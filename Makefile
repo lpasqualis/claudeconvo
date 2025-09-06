@@ -13,10 +13,10 @@ help:
 	@echo "  make upload        Upload to PyPI (requires credentials)"
 
 install:
-	pip install -e .
+	pip3 install -e .
 
 install-dev:
-	pip install -e ".[dev]"
+	pip3 install -e ".[dev]"
 
 test:
 	pytest tests/ -v --cov=claudelog --cov-report=term-missing
@@ -47,9 +47,9 @@ build: clean
 	python -m build
 
 check-release: build
-	twine check dist/*
+	python3 -m twine check dist/*
 
 upload: check-release
 	@echo "Uploading to PyPI..."
 	@echo "Make sure you have configured your PyPI credentials!"
-	twine upload dist/*
+	python3 -m twine upload dist/*

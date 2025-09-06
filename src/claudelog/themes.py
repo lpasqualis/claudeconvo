@@ -1,0 +1,242 @@
+"""Color theme definitions for claudelog."""
+
+
+class ColorTheme:
+    """Base class for color themes."""
+    name = "base"
+
+    # Base attributes - all themes inherit or override these
+    RESET = '\033[0m'
+    BOLD = '\033[1m'
+    DIM = '\033[2m'
+
+    # Message types
+    USER = ''
+    ASSISTANT = ''
+    SYSTEM = ''
+    ERROR = ''
+
+    # Tool colors
+    TOOL_NAME = ''
+    TOOL_PARAM = ''
+    TOOL_OUTPUT = ''
+
+    # Other
+    TIMESTAMP = ''
+    SEPARATOR = ''
+    METADATA = ''
+
+
+class DarkTheme(ColorTheme):
+    """Default dark terminal theme."""
+    name = "dark"
+
+    # Message types
+    USER = '\033[36m'        # Cyan
+    ASSISTANT = '\033[32m'   # Green
+    SYSTEM = '\033[33m'      # Yellow
+    ERROR = '\033[31m'       # Red
+
+    # Tool colors
+    TOOL_NAME = '\033[35m'   # Magenta
+    TOOL_PARAM = '\033[95m'  # Light magenta
+    TOOL_OUTPUT = '\033[90m' # Gray
+
+    # Other
+    TIMESTAMP = '\033[37m'   # Light gray/white
+    SEPARATOR = '\033[37m'   # White
+    METADATA = '\033[94m'    # Light blue
+
+
+class LightTheme(ColorTheme):
+    """Theme optimized for light/white terminals."""
+    name = "light"
+
+    # Message types
+    USER = '\033[34m'        # Blue
+    ASSISTANT = '\033[32m'   # Green
+    SYSTEM = '\033[33m'      # Yellow/Brown
+    ERROR = '\033[91m'       # Bright red
+
+    # Tool colors
+    TOOL_NAME = '\033[35m'   # Magenta
+    TOOL_PARAM = '\033[35m'  # Magenta (not light)
+    TOOL_OUTPUT = '\033[90m' # Dark gray
+
+    # Other
+    TIMESTAMP = '\033[90m'   # Dark gray
+    SEPARATOR = '\033[90m'   # Dark gray
+    METADATA = '\033[36m'    # Cyan
+
+
+class SolarizedDarkTheme(ColorTheme):
+    """Solarized dark color scheme."""
+    name = "solarized-dark"
+
+    # Solarized base colors
+    USER = '\033[36m'        # Cyan
+    ASSISTANT = '\033[32m'   # Green
+    SYSTEM = '\033[33m'      # Yellow
+    ERROR = '\033[31m'       # Red
+
+    # Tool colors
+    TOOL_NAME = '\033[35m'   # Magenta
+    TOOL_PARAM = '\033[34m'  # Blue
+    TOOL_OUTPUT = '\033[90m' # Base01
+
+    # Other
+    TIMESTAMP = '\033[37m'   # Base1
+    SEPARATOR = '\033[37m'   # Base1
+    METADATA = '\033[36m'    # Cyan
+
+
+class SolarizedLightTheme(ColorTheme):
+    """Solarized light color scheme."""
+    name = "solarized-light"
+
+    # Solarized light adjustments
+    USER = '\033[36m'        # Cyan
+    ASSISTANT = '\033[32m'   # Green
+    SYSTEM = '\033[33m'      # Yellow
+    ERROR = '\033[31m'       # Red
+
+    # Tool colors
+    TOOL_NAME = '\033[35m'   # Magenta
+    TOOL_PARAM = '\033[34m'  # Blue
+    TOOL_OUTPUT = '\033[90m' # Base00
+
+    # Other
+    TIMESTAMP = '\033[90m'   # Base00
+    SEPARATOR = '\033[90m'   # Base00
+    METADATA = '\033[36m'    # Cyan
+
+
+class DraculaTheme(ColorTheme):
+    """Dracula color scheme."""
+    name = "dracula"
+
+    # Dracula palette
+    USER = '\033[36m'        # Cyan
+    ASSISTANT = '\033[32m'   # Green
+    SYSTEM = '\033[33m'      # Yellow
+    ERROR = '\033[91m'       # Light red
+
+    # Tool colors
+    TOOL_NAME = '\033[95m'   # Light magenta
+    TOOL_PARAM = '\033[35m'  # Magenta
+    TOOL_OUTPUT = '\033[90m' # Comment gray
+
+    # Other
+    TIMESTAMP = '\033[37m'   # Foreground
+    SEPARATOR = '\033[35m'   # Purple
+    METADATA = '\033[94m'    # Light blue
+
+
+class NordTheme(ColorTheme):
+    """Nord color scheme."""
+    name = "nord"
+
+    # Nord palette
+    USER = '\033[96m'        # Nord8 - Bright cyan
+    ASSISTANT = '\033[92m'   # Nord14 - Green
+    SYSTEM = '\033[93m'      # Nord13 - Yellow
+    ERROR = '\033[91m'       # Nord11 - Red
+
+    # Tool colors
+    TOOL_NAME = '\033[95m'   # Nord15 - Purple
+    TOOL_PARAM = '\033[94m'  # Nord9 - Light blue
+    TOOL_OUTPUT = '\033[90m' # Nord3 - Gray
+
+    # Other
+    TIMESTAMP = '\033[37m'   # Nord4
+    SEPARATOR = '\033[37m'   # Nord4
+    METADATA = '\033[96m'    # Nord7
+
+
+class MonoTheme(ColorTheme):
+    """Monochrome theme with no colors."""
+    name = "mono"
+
+    # Override all with empty strings
+    RESET = ''
+    BOLD = ''
+    DIM = ''
+
+
+class HighContrastTheme(ColorTheme):
+    """High contrast theme for accessibility."""
+    name = "high-contrast"
+
+    # Maximum contrast colors
+    USER = '\033[1;36m'      # Bold cyan
+    ASSISTANT = '\033[1;32m' # Bold green
+    SYSTEM = '\033[1;33m'    # Bold yellow
+    ERROR = '\033[1;31m'     # Bold red
+
+    # Tool colors
+    TOOL_NAME = '\033[1;35m' # Bold magenta
+    TOOL_PARAM = '\033[1;34m'# Bold blue
+    TOOL_OUTPUT = '\033[0m'  # Normal
+
+    # Other
+    TIMESTAMP = '\033[1;37m' # Bold white
+    SEPARATOR = '\033[1;37m' # Bold white
+    METADATA = '\033[1;36m'  # Bold cyan
+
+
+# Theme registry
+THEMES = {
+    'dark': DarkTheme,
+    'light': LightTheme,
+    'solarized-dark': SolarizedDarkTheme,
+    'solarized-light': SolarizedLightTheme,
+    'dracula': DraculaTheme,
+    'nord': NordTheme,
+    'mono': MonoTheme,
+    'high-contrast': HighContrastTheme,
+}
+
+# Theme descriptions for help text
+THEME_DESCRIPTIONS = {
+    'dark': 'Optimized for dark terminals (default)',
+    'light': 'Optimized for light/white terminals',
+    'solarized-dark': 'Solarized dark color scheme',
+    'solarized-light': 'Solarized light color scheme',
+    'dracula': 'Dracula color scheme',
+    'nord': 'Nord color scheme',
+    'mono': 'No colors (monochrome)',
+    'high-contrast': 'Maximum contrast for accessibility'
+}
+
+
+def get_color_theme(theme_name='dark'):
+    """Get a color theme instance by name.
+
+    Args:
+        theme_name: Name of the theme (default: 'dark')
+
+    Returns:
+        ColorTheme instance
+    """
+    theme_class = THEMES.get(theme_name, DarkTheme)
+    return theme_class()
+
+
+# Global Colors instance - will be updated based on theme selection
+# Using a wrapper class to allow runtime theme changes
+class _ColorsWrapper:
+    """Wrapper to allow dynamic theme switching."""
+    def __init__(self):
+        self._theme = DarkTheme()
+    
+    def set_theme(self, theme):
+        """Set the current theme."""
+        self._theme = theme
+    
+    def __getattr__(self, name):
+        """Delegate attribute access to the current theme."""
+        return getattr(self._theme, name)
+
+
+# Single global instance that can be updated
+Colors = _ColorsWrapper()

@@ -2,9 +2,24 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## MUST FOLLOW RULES
+- Keep it SIMPLE, no speculative engineering and functionality
+- Keep it DRY, no repetitions in the code, no hacks
+- No hardcoded hacks made to pass test
+- Remember this is a utility that needs to run in a multitude of environments. Don't make assumptions.
+- This project is distributed as an opensource on GitHub, as a python package, and on Homebrew, so make sure everything you do is compatible with that and follows best practices
+- Keep modules small and focused on a specific thing, no monolithic Python files
+- Keep it clean, don't accumulate temporary junk
+- Test it! All functionality must have unit tests, and tests must pass
+- Claude log files format WILL CHANGE, the command needs to be able to have proper error handling and make it easy to adapt to changes
+- It should be possible to run claudelog from any subfolder of a project, and the correct project should be identified automatically
+- User experience using the CLI must be IMPECCABLE, and follow best practices for outstanding CLI experiences
+- Warnings are not acceptable, ANYWHERE. Fix all warnings you receive from any tool or test
+
 ## Project Overview
 
 `claudelog` is a command-line utility that displays Claude Code session history stored in `~/.claude/projects/` as readable, colored conversations. It has no external dependencies and works with Python 3.8+.
+
 
 ## Development Setup
 
@@ -28,13 +43,13 @@ make test
 # Run specific test
 pytest tests/test_claudelog.py::TestShowOptions::test_default_options -v
 
+# Clean all build artifacts
 # Lint and type check
 make lint
 
 # Format code (auto-fixes)
 make format
 
-# Clean all build artifacts
 make clean
 
 # Build distribution packages
@@ -67,8 +82,8 @@ make check-release
 
 1. **No External Dependencies**: Pure Python stdlib only - critical for wide compatibility
 2. **Option Parsing**: Custom flag system instead of argparse for show options to allow compact multi-flag syntax like `-saH`
-3. **Color Output**: Direct ANSI codes in Colors class, can be disabled with --no-color
-4. **Session Discovery**: Automatically finds sessions for current working directory
+3. **Color Output**: Direct ANSI codes in Colors class, can be disabled with --no-color and customized with themes
+4. **Session Discovery**: Automatically finds sessions for current working directory, including subfolders of the project
 
 ## Testing Strategy
 

@@ -7,10 +7,12 @@ View Claude Code session history as a conversation
 ## Features
 
 - Display Claude Code conversations with colored, formatted output
+- Multiple color themes optimized for different terminal backgrounds
 - Filter messages by type (user, assistant, tools, system, etc.)
 - Show or hide metadata, tool details, and system messages
 - Support for relative and absolute session references
 - Rich formatting with proper indentation and line wrapping
+- Configuration file support for persistent settings
 
 ## Installation
 
@@ -93,6 +95,52 @@ claudelog -ot
 Uppercase letters disable options:
 - `aH` - Enable all except hooks
 - `Aqw` - Disable all, then enable only user and assistant messages
+
+### Color Themes
+
+Choose from multiple color themes optimized for different terminal backgrounds:
+
+```bash
+# Use light theme for white/light terminals
+claudelog --theme light
+
+# Use high contrast theme for accessibility
+claudelog --theme high-contrast
+
+# Disable colors entirely
+claudelog --no-color
+```
+
+Available themes:
+- `dark` (default) - Optimized for dark terminal backgrounds
+- `light` - Optimized for light/white terminal backgrounds  
+- `solarized-dark` - Solarized dark color scheme
+- `solarized-light` - Solarized light color scheme
+- `dracula` - Dracula color scheme
+- `nord` - Nord color scheme
+- `mono` - No colors (monochrome)
+- `high-contrast` - Maximum contrast for accessibility
+
+Set a default theme using:
+- Environment variable: `export CLAUDELOG_THEME=light`
+- Config file: Create `~/.claudelogrc` with `{"theme": "light"}`
+
+### Configuration
+
+Create a `~/.claudelogrc` file to set persistent preferences:
+
+```json
+{
+  "theme": "light",
+  "default_show_options": "qwo"
+}
+```
+
+Configuration priority (highest to lowest):
+1. Command-line arguments
+2. Environment variables
+3. Config file (`~/.claudelogrc`)
+4. Built-in defaults
 
 ### Help and Available Sessions
 

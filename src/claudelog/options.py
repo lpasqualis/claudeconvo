@@ -2,37 +2,39 @@
 
 import sys
 
+from .constants import DEFAULT_TRUNCATION_LIMITS
+
 
 class ShowOptions:
     """Manages display options for filtering session content."""
 
     # Option definitions: (flag_char, attribute_name, description)
     OPTIONS = [
-        ('q', 'user', 'Show user messages'),
-        ('w', 'assistant', 'Show assistant (Claude) messages'),
-        ('s', 'summaries', 'Show session summaries'),
-        ('h', 'hooks', 'Show hook executions'),
-        ('m', 'metadata', 'Show metadata (uuid, sessionId, version, etc.)'),
-        ('c', 'commands', 'Show command-related messages'),
-        ('y', 'system', 'Show all system messages'),
-        ('t', 'tool_details', 'Show full tool details without truncation'),
-        ('o', 'tools', 'Show tool executions'),
-        ('e', 'errors', 'Show all error details and warnings'),
-        ('r', 'request_ids', 'Show API request IDs'),
-        ('f', 'flow', 'Show parent/child relationships'),
-        ('u', 'unfiltered', 'Show all content without truncation'),
-        ('d', 'diagnostics', 'Show performance metrics and token counts'),
-        ('p', 'paths', 'Show working directory (cwd) for each message'),
-        ('l', 'levels', 'Show message level/priority'),
-        ('k', 'sidechains', 'Show sidechain/parallel messages'),
-        ('v', 'user_types', 'Show user type for each message'),
-        ('a', 'all', 'Enable all options'),
+        ("q", "user", "Show user messages"),
+        ("w", "assistant", "Show assistant (Claude) messages"),
+        ("s", "summaries", "Show session summaries"),
+        ("h", "hooks", "Show hook executions"),
+        ("m", "metadata", "Show metadata (uuid, sessionId, version, etc.)"),
+        ("c", "commands", "Show command-related messages"),
+        ("y", "system", "Show all system messages"),
+        ("t", "tool_details", "Show full tool details without truncation"),
+        ("o", "tools", "Show tool executions"),
+        ("e", "errors", "Show all error details and warnings"),
+        ("r", "request_ids", "Show API request IDs"),
+        ("f", "flow", "Show parent/child relationships"),
+        ("u", "unfiltered", "Show all content without truncation"),
+        ("d", "diagnostics", "Show performance metrics and token counts"),
+        ("p", "paths", "Show working directory (cwd) for each message"),
+        ("l", "levels", "Show message level/priority"),
+        ("k", "sidechains", "Show sidechain/parallel messages"),
+        ("v", "user_types", "Show user type for each message"),
+        ("a", "all", "Enable all options"),
     ]
 
     # Default options that are enabled without any flags
-    DEFAULT_ENABLED = ['user', 'assistant', 'tools']
+    DEFAULT_ENABLED = ["user", "assistant", "tools"]
 
-    def __init__(self, options_string=''):
+    def __init__(self, options_string=""):
         """Initialize with a string of option flags (e.g., 'shm')."""
         # Set all options to False by default
         for _, attr, _ in self.OPTIONS:
@@ -59,9 +61,9 @@ class ShowOptions:
         Without 'a' or 'A', starts with defaults (user, assistant, tools) then modifies.
         """
         # Check for help request
-        if '?' in options_string:
+        if "?" in options_string:
             # Parse everything except the ?
-            temp_options = options_string.replace('?', '')
+            temp_options = options_string.replace("?", "")
             if temp_options:
                 self.parse_options_internal(temp_options)
             else:
@@ -86,7 +88,7 @@ class ShowOptions:
         disabled = []
 
         for flag_char, attr, desc in self.OPTIONS:
-            if attr == 'all':  # Skip the 'all' meta-option
+            if attr == "all":  # Skip the 'all' meta-option
                 continue
             is_enabled = getattr(self, attr, False)
             status_line = f"  {flag_char}: {desc}"
@@ -116,14 +118,14 @@ class ShowOptions:
 
         # Process each character left to right
         for char in options_string:
-            if char == 'A':
+            if char == "A":
                 # Disable ALL
                 for _, attr, _ in self.OPTIONS:
                     setattr(self, attr, False)
-            elif char == 'a':
+            elif char == "a":
                 # Enable ALL (except 'all' itself)
                 for _, attr, _ in self.OPTIONS:
-                    if attr != 'all':
+                    if attr != "all":
                         setattr(self, attr, True)
             else:
                 # Find the matching option
@@ -133,24 +135,24 @@ class ShowOptions:
                         setattr(self, attr, not char.isupper())
                         break
 
-    def should_truncate(self, text_type='default'):
+    def should_truncate(self, text_type="default"):
         """Determine if text should be truncated based on options."""
         if self.unfiltered:
             return False
-        if text_type == 'tool' and self.tool_details:
+        # Check if tool_details is enabled for any tool-related text type
+        if self.tool_details and text_type in ("tool", "tool_param", "tool_result"):
             return False
         return True
 
-    def get_max_length(self, text_type='default'):
+    def get_max_length(self, text_type="default"):
         """Get maximum text length based on options and text type."""
         if not self.should_truncate(text_type):
-            return float('inf')
+            return float("inf")
 
-        # Different limits for different text types
-        limits = {
-            'tool_param': 200,
-            'tool_result': 500,
-            'default': 500,
-            'error': 1000 if self.errors else 500,
-        }
-        return limits.get(text_type, 500)
+        # Use predefined constants for truncation limits
+        if text_type == "error":
+            if self.errors:
+                return DEFAULT_TRUNCATION_LIMITS["error"]
+            return DEFAULT_TRUNCATION_LIMITS["error_short"]
+
+        return DEFAULT_TRUNCATION_LIMITS.get(text_type, DEFAULT_TRUNCATION_LIMITS["default"])

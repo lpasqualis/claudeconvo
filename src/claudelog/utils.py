@@ -11,6 +11,11 @@ from typing import Any, Dict, Optional
 
 from .constants import (
     FILENAME_DISPLAY_WIDTH,
+    MAX_TOOL_WIDTH,
+    MIN_TOOL_WIDTH,
+    SEPARATOR_WIDTH,
+    TOOL_WIDTH_DIVISOR,
+    TOOL_WIDTH_HALF_DIVISOR,
     UUID_DISPLAY_LENGTH,
 )
 
@@ -59,13 +64,13 @@ def get_filename_display_width() -> int:
     term_width = get_terminal_width()
     if term_width < MIN_COMFORTABLE_WIDTH:
         # Narrow terminal - use less space for filenames
-        return max(20, term_width // 3)
+        return max(MIN_TOOL_WIDTH, term_width // TOOL_WIDTH_DIVISOR)
     elif term_width < WIDE_TERMINAL_THRESHOLD:
         # Normal terminal
         return FILENAME_DISPLAY_WIDTH
     else:
         # Wide terminal - can show more of the filename
-        return min(60, term_width // 2)
+        return min(MAX_TOOL_WIDTH, term_width // TOOL_WIDTH_HALF_DIVISOR)
 
 
 def format_uuid(uuid: str) -> str:

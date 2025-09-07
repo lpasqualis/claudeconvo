@@ -9,4 +9,4 @@ colored output for different speakers and tool executions.
 # Import main from cli for backward compatibility
 from .cli import main
 
-__all__ = ['main']
+__all__ = ["main"]

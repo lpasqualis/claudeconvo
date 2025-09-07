@@ -10,4 +10,4 @@ __author__ = "Lorenzo Pasqualis"
 
 from .claudelog import main
 
-__all__ = ['main']
+__all__ = ["main"]

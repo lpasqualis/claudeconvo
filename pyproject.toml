@@ -9,10 +9,10 @@ description = "View Claude Code session history as a conversation"
 readme = "README.md"
 license = {text = "MIT"}
 authors = [
-    {name = "Lorenzo Pasqualis", email = "lorenzo@example.com"}
+    {name = "Lorenzo Pasqualis"}
 ]
 maintainers = [
-    {name = "Lorenzo Pasqualis", email = "lorenzo@example.com"}
+    {name = "Lorenzo Pasqualis"}
 ]
 requires-python = ">=3.8"
 keywords = ["claude", "claude-code", "cli", "session-viewer", "conversation", "log-viewer"]
@@ -66,6 +66,8 @@ target-version = ['py38', 'py39', 'py310', 'py311', 'py312']
 [tool.ruff]
 line-length = 100
 target-version = "py38"
+
+[tool.ruff.lint]
 select = [
     "E",  # pycodestyle errors
     "F",  # pyflakes

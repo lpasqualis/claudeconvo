@@ -69,6 +69,7 @@ Show options (-s):
   l - Show message level/priority
   k - Show sidechain/parallel messages
   v - Show user type for each message
+  i - Show AI model name/version
   a - Enable ALL options
 
   Special combinations:

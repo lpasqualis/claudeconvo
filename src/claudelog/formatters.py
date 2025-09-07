@@ -126,6 +126,27 @@ def _format_timestamp(entry, show_timestamp):
 def _build_metadata_lines(entry, show_options):
     """Build metadata lines for an entry."""
     metadata_lines = []
+    
+    # Model information (for assistant messages)
+    if show_options.model:
+        message = entry.get("message", {})
+        if isinstance(message, dict) and message.get("model"):
+            model_name = message["model"]
+            # Format the model name to be more readable
+            if "claude-" in model_name:
+                # Extract the meaningful parts: e.g., "claude-opus-4-1-20250805" -> "Opus 4.1"
+                parts = model_name.split("-")
+                if len(parts) >= 3:
+                    tier = parts[1].capitalize()  # opus -> Opus
+                    version = parts[2] if len(parts) > 2 else ""
+                    if len(parts) > 3 and parts[3]:
+                        version += f".{parts[3]}"
+                    model_display = f"{tier} {version}"
+                else:
+                    model_display = model_name
+            else:
+                model_display = model_name
+            metadata_lines.append(f"{Colors.METADATA}[Model: {model_display}]{Colors.RESET}")
 
     # Basic metadata
     if show_options.metadata:

@@ -28,6 +28,7 @@ class ShowOptions:
         ("l", "levels", "Show message level/priority"),
         ("k", "sidechains", "Show sidechain/parallel messages"),
         ("v", "user_types", "Show user type for each message"),
+        ("i", "model", "Show AI model name/version"),
         ("a", "all", "Enable all options"),
     ]
 

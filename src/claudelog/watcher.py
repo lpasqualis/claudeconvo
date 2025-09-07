@@ -1,5 +1,6 @@
 """File watching functionality for claudelog."""
 
+import json
 import sys
 import time
 from pathlib import Path
@@ -19,6 +20,11 @@ except ImportError:
 from .formatters import format_conversation_entry
 from .parsers.adaptive import AdaptiveParser
 from .themes import Colors
+from .utils import log_debug
+
+# Constants
+ESC_KEY_CODE = 27  # ASCII code for ESC key
+WATCH_POLL_INTERVAL = 0.5  # Seconds between file checks
 
 
 def check_for_esc() -> bool:
@@ -30,7 +36,7 @@ def check_for_esc() -> bool:
     if HAS_TERMIOS:
         if sys.stdin in select.select([sys.stdin], [], [], 0)[0]:
             ch = sys.stdin.read(1)
-            if ord(ch) == 27:  # ESC key
+            if ord(ch) == ESC_KEY_CODE:
                 return True
     # On Windows, ESC detection not supported, rely on Ctrl+C only
     return False
@@ -78,7 +84,7 @@ def watch_session_file(filepath: Path, show_options, show_timestamp: bool = Fals
                 if current_size > last_size:
                     # Read and parse the file
                     with open(filepath, encoding="utf-8") as f:
-                        for line in f:
+                        for line_num, line in enumerate(f, 1):
                             line = line.strip()
                             if not line:
                                 continue
@@ -92,8 +98,6 @@ def watch_session_file(filepath: Path, show_options, show_timestamp: bool = Fals
 
                                 # Parse the new entry
                                 try:
-                                    import json
-
                                     raw_entry = json.loads(line)
                                     entry = parser.parse_entry(raw_entry)
 
@@ -105,14 +109,22 @@ def watch_session_file(filepath: Path, show_options, show_timestamp: bool = Fals
                                         print(formatted)
                                         sys.stdout.flush()  # Ensure immediate output
 
-                                except (json.JSONDecodeError, Exception):
-                                    # Skip malformed entries
-                                    pass
+                                except json.JSONDecodeError as e:
+                                    # Skip malformed JSON entries silently
+                                    # This is expected for incomplete or corrupted lines
+                                    log_debug(f"Skipping malformed JSON at line {line_num}: {e}")
+                                except (ValueError, TypeError, KeyError, AttributeError) as e:
+                                    # Log parsing errors for debugging without exposing details
+                                    # These might indicate format changes or unexpected data
+                                    if show_options.debug:
+                                        err_name = type(e).__name__
+                                        msg = f"Debug: Failed to parse entry: {err_name}"
+                                        print(f"{Colors.DIM}{msg}{Colors.RESET}", file=sys.stderr)
 
                     last_size = current_size
 
                 # Small delay to avoid excessive CPU usage
-                time.sleep(0.5)
+                time.sleep(WATCH_POLL_INTERVAL)
 
             except KeyboardInterrupt:
                 print(f"\n{Colors.SYSTEM}Interrupted{Colors.RESET}")

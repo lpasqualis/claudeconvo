@@ -271,9 +271,11 @@ class LogAnalyzer:
         """
         results = {"total_tested": 0, "successful": 0, "failed": [], "warnings": []}
 
+        # Try to find test fixtures - these may not exist in production installations
         fixtures_dir = Path("tests/fixtures/versions")
         if not fixtures_dir.exists():
-            results["warnings"].append("No fixture files found. Run collect_samples.py first.")
+            # This is expected in production installations
+            results["warnings"].append("Test fixtures not available (expected in production).")
             return results
 
         for version_file in sorted(fixtures_dir.glob("*.json")):
@@ -359,10 +361,11 @@ def run_diagnostics(session_file: str = None, verbose: bool = False) -> None:
                 print(f"  - {warning}")
 
     else:
-        # Analyze all fixture samples
+        # Try to analyze fixture samples if available (developer mode)
         fixtures_dir = Path("tests/fixtures/versions")
 
         if fixtures_dir.exists():
+            print(f"\n{Colors.BOLD}Analyzing test fixtures (developer mode){Colors.RESET}")
             for version_file in sorted(fixtures_dir.glob("*.json")):
                 if version_file.name == "summary.json":
                     continue
@@ -378,28 +381,36 @@ def run_diagnostics(session_file: str = None, verbose: bool = False) -> None:
                             0,
                         )
 
-    # Generate report
-    print(analyzer.generate_report())
+            # Generate report
+            print(analyzer.generate_report())
 
-    # Test parser compatibility
-    print(f"\n{Colors.BOLD}=== Parser Compatibility Test ==={Colors.RESET}")
-    test_results = analyzer.test_parser_compatibility()
+            # Test parser compatibility (only with fixtures)
+            print(f"\n{Colors.BOLD}=== Parser Compatibility Test ==={Colors.RESET}")
+            test_results = analyzer.test_parser_compatibility()
 
-    success_rate = (
-        test_results["successful"] / test_results["total_tested"] * 100
-        if test_results["total_tested"] > 0
-        else 0
-    )
+            success_rate = (
+                test_results["successful"] / test_results["total_tested"] * 100
+                if test_results["total_tested"] > 0
+                else 0
+            )
 
-    print(f"  Tested: {test_results['total_tested']} entries")
-    print(f"  Success rate: {success_rate:.1f}%")
+            print(f"  Tested: {test_results['total_tested']} entries")
+            print(f"  Success rate: {success_rate:.1f}%")
 
-    if test_results["failed"]:
-        print(f"\n{Colors.ERROR}Failed parses:{Colors.RESET}")
-        for failure in test_results["failed"][:MAX_PARSE_ERRORS_DISPLAY]:
-            print(f"  {failure['version']}/{failure['type']}: {failure['error']}")
+            if test_results["failed"]:
+                print(f"\n{Colors.ERROR}Failed parses:{Colors.RESET}")
+                for failure in test_results["failed"][:MAX_PARSE_ERRORS_DISPLAY]:
+                    print(f"  {failure['version']}/{failure['type']}: {failure['error']}")
 
-    if test_results["warnings"]:
-        print(f"\n{Colors.WARNING}Warnings:{Colors.RESET}")
-        for warning in test_results["warnings"][:MAX_PARSE_ERRORS_DISPLAY]:
-            print(f"  {warning}")
+            if test_results["warnings"]:
+                print(f"\n{Colors.WARNING}Warnings:{Colors.RESET}")
+                for warning in test_results["warnings"][:MAX_PARSE_ERRORS_DISPLAY]:
+                    print(f"  {warning}")
+        else:
+            # No fixtures available in production
+            print(f"\n{Colors.BOLD}Log Format Analysis{Colors.RESET}")
+            print("=" * 60)
+            msg1 = "Note: Test fixtures not available in production installation"
+            print(f"{Colors.DIM}{msg1}{Colors.RESET}")
+            msg2 = "Use --diagnose-file <session-file> to analyze a specific session"
+            print(f"{Colors.DIM}{msg2}{Colors.RESET}")

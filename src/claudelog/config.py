@@ -7,11 +7,37 @@ from .utils import load_json_config
 
 
 def load_config():
-    """Load configuration from ~/.claudelogrc if it exists.
+    """Load configuration from config file.
+
+    Looks for config in this order:
+    1. CLAUDELOG_CONFIG environment variable
+    2. XDG_CONFIG_HOME/claudelog/config.json (if XDG_CONFIG_HOME is set)
+    3. ~/.config/claudelog/config.json
+    4. ~/.claudelogrc (legacy location)
 
     Returns:
         dict: Configuration values or empty dict if no config file
     """
+    # Check environment variable first
+    env_config = os.environ.get("CLAUDELOG_CONFIG")
+    if env_config:
+        config_path = Path(env_config)
+        if config_path.exists():
+            return load_json_config(config_path, default={})
+
+    # Check XDG config directory
+    xdg_config = os.environ.get("XDG_CONFIG_HOME")
+    if xdg_config:
+        config_path = Path(xdg_config) / "claudelog" / "config.json"
+        if config_path.exists():
+            return load_json_config(config_path, default={})
+
+    # Check ~/.config/claudelog/config.json
+    config_path = Path.home() / ".config" / "claudelog" / "config.json"
+    if config_path.exists():
+        return load_json_config(config_path, default={})
+
+    # Check legacy location
     config_path = Path.home() / ".claudelogrc"
     return load_json_config(config_path, default={})
 

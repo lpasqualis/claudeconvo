@@ -27,7 +27,8 @@ from .utils import (
 from .watcher import watch_sessions
 
 
-def main():
+def create_argument_parser():
+    """Create and configure the argument parser."""
     parser = argparse.ArgumentParser(
         description="View Claude Code session history as a conversation",
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -129,23 +130,34 @@ Examples:
     parser.add_argument(
         "--verbose", action="store_true", help="Show verbose output in diagnostic mode"
     )
+    return parser
 
-    args = parser.parse_args()
 
-    # Handle diagnostics mode
+def handle_diagnostics_mode(args):
+    """Handle diagnostic mode if requested.
+
+    Returns:
+        True if diagnostics were run, False otherwise
+    """
     if args.diagnose or args.diagnose_file:
         # Apply theme first for colored output
         config = load_config()
         theme_name = determine_theme(args, config)
         from .themes import Colors
-
         Colors.set_theme(get_color_theme(theme_name))
 
         # Run diagnostics
         run_diagnostics(session_file=args.diagnose_file, verbose=args.verbose)
-        return 0
+        return True
+    return False
 
-    # Handle theme listing
+
+def handle_theme_listing(args):
+    """Handle theme listing if requested.
+
+    Returns:
+        True if themes were listed, False otherwise
+    """
     if hasattr(args, "theme") and args.theme == "list":
         print("\nAvailable color themes:")
         print("-" * 40)
@@ -155,6 +167,185 @@ Examples:
         print("\nUsage: claudelog --theme <theme_name>")
         print("Set default: export CLAUDELOG_THEME=<theme_name>")
         print("Config file: ~/.claudelogrc")
+        return True
+    return False
+
+
+def handle_project_listing(args):
+    """Handle project listing if requested.
+
+    Returns:
+        0 on success, 1 on failure, None if not handling project listing
+    """
+    if not args.list_projects:
+        return None
+
+    from .themes import Colors
+    projects_dir = Path.home() / CLAUDE_PROJECTS_DIR
+
+    if projects_dir.exists():
+        projects = sorted([d for d in projects_dir.iterdir() if d.is_dir()])
+        msg = f"Found {len(projects)} project(s) with session history:"
+        print(f"\n{Colors.BOLD}{msg}{Colors.RESET}")
+        for project in projects:
+            # Convert back to path for display
+            name = project.name[1:]  # Remove leading dash
+            # Handle double dashes (hidden folders)
+            name = name.replace("--", "-.")
+            # Replace remaining dashes with slashes
+            path = "/" + name.replace("-", "/")
+
+            # Count sessions
+            session_count = len(list(project.glob("*.jsonl")))
+            print(f"  {Colors.BOLD}{path}{Colors.RESET} ({session_count} sessions)")
+        return 0
+    else:
+        print(f"{Colors.ERROR}No projects found{Colors.RESET}")
+        return 1
+
+
+def get_session_directory(args):
+    """Get the session directory based on arguments.
+
+    Returns:
+        Tuple of (project_path, session_dir) or (None, None) on error
+    """
+    if args.project:
+        # Use specified project path
+        project_path = args.project
+        session_dir = path_to_session_dir(project_path)
+    else:
+        project_path = find_project_root()
+        session_dir = get_project_session_dir()
+
+    return project_path, session_dir
+
+
+def handle_no_session_directory(project_path):
+    """Handle the case when no session directory is found."""
+    from .themes import Colors
+
+    print(f"{Colors.ERROR}No session history found for project: {project_path}{Colors.RESET}")
+    tip = "Tip: Use --list-projects to see all projects with sessions"
+    print(f"{Colors.TIMESTAMP}{tip}{Colors.RESET}")
+    note = "Note: Both underscores and slashes in paths become dashes in session folders"
+    print(f"{Colors.TIMESTAMP}{note}{Colors.RESET}")
+    # Try with underscores converted to dashes
+    if "_" in project_path:
+        alt_path = project_path.replace("_", "-")
+        cmd = f"{os.path.basename(sys.argv[0])} -p {alt_path}"
+        print(f"{Colors.TIMESTAMP}Try: {cmd}{Colors.RESET}")
+
+
+def list_files_only(session_files):
+    """Display list of session files."""
+    from .themes import Colors
+
+    print(f"\n{Colors.BOLD}Found {len(session_files)} session file(s):{Colors.RESET}")
+    for i, filepath in enumerate(session_files):
+        file_stat = filepath.stat()  # Single stat call to avoid TOCTOU
+        mtime = datetime.fromtimestamp(file_stat.st_mtime)
+        size = file_stat.st_size
+        size_str = format_file_size(size)
+
+        # One line per entry with better colors
+        timestamp = mtime.strftime("%Y-%m-%d %H:%M")
+        filename_width = get_filename_display_width()
+        truncated_name = filepath.name[:filename_width]
+        idx_str = f"{i+1:{LIST_ITEM_NUMBER_WIDTH}}"
+        print(
+            f"  {Colors.BOLD}{idx_str}.{Colors.RESET} {truncated_name:{filename_width}} "
+            f"{Colors.TIMESTAMP}{timestamp}  {size_str:>8}{Colors.RESET}"
+        )
+
+
+def get_files_to_show(args, session_files):
+    """Determine which files to show based on arguments.
+
+    Returns:
+        List of files to show or None on error
+    """
+    from .themes import Colors
+    files_to_show = []
+
+    if args.file:
+        # Show specific file
+        if args.file.isdigit():
+            # Treat as index
+            try:
+                idx = int(args.file) - 1
+                if 0 <= idx < len(session_files):
+                    files_to_show = [session_files[idx]]
+                else:
+                    error_msg = f"Error: Index {args.file} out of range (1-{len(session_files)})"
+                    print(f"{Colors.ERROR}{error_msg}{Colors.RESET}")
+                    return None
+            except (ValueError, OverflowError):
+                error_msg = f"Error: Invalid index value: {args.file}"
+                print(f"{Colors.ERROR}{error_msg}{Colors.RESET}")
+                return None
+        else:
+            # Treat as filename
+            for f in session_files:
+                if f.name == args.file or f.stem == args.file:
+                    files_to_show = [f]
+                    break
+            if not files_to_show:
+                print(f"{Colors.ERROR}Error: File '{args.file}' not found{Colors.RESET}")
+                return None
+    else:
+        # Show recent files
+        if args.number == 0:
+            files_to_show = session_files
+        else:
+            files_to_show = session_files[: args.number]
+
+    return files_to_show
+
+
+def display_sessions(files_to_show, show_options, show_timestamp):
+    """Display session files in normal mode."""
+    from .themes import Colors
+
+    for filepath in files_to_show:
+        if len(files_to_show) > 1:
+            sep_width = get_separator_width()
+            print(f"\n{Colors.SEPARATOR}{'=' * sep_width}{Colors.RESET}")
+            print(f"{Colors.BOLD}Session: {filepath.name}{Colors.RESET}")
+            file_stat = filepath.stat()  # Single stat call to avoid TOCTOU
+            mtime = datetime.fromtimestamp(file_stat.st_mtime)
+            date_str = mtime.strftime("%Y-%m-%d %H:%M:%S")
+            print(f"{Colors.TIMESTAMP}Date: {date_str}{Colors.RESET}")
+            print(f"{Colors.SEPARATOR}{'=' * sep_width}{Colors.RESET}")
+
+        sessions = parse_session_file(filepath)
+
+        if not sessions:
+            print(f"{Colors.ERROR}No data found in {filepath.name}{Colors.RESET}")
+            continue
+
+        # Display as conversation
+        for entry in sessions:
+            formatted = format_conversation_entry(
+                entry, show_options, show_timestamp=show_timestamp
+            )
+            if formatted:
+                print(formatted)
+
+        sep_width = get_separator_width()
+        print(f"\n{Colors.SEPARATOR}{'─' * sep_width}{Colors.RESET}")
+        print(f"{Colors.TIMESTAMP}End of session{Colors.RESET}")
+
+
+def main():
+    parser = create_argument_parser()
+    args = parser.parse_args()
+
+    # Handle special modes
+    if handle_diagnostics_mode(args):
+        return 0
+
+    if handle_theme_listing(args):
         return 0
 
     # Load config
@@ -172,49 +363,16 @@ Examples:
 
     Colors.set_theme(get_color_theme(theme_name))
 
-    # List all projects if requested
-    if args.list_projects:
-        projects_dir = Path.home() / CLAUDE_PROJECTS_DIR
-        if projects_dir.exists():
-            projects = sorted([d for d in projects_dir.iterdir() if d.is_dir()])
-            msg = f"Found {len(projects)} project(s) with session history:"
-            print(f"\n{Colors.BOLD}{msg}{Colors.RESET}")
-            for project in projects:
-                # Convert back to path for display
-                name = project.name[1:]  # Remove leading dash
-                # Handle double dashes (hidden folders)
-                name = name.replace("--", "-.")
-                # Replace remaining dashes with slashes
-                path = "/" + name.replace("-", "/")
-
-                # Count sessions
-                session_count = len(list(project.glob("*.jsonl")))
-                print(f"  {Colors.BOLD}{path}{Colors.RESET} ({session_count} sessions)")
-            return 0
-        else:
-            print(f"{Colors.ERROR}No projects found{Colors.RESET}")
-            return 1
+    # Handle project listing
+    project_list_result = handle_project_listing(args)
+    if project_list_result is not None:
+        return project_list_result
 
     # Get project session directory
-    if args.project:
-        # Use specified project path
-        project_path = args.project
-        session_dir = path_to_session_dir(project_path)
-    else:
-        project_path = find_project_root()
-        session_dir = get_project_session_dir()
+    project_path, session_dir = get_session_directory(args)
 
     if not session_dir.exists():
-        print(f"{Colors.ERROR}No session history found for project: {project_path}{Colors.RESET}")
-        tip = "Tip: Use --list-projects to see all projects with sessions"
-        print(f"{Colors.TIMESTAMP}{tip}{Colors.RESET}")
-        note = "Note: Both underscores and slashes in paths become dashes in session folders"
-        print(f"{Colors.TIMESTAMP}{note}{Colors.RESET}")
-        # Try with underscores converted to dashes
-        if "_" in project_path:
-            alt_path = project_path.replace("_", "-")
-            cmd = f"{os.path.basename(sys.argv[0])} -p {alt_path}"
-            print(f"{Colors.TIMESTAMP}Try: {cmd}{Colors.RESET}")
+        handle_no_session_directory(project_path)
         return 1
 
     # Get list of session files
@@ -226,58 +384,13 @@ Examples:
 
     # If listing files only
     if args.list:
-        print(f"\n{Colors.BOLD}Found {len(session_files)} session file(s):{Colors.RESET}")
-        for i, filepath in enumerate(session_files):
-            file_stat = filepath.stat()  # Single stat call to avoid TOCTOU
-            mtime = datetime.fromtimestamp(file_stat.st_mtime)
-            size = file_stat.st_size
-            size_str = format_file_size(size)
-
-            # One line per entry with better colors
-            timestamp = mtime.strftime("%Y-%m-%d %H:%M")
-            filename_width = get_filename_display_width()
-            truncated_name = filepath.name[:filename_width]
-            idx_str = f"{i+1:{LIST_ITEM_NUMBER_WIDTH}}"
-            print(
-                f"  {Colors.BOLD}{idx_str}.{Colors.RESET} {truncated_name:{filename_width}} "
-                f"{Colors.TIMESTAMP}{timestamp}  {size_str:>8}{Colors.RESET}"
-            )
+        list_files_only(session_files)
         return 0
 
     # Determine which files to show
-    files_to_show = []
-
-    if args.file:
-        # Show specific file
-        if args.file.isdigit():
-            # Treat as index
-            try:
-                idx = int(args.file) - 1
-                if 0 <= idx < len(session_files):
-                    files_to_show = [session_files[idx]]
-                else:
-                    error_msg = f"Error: Index {args.file} out of range (1-{len(session_files)})"
-                    print(f"{Colors.ERROR}{error_msg}{Colors.RESET}")
-                    return 1
-            except (ValueError, OverflowError):
-                error_msg = f"Error: Invalid index value: {args.file}"
-                print(f"{Colors.ERROR}{error_msg}{Colors.RESET}")
-                return 1
-        else:
-            # Treat as filename
-            for f in session_files:
-                if f.name == args.file or f.stem == args.file:
-                    files_to_show = [f]
-                    break
-            if not files_to_show:
-                print(f"{Colors.ERROR}Error: File '{args.file}' not found{Colors.RESET}")
-                return 1
-    else:
-        # Show recent files
-        if args.number == 0:
-            files_to_show = session_files
-        else:
-            files_to_show = session_files[: args.number]
+    files_to_show = get_files_to_show(args, session_files)
+    if files_to_show is None:
+        return 1
 
     # Check if we should watch or just dump
     if args.watch:
@@ -285,34 +398,7 @@ Examples:
         watch_sessions(files_to_show, show_options, show_timestamp=args.timestamp)
     else:
         # Normal mode - dump and exit
-        for filepath in files_to_show:
-            if len(files_to_show) > 1:
-                sep_width = get_separator_width()
-                print(f"\n{Colors.SEPARATOR}{'=' * sep_width}{Colors.RESET}")
-                print(f"{Colors.BOLD}Session: {filepath.name}{Colors.RESET}")
-                file_stat = filepath.stat()  # Single stat call to avoid TOCTOU
-                mtime = datetime.fromtimestamp(file_stat.st_mtime)
-                date_str = mtime.strftime("%Y-%m-%d %H:%M:%S")
-                print(f"{Colors.TIMESTAMP}Date: {date_str}{Colors.RESET}")
-                print(f"{Colors.SEPARATOR}{'=' * sep_width}{Colors.RESET}")
-
-            sessions = parse_session_file(filepath)
-
-            if not sessions:
-                print(f"{Colors.ERROR}No data found in {filepath.name}{Colors.RESET}")
-                continue
-
-            # Display as conversation
-            for entry in sessions:
-                formatted = format_conversation_entry(
-                    entry, show_options, show_timestamp=args.timestamp
-                )
-                if formatted:
-                    print(formatted)
-
-            sep_width = get_separator_width()
-            print(f"\n{Colors.SEPARATOR}{'─' * sep_width}{Colors.RESET}")
-            print(f"{Colors.TIMESTAMP}End of session{Colors.RESET}")
+        display_sessions(files_to_show, show_options, args.timestamp)
 
     return 0
 

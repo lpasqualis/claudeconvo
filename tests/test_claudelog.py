@@ -241,10 +241,11 @@ class TestSessionFunctions:
         assert files[1] == mock_files[0]  # session1 has older mtime
 
     @patch("claudelog.parsers.adaptive.Path")
+    @patch("os.fstat")
     @patch("builtins.open")
-    @patch("claudelog.session.Path.stat")
+    @patch("claudelog.session.Path.is_symlink")
     @patch("claudelog.session.Path.resolve")
-    def test_parse_session_file(self, mock_resolve, mock_stat, mock_open, mock_adaptive_path):
+    def test_parse_session_file(self, mock_resolve, mock_is_symlink, mock_open, mock_fstat, mock_adaptive_path):
         """Test parsing a session file."""
         # Mock adaptive parser config loading
         mock_config_path = Mock()
@@ -259,9 +260,12 @@ class TestSessionFunctions:
         home_sessions = Path.home() / ".claude" / "projects" / "test"
         test_file = home_sessions / "session.jsonl"
         mock_resolve.return_value = test_file
+        
+        # Mock symlink check
+        mock_is_symlink.return_value = False
 
-        # Mock file size check
-        mock_stat.return_value = Mock(st_size=1000)  # Small file
+        # Mock file size check using fstat
+        mock_fstat.return_value = Mock(st_size=1000)  # Small file
 
         # Mock file content with newline-delimited JSON
         # Use realistic Claude log format
@@ -274,8 +278,12 @@ class TestSessionFunctions:
             },
         ]
 
+        mock_file_handle = MagicMock()
+        mock_file_handle.__iter__ = Mock(return_value=iter([json.dumps(entry) + "\n" for entry in session_data]))
+        mock_file_handle.fileno = Mock(return_value=3)  # Mock file descriptor
+        
         mock_file = MagicMock()
-        mock_file.__enter__.return_value = [json.dumps(entry) + "\n" for entry in session_data]
+        mock_file.__enter__.return_value = mock_file_handle
         mock_open.return_value = mock_file
 
         entries = parse_session_file("/fake/session.json")

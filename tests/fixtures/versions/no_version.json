@@ -1,0 +1,29 @@
+{
+  "version": "no_version",
+  "entry_types": {
+    "summary": [
+      {
+        "type": "summary",
+        "summary": "Documentation update",
+        "leafUuid": "leaf-xxx"
+      },
+      {
+        "type": "summary",
+        "summary": "Documentation update",
+        "leafUuid": "leaf-xxx"
+      },
+      {
+        "type": "summary",
+        "summary": "Code review and implementation",
+        "leafUuid": "leaf-xxx"
+      }
+    ]
+  },
+  "field_patterns": [
+    [
+      "leafUuid",
+      "summary",
+      "type"
+    ]
+  ]
+}

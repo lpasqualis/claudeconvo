@@ -1,0 +1,311 @@
+{
+  "version": "1.0.96",
+  "entry_types": {
+    "user": [
+      {
+        "parentUuid": null,
+        "isSidechain": false,
+        "userType": "external",
+        "cwd": "/Users/anonymous/Projects/professional/agentic_career",
+        "sessionId": "session-xxx",
+        "version": "1.0.96",
+        "gitBranch": "master",
+        "type": "user",
+        "message": {
+          "role": "user",
+          "content": [
+            {
+              "type": "text",
+              "text": "Sample text"
+            }
+          ]
+        },
+        "uuid": "6a039a48-8398-3a79-e38d-e395956365af",
+        "timestamp": "2025-01-01T12:00:00.000Z"
+      },
+      {
+        "parentUuid": "parent-xxx",
+        "isSidechain": false,
+        "userType": "external",
+        "cwd": "/Users/anonymous/Projects/professional/agentic_career",
+        "sessionId": "session-xxx",
+        "version": "1.0.96",
+        "gitBranch": "master",
+        "type": "user",
+        "message": {
+          "role": "user",
+          "content": [
+            {
+              "type": "text",
+              "text": "Sample text"
+            }
+          ]
+        },
+        "uuid": "2f3cf4d8-4b6a-bca3-1a92-026dad22f543",
+        "timestamp": "2025-01-01T12:00:00.000Z"
+      },
+      {
+        "parentUuid": "parent-xxx",
+        "isSidechain": false,
+        "userType": "external",
+        "cwd": "/Users/anonymous/Projects/professional/agentic_career",
+        "sessionId": "session-xxx",
+        "version": "1.0.96",
+        "gitBranch": "master",
+        "type": "user",
+        "message": {
+          "role": "user",
+          "content": [
+            {
+              "tool_use_id": "toolu_xxx",
+              "type": "tool_result",
+              "content": "Sample text",
+              "is_error": false
+            }
+          ]
+        },
+        "uuid": "5e558f13-351b-21e2-1037-cff18a4edb19",
+        "timestamp": "2025-01-01T12:00:00.000Z",
+        "toolUseResult": {
+          "type": "text",
+          "file": {
+            "filePath": "/Users/anonymous/Projects/professional/agentic_career/resume/master_resume/master_facts.yaml",
+            "content": "Sample YAML configuration content",
+            "numLines": 1160,
+            "startLine": 1,
+            "totalLines": 1160
+          }
+        }
+      }
+    ],
+    "assistant": [
+      {
+        "parentUuid": "parent-xxx",
+        "isSidechain": false,
+        "userType": "external",
+        "cwd": "/Users/anonymous/Projects/professional/agentic_career",
+        "sessionId": "session-xxx",
+        "version": "1.0.96",
+        "gitBranch": "master",
+        "message": {
+          "id": "msg_xxx",
+          "type": "message",
+          "role": "assistant",
+          "model": "claude-opus-4-1-20250805",
+          "content": [
+            {
+              "type": "text",
+              "text": "Sample text"
+            }
+          ],
+          "stop_reason": null,
+          "stop_sequence": null,
+          "usage": {
+            "input_tokens": 3,
+            "cache_creation_input_tokens": 25764,
+            "cache_read_input_tokens": 0,
+            "cache_creation": {
+              "ephemeral_5m_input_tokens": 25764,
+              "ephemeral_1h_input_tokens": 0
+            },
+            "output_tokens": 3,
+            "service_tier": "standard"
+          }
+        },
+        "requestId": "req-xxx",
+        "type": "assistant",
+        "uuid": "bceae76c-1d8f-4cd9-1ae8-2942f57f3ecf",
+        "timestamp": "2025-01-01T12:00:00.000Z"
+      },
+      {
+        "parentUuid": "parent-xxx",
+        "isSidechain": false,
+        "userType": "external",
+        "cwd": "/Users/anonymous/Projects/professional/agentic_career",
+        "sessionId": "session-xxx",
+        "version": "1.0.96",
+        "gitBranch": "master",
+        "message": {
+          "id": "msg_xxx",
+          "type": "message",
+          "role": "assistant",
+          "model": "claude-opus-4-1-20250805",
+          "content": [
+            {
+              "type": "tool_use",
+              "id": "toolu_xxx",
+              "name": "Read",
+              "input": {
+                "file_path": "/path/to/file"
+              }
+            }
+          ],
+          "stop_reason": null,
+          "stop_sequence": null,
+          "usage": {
+            "input_tokens": 7,
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 25764,
+            "cache_creation": {
+              "ephemeral_5m_input_tokens": 0,
+              "ephemeral_1h_input_tokens": 0
+            },
+            "output_tokens": 37,
+            "service_tier": "standard"
+          }
+        },
+        "requestId": "req-xxx",
+        "type": "assistant",
+        "uuid": "8d2e67ed-dd1b-3b8d-142e-70fd488ae9d4",
+        "timestamp": "2025-01-01T12:00:00.000Z"
+      },
+      {
+        "parentUuid": "parent-xxx",
+        "isSidechain": false,
+        "userType": "external",
+        "cwd": "/Users/anonymous/Projects/professional/agentic_career",
+        "sessionId": "session-xxx",
+        "version": "1.0.96",
+        "gitBranch": "master",
+        "message": {
+          "id": "msg_xxx",
+          "type": "message",
+          "role": "assistant",
+          "model": "claude-opus-4-1-20250805",
+          "content": [
+            {
+              "type": "text",
+              "text": "Sample text"
+            }
+          ],
+          "stop_reason": null,
+          "stop_sequence": null,
+          "usage": {
+            "input_tokens": 7,
+            "cache_creation_input_tokens": 165,
+            "cache_read_input_tokens": 25764,
+            "cache_creation": {
+              "ephemeral_5m_input_tokens": 165,
+              "ephemeral_1h_input_tokens": 0
+            },
+            "output_tokens": 3,
+            "service_tier": "standard"
+          }
+        },
+        "requestId": "req-xxx",
+        "type": "assistant",
+        "uuid": "ebfc294d-89ad-227f-bde3-f8c4cd1e8d32",
+        "timestamp": "2025-01-01T12:00:00.000Z"
+      }
+    ],
+    "system": [
+      {
+        "parentUuid": null,
+        "isSidechain": false,
+        "userType": "external",
+        "cwd": "/Users/anonymous/Projects/professional/agentic_career",
+        "sessionId": "session-xxx",
+        "version": "1.0.96",
+        "gitBranch": "master",
+        "type": "system",
+        "content": "Session started",
+        "isMeta": false,
+        "timestamp": "2025-01-01T12:00:00.000Z",
+        "uuid": "68504a2b-7071-606c-7b10-e5862159c126",
+        "toolUseID": "tool-xxx",
+        "level": "info"
+      },
+      {
+        "parentUuid": "parent-xxx",
+        "isSidechain": false,
+        "userType": "external",
+        "cwd": "/Users/anonymous/Projects/professional/agentic_career",
+        "sessionId": "session-xxx",
+        "version": "1.0.96",
+        "gitBranch": "master",
+        "type": "system",
+        "content": "Hook executed",
+        "isMeta": false,
+        "timestamp": "2025-01-01T12:00:00.000Z",
+        "uuid": "5703678b-973c-c7b0-d037-6850a80069b4",
+        "toolUseID": "tool-xxx",
+        "level": "info"
+      },
+      {
+        "parentUuid": "parent-xxx",
+        "isSidechain": false,
+        "userType": "external",
+        "cwd": "/Users/anonymous/Projects/professional/agentic_career",
+        "sessionId": "session-xxx",
+        "version": "1.0.96",
+        "gitBranch": "master",
+        "type": "system",
+        "content": "Session started",
+        "isMeta": false,
+        "timestamp": "2025-01-01T12:00:00.000Z",
+        "uuid": "586e2b8e-4f19-5c97-e958-e9c798cca010",
+        "toolUseID": "tool-xxx",
+        "level": "info"
+      }
+    ]
+  },
+  "field_patterns": [
+    [
+      "cwd",
+      "gitBranch",
+      "isSidechain",
+      "message",
+      "parentUuid",
+      "sessionId",
+      "timestamp",
+      "type",
+      "userType",
+      "uuid",
+      "version"
+    ],
+    [
+      "cwd",
+      "gitBranch",
+      "isSidechain",
+      "message",
+      "parentUuid",
+      "requestId",
+      "sessionId",
+      "timestamp",
+      "type",
+      "userType",
+      "uuid",
+      "version"
+    ],
+    [
+      "content",
+      "cwd",
+      "gitBranch",
+      "isMeta",
+      "isSidechain",
+      "level",
+      "parentUuid",
+      "sessionId",
+      "timestamp",
+      "toolUseID",
+      "type",
+      "userType",
+      "uuid",
+      "version"
+    ],
+    [
+      "cwd",
+      "gitBranch",
+      "isSidechain",
+      "message",
+      "parentUuid",
+      "sessionId",
+      "timestamp",
+      "toolUseResult",
+      "type",
+      "userType",
+      "uuid",
+      "version"
+    ]
+  ]
+}

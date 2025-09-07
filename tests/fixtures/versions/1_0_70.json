@@ -1,0 +1,303 @@
+{
+  "version": "1.0.70",
+  "entry_types": {
+    "system": [
+      {
+        "parentUuid": null,
+        "isSidechain": false,
+        "userType": "external",
+        "cwd": "/Users/anonymous/Projects/docs/Books/ExampleProject",
+        "sessionId": "session-xxx",
+        "version": "1.0.70",
+        "gitBranch": "master",
+        "type": "system",
+        "content": "Command executed successfully",
+        "isMeta": false,
+        "timestamp": "2025-01-01T12:00:00.000Z",
+        "uuid": "23a627e1-1bb6-d892-3e5d-82aead58afed",
+        "toolUseID": "tool-xxx",
+        "level": "info"
+      },
+      {
+        "parentUuid": "parent-xxx",
+        "isSidechain": false,
+        "userType": "external",
+        "cwd": "/Users/anonymous/Projects/docs/Books/ExampleProject",
+        "sessionId": "session-xxx",
+        "version": "1.0.70",
+        "gitBranch": "master",
+        "type": "system",
+        "content": "Configuration loaded",
+        "isMeta": false,
+        "timestamp": "2025-01-01T12:00:00.000Z",
+        "uuid": "87b66053-0efe-1d2b-5fd4-ea7a117ed7c2",
+        "toolUseID": "tool-xxx",
+        "level": "info"
+      },
+      {
+        "parentUuid": "parent-xxx",
+        "isSidechain": false,
+        "userType": "external",
+        "cwd": "/Users/anonymous/Projects/docs/Books/ExampleProject",
+        "sessionId": "session-xxx",
+        "version": "1.0.70",
+        "gitBranch": "master",
+        "type": "system",
+        "content": "Command executed successfully",
+        "isMeta": false,
+        "timestamp": "2025-01-01T12:00:00.000Z",
+        "uuid": "a3580df3-dcdb-f40f-e248-3730d1d6f062",
+        "toolUseID": "tool-xxx",
+        "level": "info"
+      }
+    ],
+    "user": [
+      {
+        "parentUuid": "parent-xxx",
+        "isSidechain": false,
+        "userType": "external",
+        "cwd": "/Users/anonymous/Projects/docs/Books/ExampleProject",
+        "sessionId": "session-xxx",
+        "version": "1.0.70",
+        "gitBranch": "master",
+        "type": "user",
+        "message": {
+          "role": "user",
+          "content": "Sample text"
+        },
+        "uuid": "66d57b8e-cdda-923d-36f6-a6b18400f4ea",
+        "timestamp": "2025-01-01T12:00:00.000Z"
+      },
+      {
+        "parentUuid": "parent-xxx",
+        "isSidechain": false,
+        "userType": "external",
+        "cwd": "/Users/anonymous/Projects/docs/Books/ExampleProject",
+        "sessionId": "session-xxx",
+        "version": "1.0.70",
+        "gitBranch": "master",
+        "type": "user",
+        "message": {
+          "role": "user",
+          "content": "Sample text"
+        },
+        "uuid": "44444716-3b51-428e-f2c9-39929dace8cd",
+        "timestamp": "2025-01-01T12:00:00.000Z"
+      },
+      {
+        "parentUuid": "parent-xxx",
+        "isSidechain": false,
+        "userType": "external",
+        "cwd": "/Users/anonymous/Projects/docs/Books/ExampleProject",
+        "sessionId": "session-xxx",
+        "version": "1.0.70",
+        "gitBranch": "master",
+        "type": "user",
+        "message": {
+          "role": "user",
+          "content": "Sample text"
+        },
+        "isVisibleInTranscriptOnly": true,
+        "uuid": "09cc41a4-a587-9e77-285a-abfdef5af0c8",
+        "timestamp": "2025-01-01T12:00:00.000Z"
+      }
+    ],
+    "assistant": [
+      {
+        "parentUuid": "parent-xxx",
+        "isSidechain": false,
+        "userType": "external",
+        "cwd": "/Users/anonymous/Projects/docs/Books/ExampleProject",
+        "sessionId": "session-xxx",
+        "version": "1.0.70",
+        "gitBranch": "master",
+        "message": {
+          "id": "msg_xxx",
+          "type": "message",
+          "role": "assistant",
+          "model": "claude-opus-4-1-20250805",
+          "content": [
+            {
+              "type": "text",
+              "text": "Sample text"
+            }
+          ],
+          "stop_reason": null,
+          "stop_sequence": null,
+          "usage": {
+            "input_tokens": 4,
+            "cache_creation_input_tokens": 27072,
+            "cache_read_input_tokens": 0,
+            "output_tokens": 3,
+            "service_tier": "standard"
+          }
+        },
+        "requestId": "req-xxx",
+        "type": "assistant",
+        "uuid": "c6b276dd-27e4-9b77-18c2-a773080b577c",
+        "timestamp": "2025-01-01T12:00:00.000Z"
+      },
+      {
+        "parentUuid": "parent-xxx",
+        "isSidechain": false,
+        "userType": "external",
+        "cwd": "/Users/anonymous/Projects/docs/Books/ExampleProject",
+        "sessionId": "session-xxx",
+        "version": "1.0.70",
+        "gitBranch": "master",
+        "message": {
+          "id": "msg_xxx",
+          "type": "message",
+          "role": "assistant",
+          "model": "claude-opus-4-1-20250805",
+          "content": [
+            {
+              "type": "tool_use",
+              "id": "toolu_xxx",
+              "name": "CustomTool",
+              "input": {
+                "description": "value",
+                "prompt": "value",
+                "subagent_type": "value"
+              }
+            }
+          ],
+          "stop_reason": null,
+          "stop_sequence": null,
+          "usage": {
+            "input_tokens": 4,
+            "cache_creation_input_tokens": 27072,
+            "cache_read_input_tokens": 0,
+            "output_tokens": 141,
+            "service_tier": "standard"
+          }
+        },
+        "requestId": "req-xxx",
+        "type": "assistant",
+        "uuid": "d630ec85-9463-dee1-d282-86b0aaf8a580",
+        "timestamp": "2025-01-01T12:00:00.000Z"
+      },
+      {
+        "parentUuid": "parent-xxx",
+        "isSidechain": true,
+        "userType": "external",
+        "cwd": "/Users/anonymous/Projects/docs/Books/ExampleProject",
+        "sessionId": "session-xxx",
+        "version": "1.0.70",
+        "gitBranch": "master",
+        "message": {
+          "id": "msg_xxx",
+          "type": "message",
+          "role": "assistant",
+          "model": "claude-sonnet-4-20250514",
+          "content": [
+            {
+              "type": "text",
+              "text": "Sample text"
+            }
+          ],
+          "stop_reason": null,
+          "stop_sequence": null,
+          "usage": {
+            "input_tokens": 4,
+            "cache_creation_input_tokens": 9189,
+            "cache_read_input_tokens": 0,
+            "output_tokens": 219,
+            "service_tier": "standard"
+          }
+        },
+        "requestId": "req-xxx",
+        "type": "assistant",
+        "uuid": "d4d762fe-98fb-1a7a-cb04-85cbc3cdfb25",
+        "timestamp": "2025-01-01T12:00:00.000Z"
+      }
+    ]
+  },
+  "field_patterns": [
+    [
+      "cwd",
+      "gitBranch",
+      "isMeta",
+      "isSidechain",
+      "message",
+      "parentUuid",
+      "sessionId",
+      "timestamp",
+      "type",
+      "userType",
+      "uuid",
+      "version"
+    ],
+    [
+      "cwd",
+      "gitBranch",
+      "isSidechain",
+      "message",
+      "parentUuid",
+      "requestId",
+      "sessionId",
+      "timestamp",
+      "type",
+      "userType",
+      "uuid",
+      "version"
+    ],
+    [
+      "cwd",
+      "gitBranch",
+      "isSidechain",
+      "message",
+      "parentUuid",
+      "sessionId",
+      "timestamp",
+      "type",
+      "userType",
+      "uuid",
+      "version"
+    ],
+    [
+      "content",
+      "cwd",
+      "gitBranch",
+      "isMeta",
+      "isSidechain",
+      "level",
+      "parentUuid",
+      "sessionId",
+      "timestamp",
+      "toolUseID",
+      "type",
+      "userType",
+      "uuid",
+      "version"
+    ],
+    [
+      "cwd",
+      "gitBranch",
+      "isSidechain",
+      "message",
+      "parentUuid",
+      "sessionId",
+      "timestamp",
+      "toolUseResult",
+      "type",
+      "userType",
+      "uuid",
+      "version"
+    ],
+    [
+      "cwd",
+      "gitBranch",
+      "isSidechain",
+      "isVisibleInTranscriptOnly",
+      "message",
+      "parentUuid",
+      "sessionId",
+      "timestamp",
+      "type",
+      "userType",
+      "uuid",
+      "version"
+    ]
+  ]
+}

@@ -15,6 +15,7 @@ class ColorTheme:
     ASSISTANT = ''
     SYSTEM = ''
     ERROR = ''
+    WARNING = ''
 
     # Tool colors
     TOOL_NAME = ''
@@ -36,6 +37,7 @@ class DarkTheme(ColorTheme):
     ASSISTANT = '\033[32m'   # Green
     SYSTEM = '\033[33m'      # Yellow
     ERROR = '\033[31m'       # Red
+    WARNING = '\033[33m'     # Yellow
 
     # Tool colors
     TOOL_NAME = '\033[35m'   # Magenta
@@ -57,6 +59,7 @@ class LightTheme(ColorTheme):
     ASSISTANT = '\033[32m'   # Green
     SYSTEM = '\033[33m'      # Yellow/Brown
     ERROR = '\033[91m'       # Bright red
+    WARNING = '\033[33m'     # Yellow/Brown
 
     # Tool colors
     TOOL_NAME = '\033[35m'   # Magenta
@@ -78,6 +81,7 @@ class SolarizedDarkTheme(ColorTheme):
     ASSISTANT = '\033[32m'   # Green
     SYSTEM = '\033[33m'      # Yellow
     ERROR = '\033[31m'       # Red
+    WARNING = '\033[33m'     # Yellow
 
     # Tool colors
     TOOL_NAME = '\033[35m'   # Magenta
@@ -99,6 +103,7 @@ class SolarizedLightTheme(ColorTheme):
     ASSISTANT = '\033[32m'   # Green
     SYSTEM = '\033[33m'      # Yellow
     ERROR = '\033[31m'       # Red
+    WARNING = '\033[33m'     # Yellow
 
     # Tool colors
     TOOL_NAME = '\033[35m'   # Magenta
@@ -120,6 +125,7 @@ class DraculaTheme(ColorTheme):
     ASSISTANT = '\033[32m'   # Green
     SYSTEM = '\033[33m'      # Yellow
     ERROR = '\033[91m'       # Light red
+    WARNING = '\033[93m'     # Bright yellow
 
     # Tool colors
     TOOL_NAME = '\033[95m'   # Light magenta
@@ -141,6 +147,7 @@ class NordTheme(ColorTheme):
     ASSISTANT = '\033[92m'   # Nord14 - Green
     SYSTEM = '\033[93m'      # Nord13 - Yellow
     ERROR = '\033[91m'       # Nord11 - Red
+    WARNING = '\033[93m'     # Nord13 - Yellow
 
     # Tool colors
     TOOL_NAME = '\033[95m'   # Nord15 - Purple
@@ -172,6 +179,7 @@ class HighContrastTheme(ColorTheme):
     ASSISTANT = '\033[1;32m' # Bold green
     SYSTEM = '\033[1;33m'    # Bold yellow
     ERROR = '\033[1;31m'     # Bold red
+    WARNING = '\033[1;33m'   # Bold yellow
 
     # Tool colors
     TOOL_NAME = '\033[1;35m' # Bold magenta

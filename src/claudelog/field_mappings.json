@@ -1,0 +1,65 @@
+{
+  "comment": "Field mappings for Claude log parser - update this when log format changes",
+  "last_updated": "2025-09-06",
+  "known_versions": ["1.0.70", "1.0.80", "1.0.85"],
+  
+  "field_aliases": {
+    "content": ["content", "text", "message", "body", "data"],
+    "role": ["role", "type", "sender", "author"],
+    "timestamp": ["timestamp", "time", "created", "createdAt", "datetime"],
+    "version": ["version", "ver", "v"],
+    "session_id": ["sessionId", "session_id", "sid"],
+    "request_id": ["requestId", "request_id", "rid"],
+    "uuid": ["uuid", "id", "messageId", "message_id"],
+    "parent_uuid": ["parentUuid", "parent_uuid", "parent_id", "parentId"],
+    "working_dir": ["cwd", "pwd", "workingDirectory", "working_directory", "path"],
+    "git_branch": ["gitBranch", "git_branch", "branch"],
+    "user_type": ["userType", "user_type", "sender_type"],
+    "level": ["level", "severity", "priority"],
+    "tool_result": ["toolUseResult", "tool_result", "toolResult", "result", "output"],
+    "tool_use_id": ["toolUseID", "tool_use_id", "toolId"],
+    "is_meta": ["isMeta", "is_meta", "meta"],
+    "is_sidechain": ["isSidechain", "is_sidechain", "sidechain"],
+    "is_compact_summary": ["isCompactSummary", "is_compact_summary"],
+    "is_visible_in_transcript_only": ["isVisibleInTranscriptOnly", "is_visible_in_transcript_only"],
+    "subtype": ["subtype", "sub_type"]
+  },
+  
+  "content_extractors": {
+    "comment": "Patterns for extracting text from complex content structures",
+    "patterns": [
+      {
+        "description": "Direct string content",
+        "type": "string"
+      },
+      {
+        "description": "Array of text objects",
+        "type": "array",
+        "item_fields": ["text", "content", "value"]
+      },
+      {
+        "description": "Nested content object",
+        "type": "object",
+        "fields": ["text", "content", "value", "body", "message"]
+      }
+    ]
+  },
+  
+  "tool_patterns": {
+    "tool_use_types": ["tool_use", "tool", "function_call", "tool_call"],
+    "tool_name_fields": ["name", "tool", "function", "tool_name"],
+    "tool_id_fields": ["id", "tool_id", "call_id", "use_id"],
+    "tool_input_fields": ["input", "arguments", "params", "data", "parameters"]
+  },
+  
+  "special_entries": {
+    "summary": {
+      "minimal_fields": ["type", "summary", "leafUuid"],
+      "skip_normalization": true
+    },
+    "system": {
+      "content_fields": ["content", "message", "text"],
+      "importance_markers": ["Error", "Warning", "Failed", "Exception"]
+    }
+  }
+}

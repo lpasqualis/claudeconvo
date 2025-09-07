@@ -6,6 +6,7 @@ import sys
 from pathlib import Path
 
 from .themes import Colors
+from .parsers.adaptive import AdaptiveParser
 
 
 def path_to_session_dir(path):
@@ -56,17 +57,28 @@ def list_session_files(session_dir):
 def parse_session_file(filepath):
     """Parse a JSONL session file and return its contents."""
     sessions = []
+    parser = AdaptiveParser()  # Will auto-load config if available
+    
     try:
         with open(filepath) as f:
-            for line in f:
+            for line_num, line in enumerate(f, 1):
                 line = line.strip()
                 if line:
                     try:
-                        data = json.loads(line)
-                        sessions.append(data)
+                        raw_data = json.loads(line)
+                        # Use the adaptive parser to normalize the entry
+                        parsed_data = parser.parse_entry(raw_data)
+                        sessions.append(parsed_data)
                     except json.JSONDecodeError as e:
-                        print(f"{Colors.ERROR}Warning: Could not parse line: {e}{Colors.RESET}",
+                        print(f"{Colors.ERROR}Warning: Could not parse JSON on line {line_num}: {e}{Colors.RESET}",
                               file=sys.stderr)
+                    except Exception as e:
+                        # Parser errors - still add the raw data so we don't lose information
+                        print(f"{Colors.ERROR}Warning: Parser error on line {line_num}: {e}{Colors.RESET}",
+                              file=sys.stderr)
+                        # Add raw data with error flag
+                        raw_data['_parse_error'] = str(e)
+                        sessions.append(raw_data)
     except Exception as e:
         print(f"{Colors.ERROR}Error reading file {filepath}: {e}{Colors.RESET}", file=sys.stderr)
 

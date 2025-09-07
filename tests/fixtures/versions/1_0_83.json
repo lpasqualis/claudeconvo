@@ -1,0 +1,327 @@
+{
+  "version": "1.0.83",
+  "entry_types": {
+    "user": [
+      {
+        "parentUuid": null,
+        "isSidechain": false,
+        "userType": "external",
+        "cwd": "/Users/anonymous/.claude",
+        "sessionId": "session-xxx",
+        "version": "1.0.83",
+        "gitBranch": "",
+        "type": "user",
+        "message": {
+          "role": "user",
+          "content": "Sample text"
+        },
+        "isMeta": true,
+        "uuid": "2282d54c-601c-2281-b6e5-445e343b531a",
+        "timestamp": "2025-01-01T12:00:00.000Z"
+      },
+      {
+        "parentUuid": "parent-xxx",
+        "isSidechain": false,
+        "userType": "external",
+        "cwd": "/Users/anonymous/.claude",
+        "sessionId": "session-xxx",
+        "version": "1.0.83",
+        "gitBranch": "",
+        "type": "user",
+        "message": {
+          "role": "user",
+          "content": "Sample text"
+        },
+        "uuid": "97d8ca48-d0a4-6528-b09e-e029fc3e7fad",
+        "timestamp": "2025-01-01T12:00:00.000Z"
+      },
+      {
+        "parentUuid": "parent-xxx",
+        "isSidechain": false,
+        "userType": "external",
+        "cwd": "/Users/anonymous/.claude",
+        "sessionId": "session-xxx",
+        "version": "1.0.83",
+        "gitBranch": "",
+        "type": "user",
+        "message": {
+          "role": "user",
+          "content": "Sample text"
+        },
+        "uuid": "ef8f5d2a-b5f0-8446-24cd-8910726f40d9",
+        "timestamp": "2025-01-01T12:00:00.000Z"
+      }
+    ],
+    "assistant": [
+      {
+        "parentUuid": "parent-xxx",
+        "isSidechain": false,
+        "userType": "external",
+        "cwd": "/Users/anonymous/.claude",
+        "sessionId": "session-xxx",
+        "version": "1.0.83",
+        "gitBranch": "",
+        "message": {
+          "id": "msg_xxx",
+          "type": "message",
+          "role": "assistant",
+          "model": "claude-opus-4-1-20250805",
+          "content": [
+            {
+              "type": "text",
+              "text": "Sample text"
+            }
+          ],
+          "stop_reason": null,
+          "stop_sequence": null,
+          "usage": {
+            "input_tokens": 3,
+            "cache_creation_input_tokens": 18027,
+            "cache_read_input_tokens": 0,
+            "cache_creation": {
+              "ephemeral_5m_input_tokens": 18027,
+              "ephemeral_1h_input_tokens": 0
+            },
+            "output_tokens": 4,
+            "service_tier": "standard"
+          }
+        },
+        "requestId": "req-xxx",
+        "type": "assistant",
+        "uuid": "cb85c051-9b87-4bdc-b9ce-1a5b5f097226",
+        "timestamp": "2025-01-01T12:00:00.000Z"
+      },
+      {
+        "parentUuid": "parent-xxx",
+        "isSidechain": false,
+        "userType": "external",
+        "cwd": "/Users/anonymous/.claude",
+        "sessionId": "session-xxx",
+        "version": "1.0.83",
+        "gitBranch": "",
+        "message": {
+          "id": "msg_xxx",
+          "type": "message",
+          "role": "assistant",
+          "model": "claude-opus-4-1-20250805",
+          "content": [
+            {
+              "type": "tool_use",
+              "id": "toolu_xxx",
+              "name": "Read",
+              "input": {
+                "file_path": "/path/to/file"
+              }
+            }
+          ],
+          "stop_reason": null,
+          "stop_sequence": null,
+          "usage": {
+            "input_tokens": 3,
+            "cache_creation_input_tokens": 18027,
+            "cache_read_input_tokens": 0,
+            "cache_creation": {
+              "ephemeral_5m_input_tokens": 18027,
+              "ephemeral_1h_input_tokens": 0
+            },
+            "output_tokens": 4,
+            "service_tier": "standard"
+          }
+        },
+        "requestId": "req-xxx",
+        "type": "assistant",
+        "uuid": "426340f3-1640-b977-c038-c7a1ab3b3ae4",
+        "timestamp": "2025-01-01T12:00:00.000Z"
+      },
+      {
+        "parentUuid": "parent-xxx",
+        "isSidechain": false,
+        "userType": "external",
+        "cwd": "/Users/anonymous/.claude",
+        "sessionId": "session-xxx",
+        "version": "1.0.83",
+        "gitBranch": "",
+        "message": {
+          "id": "msg_xxx",
+          "type": "message",
+          "role": "assistant",
+          "model": "claude-opus-4-1-20250805",
+          "content": [
+            {
+              "type": "text",
+              "text": "Sample text"
+            }
+          ],
+          "stop_reason": null,
+          "stop_sequence": null,
+          "usage": {
+            "input_tokens": 6,
+            "cache_creation_input_tokens": 905,
+            "cache_read_input_tokens": 18027,
+            "cache_creation": {
+              "ephemeral_5m_input_tokens": 905,
+              "ephemeral_1h_input_tokens": 0
+            },
+            "output_tokens": 1,
+            "service_tier": "standard"
+          }
+        },
+        "requestId": "req-xxx",
+        "type": "assistant",
+        "uuid": "8590cd5e-7f39-d7b7-c261-d4675ecbb722",
+        "timestamp": "2025-01-01T12:00:00.000Z"
+      }
+    ],
+    "system": [
+      {
+        "parentUuid": "parent-xxx",
+        "isSidechain": false,
+        "userType": "external",
+        "cwd": "/Users/anonymous/.claude",
+        "sessionId": "session-xxx",
+        "version": "1.0.83",
+        "gitBranch": "",
+        "type": "system",
+        "content": "Session started",
+        "isMeta": false,
+        "timestamp": "2025-01-01T12:00:00.000Z",
+        "uuid": "a7762e99-b302-8c49-c368-1ab0b0a1053b",
+        "toolUseID": "tool-xxx",
+        "level": "info"
+      },
+      {
+        "parentUuid": "parent-xxx",
+        "isSidechain": false,
+        "userType": "external",
+        "cwd": "/Users/anonymous/.claude",
+        "sessionId": "session-xxx",
+        "version": "1.0.83",
+        "gitBranch": "",
+        "type": "system",
+        "content": "Hook executed",
+        "isMeta": false,
+        "timestamp": "2025-01-01T12:00:00.000Z",
+        "uuid": "56086364-e778-253f-770e-3af03f5f74cc",
+        "toolUseID": "tool-xxx",
+        "level": "info"
+      },
+      {
+        "parentUuid": "parent-xxx",
+        "isSidechain": false,
+        "userType": "external",
+        "cwd": "/Users/anonymous/.claude",
+        "sessionId": "session-xxx",
+        "version": "1.0.83",
+        "gitBranch": "",
+        "type": "system",
+        "content": "Command executed successfully",
+        "isMeta": false,
+        "timestamp": "2025-01-01T12:00:00.000Z",
+        "uuid": "4c0dbab1-080f-ca28-0c9c-e8bb41a8d7ad",
+        "toolUseID": "tool-xxx",
+        "level": "info"
+      }
+    ]
+  },
+  "field_patterns": [
+    [
+      "cwd",
+      "gitBranch",
+      "isMeta",
+      "isSidechain",
+      "message",
+      "parentUuid",
+      "sessionId",
+      "timestamp",
+      "type",
+      "userType",
+      "uuid",
+      "version"
+    ],
+    [
+      "cwd",
+      "gitBranch",
+      "isSidechain",
+      "message",
+      "parentUuid",
+      "requestId",
+      "sessionId",
+      "timestamp",
+      "type",
+      "userType",
+      "uuid",
+      "version"
+    ],
+    [
+      "cwd",
+      "gitBranch",
+      "isSidechain",
+      "message",
+      "parentUuid",
+      "sessionId",
+      "timestamp",
+      "type",
+      "userType",
+      "uuid",
+      "version"
+    ],
+    [
+      "content",
+      "cwd",
+      "gitBranch",
+      "isMeta",
+      "isSidechain",
+      "level",
+      "parentUuid",
+      "sessionId",
+      "timestamp",
+      "toolUseID",
+      "type",
+      "userType",
+      "uuid",
+      "version"
+    ],
+    [
+      "cwd",
+      "gitBranch",
+      "isApiErrorMessage",
+      "isSidechain",
+      "message",
+      "parentUuid",
+      "sessionId",
+      "timestamp",
+      "type",
+      "userType",
+      "uuid",
+      "version"
+    ],
+    [
+      "cwd",
+      "gitBranch",
+      "isSidechain",
+      "message",
+      "parentUuid",
+      "sessionId",
+      "timestamp",
+      "toolUseResult",
+      "type",
+      "userType",
+      "uuid",
+      "version"
+    ],
+    [
+      "content",
+      "cwd",
+      "gitBranch",
+      "isSidechain",
+      "level",
+      "parentUuid",
+      "sessionId",
+      "timestamp",
+      "type",
+      "userType",
+      "uuid",
+      "version"
+    ]
+  ]
+}

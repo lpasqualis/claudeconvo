@@ -63,20 +63,34 @@ make check-release
 
 ### Core Components
 
-**ShowOptions** (`src/claudelog/claudelog.py:41-189`)
+**ShowOptions** (`src/claudelog/options.py`)
 - Manages display filtering via single-letter flags (q=user, w=assistant, o=tools, etc.)
 - Implements complex parsing logic: lowercase enables, uppercase disables, 'a'=all, 'A'=none
 - Default shows user, assistant, and tools only
 
-**SessionManager** (`src/claudelog/claudelog.py:201-280`)
+**Session Management** (`src/claudelog/session.py`)
 - Handles session file discovery in `~/.claude/projects/`
 - Maps working directories to session storage using path_to_session_dir()
+- Integrates with adaptive parser for format normalization
 - Supports relative/absolute session references
 
-**MessageFormatter** (`src/claudelog/claudelog.py:282-580`)
+**Message Formatting** (`src/claudelog/formatters.py`)
 - Renders messages with ANSI colors based on ShowOptions
 - Handles tool executions, system messages, metadata
 - Implements smart truncation and text wrapping
+- Uses adaptive parser for content extraction
+
+**Color Themes** (`src/claudelog/themes.py`)
+- 8 built-in themes: dark, light, solarized-dark/light, dracula, nord, mono, high-contrast
+- Inheritance-based theme system to avoid repetition
+- Runtime theme switching via proxy pattern
+- Configurable via CLI, environment variable, or config file
+
+**Adaptive Parser** (`src/claudelog/parsers/adaptive.py`)
+- Detects and normalizes different Claude log format versions
+- Handles format variations between Claude versions
+- Extensible parser system for future format changes
+- Configured via parsers.yaml with format specifications
 
 ### Key Design Patterns
 
@@ -87,10 +101,30 @@ make check-release
 
 ## Testing Strategy
 
-Tests use mocking extensively to avoid filesystem dependencies:
-- Mock Path.exists() and Path.iterdir() for session discovery
-- Mock file reads for session data
-- Test all ShowOptions combinations and edge cases
+### Test Structure
+- Tests are organized by functional area in `tests/test_claudelog.py`
+- Each major component has its own test class (TestShowOptions, TestMessageFormatting, TestSessionFunctions, etc.)
+- Coverage target: maintain high coverage for critical parsing and formatting logic
+
+### Mocking Approach
+Tests use mocking to avoid filesystem and external dependencies:
+- Mock `Path.exists()`, `Path.glob()`, and `Path.iterdir()` for session discovery
+- Mock file reads with realistic Claude log format entries
+- Mock parser configurations when testing adaptive parsing
+- Use dependency injection for testable components
+
+### Key Test Areas
+1. **ShowOptions**: Test all flag combinations, uppercase/lowercase behavior, defaults
+2. **Message Formatting**: Verify correct handling of user/assistant/tool messages
+3. **Color Themes**: Ensure theme inheritance and proper ANSI code generation
+4. **Session Parsing**: Handle various log format variations from different Claude versions
+5. **Adaptive Parser**: Test format detection and normalization across versions
+6. **Edge Cases**: Empty files, malformed JSON, missing fields, parse errors
+
+### Test Data
+- Use realistic Claude session data structures (with version fields, proper type structure)
+- Test data should reflect actual log format variations found in production
+- Include both legacy and current format examples
 
 ## Release Process
 

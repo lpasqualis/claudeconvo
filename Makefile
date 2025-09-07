@@ -19,7 +19,7 @@ install-dev:
 	pip3 install -e ".[dev]"
 
 test:
-	pytest tests/ -v --cov=claudelog --cov-report=term-missing
+	pytest tests/ -v --cov=src/claudelog --cov-report=term-missing
 
 lint:
 	ruff check src/

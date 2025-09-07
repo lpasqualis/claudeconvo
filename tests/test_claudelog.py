@@ -190,9 +190,10 @@ class TestSessionFunctions:
         mock_exists.return_value = True
         
         # Mock file content with newline-delimited JSON
+        # Use realistic Claude log format
         session_data = [
-            {"type": "message", "role": "user", "content": "Test"},
-            {"type": "message", "role": "assistant", "content": "Response"}
+            {"type": "user", "version": "1.0.108", "message": {"role": "user", "content": "Test"}},
+            {"type": "assistant", "version": "1.0.108", "message": {"role": "assistant", "content": "Response"}}
         ]
         
         mock_file = MagicMock()
@@ -202,8 +203,11 @@ class TestSessionFunctions:
         entries = parse_session_file(Path('/fake/session.json'))
         
         assert len(entries) == 2
-        assert entries[0]['content'] == 'Test'
-        assert entries[1]['content'] == 'Response'
+        # Parsed entries have normalized structure
+        assert entries[0]['type'] == 'user'
+        assert entries[0]['message']['content'] == 'Test'
+        assert entries[1]['type'] == 'assistant'
+        assert entries[1]['message']['content'] == 'Response'
 
 
 # Removed TestUtilityFunctions since wrap_text doesn't exist in the main module

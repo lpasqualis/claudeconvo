@@ -4,6 +4,7 @@ import re
 from datetime import datetime
 
 from .themes import Colors
+from .parsers.adaptive import AdaptiveParser
 
 
 def truncate_text(text, max_length=500, force_truncate=False):
@@ -24,26 +25,15 @@ def truncate_text(text, max_length=500, force_truncate=False):
 
 
 def extract_message_text(message_content):
-    """Extract text from various message content formats."""
-    if isinstance(message_content, str):
-        return message_content
-    elif isinstance(message_content, list):
-        text_parts = []
-        for item in message_content:
-            if isinstance(item, dict):
-                if 'text' in item:
-                    text_parts.append(item['text'])
-                elif 'type' in item and item['type'] == 'text' and 'content' in item:
-                    text_parts.append(item['content'])
-            elif isinstance(item, str):
-                text_parts.append(item)
-        return '\n'.join(text_parts) if text_parts else None
-    elif isinstance(message_content, dict):
-        if 'text' in message_content:
-            return message_content['text']
-        elif 'content' in message_content:
-            return extract_message_text(message_content['content'])
-    return None
+    """Extract text from various message content formats.
+    
+    Uses the adaptive parser for robust content extraction.
+    """
+    # Create a parser instance (cached internally)
+    parser = AdaptiveParser()
+    
+    # Use parser's extraction method
+    return parser._extract_text_from_content(message_content)
 
 
 def format_tool_use(entry, show_options):

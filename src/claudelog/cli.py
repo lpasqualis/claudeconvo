@@ -7,6 +7,7 @@ from datetime import datetime
 from pathlib import Path
 
 from .config import determine_theme, load_config
+from .diagnostics import run_diagnostics
 from .formatters import format_conversation_entry
 from .options import ShowOptions
 from .session import (
@@ -91,9 +92,27 @@ Examples:
                         help='List all projects with session history')
     parser.add_argument('-s', '--show', type=str, default='',
                         help='Show additional info (use -h for details)')
+    parser.add_argument('--diagnose', action='store_true',
+                        help='Run diagnostic analysis on log format variations')
+    parser.add_argument('--diagnose-file', type=str,
+                        help='Run diagnostics on a specific session file')
+    parser.add_argument('--verbose', action='store_true',
+                        help='Show verbose output in diagnostic mode')
 
     args = parser.parse_args()
 
+    # Handle diagnostics mode
+    if args.diagnose or args.diagnose_file:
+        # Apply theme first for colored output
+        config = load_config()
+        theme_name = determine_theme(args, config)
+        from .themes import Colors
+        Colors.set_theme(get_color_theme(theme_name))
+        
+        # Run diagnostics
+        run_diagnostics(session_file=args.diagnose_file, verbose=args.verbose)
+        return 0
+    
     # Handle theme listing
     if hasattr(args, 'theme') and args.theme == 'list':
         print("\nAvailable color themes:")

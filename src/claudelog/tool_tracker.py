@@ -86,7 +86,7 @@ class ToolInvocationTracker:
         message = entry.get("message", {})
         if isinstance(message, dict):
             content = message.get("content", [])
-            if isinstance(content, list) and content:
+            if isinstance(content, list) and len(content) > 0:
                 first_item = content[0]
                 if isinstance(first_item, dict) and first_item.get("type") == "tool_result":
                     return True
@@ -114,7 +114,7 @@ class ToolInvocationTracker:
         message = entry.get("message", {})
         if isinstance(message, dict):
             content = message.get("content", [])
-            if isinstance(content, list) and content:
+            if isinstance(content, list) and len(content) > 0:
                 first_item = content[0]
                 if (
                     isinstance(first_item, dict)
@@ -144,7 +144,7 @@ class ToolInvocationTracker:
         message = entry.get("message", {})
         if isinstance(message, dict):
             content = message.get("content", [])
-            if isinstance(content, list) and content:
+            if isinstance(content, list) and len(content) > 0:
                 first_item = content[0]
                 if isinstance(first_item, dict):
                     tool_use_id = first_item.get("tool_use_id")
@@ -174,7 +174,7 @@ class ToolInvocationTracker:
         message = entry.get("message", {})
         if isinstance(message, dict):
             content = message.get("content", [])
-            if isinstance(content, list) and content:
+            if isinstance(content, list) and len(content) > 0:
                 first_item = content[0]
                 if isinstance(first_item, dict):
                     tool_use_id = first_item.get("tool_use_id")

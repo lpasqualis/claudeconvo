@@ -204,6 +204,68 @@ def format_conversation_entry(entry, show_options, show_timestamp=False):
     return "\n".join(output) if output else None
 
 
+def _extract_and_format_tool_result(message, label, show_options, timestamp_str=""):
+    """Extract and format tool result content from a message.
+    
+    Args:
+        message: The message dict containing the tool result
+        label: The formatted label for the tool result
+        show_options: ShowOptions instance
+        timestamp_str: Optional timestamp string
+    
+    Returns:
+        list: Output lines or None if no content found
+    """
+    output = []
+    
+    if not isinstance(message, dict):
+        return None
+        
+    content = message.get("content", [])
+    if not (isinstance(content, list) and len(content) > 0):
+        return None
+        
+    first_item = content[0]
+    if not (isinstance(first_item, dict) and first_item.get("type") == "tool_result"):
+        return None
+        
+    result_content = first_item.get("content", [])
+    text = None
+    
+    # Handle both string and list formats
+    if isinstance(result_content, str):
+        # Direct string content
+        text = result_content
+    elif isinstance(result_content, list) and result_content:
+        # List format - find text item
+        for item in result_content:
+            if isinstance(item, dict) and item.get("type") == "text":
+                text = item.get("text", "")
+                break
+    
+    if not text:
+        return None
+        
+    max_len = show_options.get_max_length("tool_result")
+    text = truncate_text(text, max_len)
+    
+    if show_options.indent_results:
+        # Add blank line, then put label indented to align with tool parameters
+        output.append("")  # Blank line for spacing
+        output.append(f"   {label}")
+        
+        # Handle multi-line content by indenting each line
+        lines = text.split('\n')
+        for line in lines:
+            output.append(f"   {Colors.TOOL_OUTPUT}{line}{Colors.RESET}")
+    else:
+        # Original format: label and result on same line
+        result_text = f"{Colors.TOOL_OUTPUT}{text}{Colors.RESET}"
+        output.append(f"\n{timestamp_str}{label} {result_text}")
+    
+    return output
+
+
 def _format_user_entry(entry, show_options, timestamp_str, metadata_lines):
     """Format a user entry."""
     output = []
@@ -236,43 +298,10 @@ def _format_user_entry(entry, show_options, timestamp_str, metadata_lines):
 
         # Extract and format the actual content
         message = entry.get("message", {})
-        if isinstance(message, dict):
-            content = message.get("content", [])
-            if isinstance(content, list) and content:
-                first_item = content[0]
-                if isinstance(first_item, dict) and first_item.get("type") == "tool_result":
-                    result_content = first_item.get("content", [])
-                    text = None
-                    
-                    # Handle both string and list formats
-                    if isinstance(result_content, str):
-                        # Direct string content
-                        text = result_content
-                    elif isinstance(result_content, list) and result_content:
-                        # List format - find text item
-                        for item in result_content:
-                            if isinstance(item, dict) and item.get("type") == "text":
-                                text = item.get("text", "")
-                                break
-                    
-                    if text:
-                        max_len = show_options.get_max_length("tool_result")
-                        text = truncate_text(text, max_len)
-                        
-                        if show_options.indent_results:
-                            # Add blank line, then put label indented to align with tool parameters
-                            output.append("")  # Blank line for spacing
-                            output.append(f"   {label}")
-                            
-                            # Handle multi-line content by indenting each line
-                            lines = text.split('\n')
-                            for line in lines:
-                                output.append(f"   {Colors.TOOL_OUTPUT}{line}{Colors.RESET}")
-                        else:
-                            # Original format: label and result on same line
-                            result_text = f"{Colors.TOOL_OUTPUT}{text}{Colors.RESET}"
-                            output.append(f"\n{timestamp_str}{label} {result_text}")
-                        user_shown = True
+        result_lines = _extract_and_format_tool_result(message, label, show_options, timestamp_str)
+        if result_lines:
+            output.extend(result_lines)
+            user_shown = True
 
         # If we formatted it as a task, we're done
         if user_shown:
@@ -289,43 +318,10 @@ def _format_user_entry(entry, show_options, timestamp_str, metadata_lines):
 
         # Extract and format the actual content
         message = entry.get("message", {})
-        if isinstance(message, dict):
-            content = message.get("content", [])
-            if isinstance(content, list) and content:
-                first_item = content[0]
-                if isinstance(first_item, dict) and first_item.get("type") == "tool_result":
-                    result_content = first_item.get("content", [])
-                    text = None
-                    
-                    # Handle both string and list formats
-                    if isinstance(result_content, str):
-                        # Direct string content
-                        text = result_content
-                    elif isinstance(result_content, list) and result_content:
-                        # List format - find text item
-                        for item in result_content:
-                            if isinstance(item, dict) and item.get("type") == "text":
-                                text = item.get("text", "")
-                                break
-                    
-                    if text:
-                        max_len = show_options.get_max_length("tool_result")
-                        text = truncate_text(text, max_len)
-                        
-                        if show_options.indent_results:
-                            # Add blank line, then put label indented to align with tool parameters
-                            output.append("")  # Blank line for spacing
-                            output.append(f"   {label}")
-                            
-                            # Handle multi-line content by indenting each line
-                            lines = text.split('\n')
-                            for line in lines:
-                                output.append(f"   {Colors.TOOL_OUTPUT}{line}{Colors.RESET}")
-                        else:
-                            # Original format: label and result on same line
-                            result_text = f"{Colors.TOOL_OUTPUT}{text}{Colors.RESET}"
-                            output.append(f"\n{timestamp_str}{label} {result_text}")
-                        user_shown = True
+        result_lines = _extract_and_format_tool_result(message, label, show_options, timestamp_str)
+        if result_lines:
+            output.extend(result_lines)
+            user_shown = True
 
         # If we formatted it as a tool result, we're done
         if user_shown:

@@ -7,7 +7,15 @@ from datetime import datetime
 from pathlib import Path
 
 from .config import determine_theme, load_config
-from .constants import CLAUDE_PROJECTS_DIR, LIST_ITEM_NUMBER_WIDTH
+from .constants import (
+    CLAUDE_PROJECTS_DIR,
+    HEADER_SEPARATOR_CHAR,
+    LIST_ITEM_NUMBER_WIDTH,
+    MAX_FILE_INDEX_DIGITS,
+    SEPARATOR_CHAR,
+    THEME_LIST_SEPARATOR_WIDTH,
+    THEME_NAME_DISPLAY_WIDTH,
+)
 from .diagnostics import run_diagnostics
 from .options import ShowOptions
 from .session import (
@@ -164,10 +172,10 @@ def handle_theme_listing(args):
     """
     if hasattr(args, "theme") and args.theme == "list":
         print("\nAvailable color themes:")
-        print("-" * 40)
+        print(SEPARATOR_CHAR * THEME_LIST_SEPARATOR_WIDTH)
         for name, desc in THEME_DESCRIPTIONS.items():
-            print(f"  {name:16} - {desc}")
-        print("-" * 40)
+            print(f"  {name:{THEME_NAME_DISPLAY_WIDTH}} - {desc}")
+        print(SEPARATOR_CHAR * THEME_LIST_SEPARATOR_WIDTH)
         print("\nUsage: claudelog --theme <theme_name>")
         print("Set default: export CLAUDELOG_THEME=<theme_name>")
         print("Config file: ~/.claudelogrc")
@@ -279,6 +287,11 @@ def get_files_to_show(args, session_files):
         if args.file.isdigit():
             # Treat as index
             try:
+                # Add explicit length check before conversion to prevent extremely large numbers
+                if len(args.file) > MAX_FILE_INDEX_DIGITS:
+                    error_msg = f"Error: Index value too large: {args.file}"
+                    print(f"{Colors.ERROR}{error_msg}{Colors.RESET}")
+                    return None
                 idx = int(args.file) - 1
                 if 0 <= idx < len(session_files):
                     files_to_show = [session_files[idx]]

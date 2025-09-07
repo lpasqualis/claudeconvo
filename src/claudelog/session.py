@@ -9,8 +9,10 @@ from .constants import (
     BYTES_PER_KB,
     BYTES_PER_MB,
     CLAUDE_PROJECTS_DIR,
+    ESC_KEY_CODE,
     MAX_FILE_SIZE,
     MAX_FILE_SIZE_MB,
+    WATCH_POLL_INTERVAL,
 )
 from .parsers.adaptive import AdaptiveParser
 from .themes import Colors
@@ -176,9 +178,17 @@ def parse_session_file(filepath):
                         # Add raw data with sanitized error flag
                         raw_data["_parse_error"] = type(e).__name__
                         sessions.append(raw_data)
-    except Exception as e:
+    except (OSError, IOError, PermissionError) as e:
         # Sanitize error message to avoid exposing sensitive paths
         err_msg = f"{Colors.ERROR}Error reading session file: {type(e).__name__}"
+        print(f"{err_msg}{Colors.RESET}", file=sys.stderr)
+    except UnicodeDecodeError:
+        # Handle encoding issues
+        err_msg = f"{Colors.ERROR}Error reading session file: Encoding error"
+        print(f"{err_msg}{Colors.RESET}", file=sys.stderr)
+    except MemoryError:
+        # Handle large file memory issues
+        err_msg = f"{Colors.ERROR}Error reading session file: Out of memory"
         print(f"{err_msg}{Colors.RESET}", file=sys.stderr)
 
     return sessions
@@ -245,11 +255,11 @@ def display_session(filepath, show_options, watch_mode=False, show_timestamp=Fal
             if old_settings:
                 if sys.stdin in select.select([sys.stdin], [], [], 0)[0]:
                     ch = sys.stdin.read(1)
-                    if ord(ch) == 27:  # ESC key
+                    if ord(ch) == ESC_KEY_CODE:  # ESC key
                         print(f"\n{Colors.SYSTEM}Stopped watching{Colors.RESET}")
                         break
 
-            time.sleep(0.5)  # Poll interval
+            time.sleep(WATCH_POLL_INTERVAL)  # Poll interval
 
     except KeyboardInterrupt:
         if watch_mode:

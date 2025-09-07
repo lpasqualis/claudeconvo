@@ -15,6 +15,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - It should be possible to run claudelog from any subfolder of a project, and the correct project should be identified automatically
 - User experience using the CLI must be IMPECCABLE, and follow best practices for outstanding CLI experiences
 - Warnings are not acceptable, ANYWHERE. Fix all warnings you receive from any tool or test
+- Never put imports in the middle of the code, all the imports should be at the top
 
 ## Project Overview
 

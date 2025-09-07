@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Watch mode (`-w`/`--watch`) for tailing session logs in real-time
+- ESC key support to exit watch mode (in addition to Ctrl+C)
 - Multiple color themes optimized for different terminal backgrounds
 - Support for 8 built-in themes: dark, light, solarized-dark/light, dracula, nord, mono, high-contrast
 - `--theme` command-line option to select color themes
@@ -18,6 +20,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Refactored color system to use theme classes for better maintainability
 - `--no-color` now acts as alias for `--theme mono`
+
+### Fixed
+- Tool truncation with `-st` option now correctly shows full tool output without truncation
 
 ## [0.1.0] - 2025-01-XX
 

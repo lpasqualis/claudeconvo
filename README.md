@@ -50,6 +50,12 @@ claudelog 3
 
 # View previous session
 claudelog -1
+
+# Watch a session for new entries (tail mode)
+claudelog -w
+
+# Watch a specific session
+claudelog -f session-123 -w
 ```
 
 ### Filtering Options

@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from ..constants import MAX_RECURSION_DEPTH
-from ..utils import load_json_config
+from ..utils import load_json_config, log_debug, sanitize_terminal_output
 
 
 class AdaptiveParser:
@@ -213,7 +213,8 @@ class AdaptiveParser:
             return None
 
         if isinstance(content, str):
-            return content
+            # Sanitize at the leaf level for security
+            return sanitize_terminal_output(content)
 
         if isinstance(content, (int, float, bool)):
             return str(content)
@@ -237,11 +238,13 @@ class AdaptiveParser:
                     if text:
                         texts.append(text)
                 elif isinstance(item, str):
-                    texts.append(item)
+                    # Sanitize individual string items
+                    texts.append(sanitize_terminal_output(item))
                 else:
                     # Try converting to string
                     texts.append(str(item))
 
+            # Join texts - already sanitized individual items
             return "\n".join(texts) if texts else None
 
         if isinstance(content, dict):
@@ -258,11 +261,13 @@ class AdaptiveParser:
                     if field in content:
                         return self._extract_text_from_content(content[field], depth + 1)
 
-        # Last resort - convert to string
+        # Last resort - convert to string and sanitize
         try:
-            return json.dumps(content) if isinstance(content, (dict, list)) else str(content)
-        except (TypeError, ValueError, RecursionError, OverflowError):
+            result = json.dumps(content) if isinstance(content, (dict, list)) else str(content)
+            return sanitize_terminal_output(result) if result else None
+        except (TypeError, ValueError, RecursionError, OverflowError) as e:
             # Only catch specific exceptions that could occur during serialization
+            log_debug(f"Failed to serialize content to string: {type(e).__name__}")
             return None
 
     def extract_tool_info(self, entry: Dict[str, Any]) -> Dict[str, Any]:

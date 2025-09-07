@@ -1,5 +1,7 @@
 """Constants for claudelog."""
 
+import os
+
 # File size limits
 BYTES_PER_KB = 1024
 BYTES_PER_MB = BYTES_PER_KB * 1024
@@ -30,4 +32,5 @@ MAX_FIELD_PATTERNS_DISPLAY = 20
 MAX_TYPE_COUNTS_DISPLAY = 20
 
 # Default paths
-CLAUDE_PROJECTS_DIR = ".claude/projects"
+# Allow overriding the Claude projects directory via environment variable
+CLAUDE_PROJECTS_DIR = os.environ.get("CLAUDE_PROJECTS_DIR", ".claude/projects")

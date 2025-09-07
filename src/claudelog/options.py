@@ -40,6 +40,9 @@ class ShowOptions:
         for _, attr, _ in self.OPTIONS:
             setattr(self, attr, False)
 
+        # Debug mode for internal error reporting (not user-facing)
+        self.debug = False
+
         # Enable defaults if no options specified
         if not options_string:
             for attr in self.DEFAULT_ENABLED:

@@ -5,7 +5,7 @@ from datetime import datetime
 
 from .parsers.adaptive import AdaptiveParser
 from .themes import Colors
-from .utils import format_uuid
+from .utils import format_uuid, sanitize_terminal_output
 
 
 def truncate_text(text, max_length=500, force_truncate=False):
@@ -96,26 +96,20 @@ def format_tool_result(entry, show_options):
     return None
 
 
-def format_conversation_entry(entry, show_options, show_timestamp=False):
-    """Format a single entry as part of a conversation."""
-    output = []
-    entry_type = entry.get("type", "unknown")
-
-    # Handle summaries
-    if entry_type == "summary":
-        if not show_options.summaries:
-            return None
-        summary = entry.get("summary", "N/A")
-        output.append(f"\n{Colors.SEPARATOR}📝 Summary: {summary}{Colors.RESET}")
-        if show_options.metadata and "leafUuid" in entry:
-            output.append(f"   {Colors.METADATA}Session: {entry['leafUuid']}{Colors.RESET}")
-        return "\n".join(output)
-
-    # Skip meta entries unless showing metadata
-    if entry.get("isMeta", False) and not show_options.metadata:
+def _format_summary_entry(entry, show_options):
+    """Format a summary entry."""
+    if not show_options.summaries:
         return None
+    output = []
+    summary = entry.get("summary", "N/A")
+    output.append(f"\n{Colors.SEPARATOR}📝 Summary: {summary}{Colors.RESET}")
+    if show_options.metadata and "leafUuid" in entry:
+        output.append(f"   {Colors.METADATA}Session: {entry['leafUuid']}{Colors.RESET}")
+    return "\n".join(output)
 
-    # Format timestamp if requested
+
+def _format_timestamp(entry, show_timestamp):
+    """Format timestamp for an entry."""
     timestamp_str = ""
     if show_timestamp and "timestamp" in entry:
         try:
@@ -126,9 +120,14 @@ def format_conversation_entry(entry, show_options, show_timestamp=False):
             # TypeError: timestamp is not a string
             # AttributeError: timestamp object missing expected method
             pass  # Keep timestamp_str as empty string on parse failure
+    return timestamp_str
 
-    # Add metadata if requested
+
+def _build_metadata_lines(entry, show_options):
+    """Build metadata lines for an entry."""
     metadata_lines = []
+
+    # Basic metadata
     if show_options.metadata:
         meta_items = []
         if "uuid" in entry:
@@ -142,133 +141,174 @@ def format_conversation_entry(entry, show_options, show_timestamp=False):
         if meta_items:
             metadata_lines.append(f"{Colors.METADATA}[{' | '.join(meta_items)}]{Colors.RESET}")
 
-    # Add request IDs if requested
+    # Request IDs
     if show_options.request_ids and "requestId" in entry:
         metadata_lines.append(f"{Colors.METADATA}Request: {entry['requestId']}{Colors.RESET}")
 
-    # Add flow information if requested
+    # Flow information
     if show_options.flow and "parentUuid" in entry and entry["parentUuid"]:
         parent_id = format_uuid(entry["parentUuid"])
         metadata_lines.append(f"{Colors.METADATA}Parent: {parent_id}...{Colors.RESET}")
 
-    # Add working directory if requested
+    # Working directory
     if show_options.paths and "cwd" in entry:
         metadata_lines.append(f"{Colors.METADATA}Path: {entry['cwd']}{Colors.RESET}")
 
-    # Add user type if requested
+    # User type
     if show_options.user_types and "userType" in entry:
         metadata_lines.append(f"{Colors.METADATA}UserType: {entry['userType']}{Colors.RESET}")
 
-    # Add level if requested
+    # Level
     if show_options.levels and "level" in entry:
         metadata_lines.append(f"{Colors.METADATA}Level: {entry['level']}{Colors.RESET}")
 
-    # Check for sidechain messages
+    # Sidechain indicator
     if "isSidechain" in entry and entry["isSidechain"]:
         if not show_options.sidechains:
-            return None  # Skip sidechain messages unless explicitly requested
+            return None  # Signal to skip this entry
         metadata_lines.append(f"{Colors.METADATA}[SIDECHAIN]{Colors.RESET}")
 
+    return metadata_lines
+
+
+def format_conversation_entry(entry, show_options, show_timestamp=False):
+    """Format a single entry as part of a conversation."""
+    output = []
+    entry_type = entry.get("type", "unknown")
+
+    # Handle summaries
+    if entry_type == "summary":
+        return _format_summary_entry(entry, show_options)
+
+    # Skip meta entries unless showing metadata
+    if entry.get("isMeta", False) and not show_options.metadata:
+        return None
+
+    # Format timestamp
+    timestamp_str = _format_timestamp(entry, show_timestamp)
+
+    # Build metadata lines
+    metadata_lines = _build_metadata_lines(entry, show_options)
+    if metadata_lines is None:  # Sidechain skip signal
+        return None
+
     if entry_type == "user":
-        user_shown = False
-
-        # Process user message if enabled
-        if show_options.user:
-            message = entry.get("message", {})
-            if isinstance(message, dict):
-                content = message.get("content", "")
-                text = extract_message_text(content)
-
-                # Handle command messages
-                is_command = text and (
-                    text.startswith("<command-") or text.startswith("<local-command-")
-                )
-                if is_command and not show_options.commands:
-                    # Skip command messages unless requested
-                    pass
-                elif text:
-                    # Clean up the text if not showing commands
-                    if not show_options.commands:
-                        text = re.sub(r"<[^>]+>", "", text).strip()  # Remove XML-like tags
-
-                    if text:
-                        if metadata_lines:
-                            output.extend(metadata_lines)
-                        user_label = f"{Colors.USER}{Colors.BOLD}User:{Colors.RESET}"
-                        user_prefix = f"\n{timestamp_str}{user_label}"
-                        output.append(f"{user_prefix} {Colors.USER}{text}{Colors.RESET}")
-                        user_shown = True
-
-        # Check for tool results (independent of user text)
-        if show_options.tools:
-            tool_result = format_tool_result(entry, show_options)
-            if tool_result:
-                # Add metadata if not already added
-                if not user_shown and metadata_lines:
-                    output.extend(metadata_lines)
-                output.append(tool_result)
-
-        # Return None only if nothing was shown
-        if not output:
-            return None
+        return _format_user_entry(entry, show_options, timestamp_str, metadata_lines)
 
     elif entry_type == "assistant":
-        # Process assistant message if enabled
-        message = entry.get("message", {})
-        assistant_shown = False
+        return _format_assistant_entry(entry, show_options, timestamp_str, metadata_lines)
 
-        if show_options.assistant and isinstance(message, dict):
+    elif entry_type == "system":
+        return _format_system_entry(entry, show_options, timestamp_str, metadata_lines)
+
+    return "\n".join(output) if output else None
+
+
+def _format_user_entry(entry, show_options, timestamp_str, metadata_lines):
+    """Format a user entry."""
+    output = []
+    user_shown = False
+
+    # Process user message if enabled
+    if show_options.user:
+        message = entry.get("message", {})
+        if isinstance(message, dict):
             content = message.get("content", "")
             text = extract_message_text(content)
 
-            if text:
-                if metadata_lines:
-                    output.extend(metadata_lines)
-                max_len = show_options.get_max_length("default")
-                text = truncate_text(text, max_len)
-                assistant_label = f"{Colors.ASSISTANT}{Colors.BOLD}Claude:{Colors.RESET}"
-                assistant_prefix = f"\n{timestamp_str}{assistant_label}"
-                output.append(f"{assistant_prefix} {Colors.ASSISTANT}{text}{Colors.RESET}")
-                assistant_shown = True
+            # Handle command messages
+            is_command = text and (
+                text.startswith("<command-") or text.startswith("<local-command-")
+            )
+            if is_command and not show_options.commands:
+                # Skip command messages unless requested
+                pass
+            elif text:
+                # Clean up the text if not showing commands
+                if not show_options.commands:
+                    text = re.sub(r"<[^>]+>", "", text).strip()  # Remove XML-like tags
 
-        # Check for tool uses (independent of assistant text)
-        if show_options.tools:
-            tool_use = format_tool_use(entry, show_options)
-            if tool_use:
-                # Add metadata if not already added
-                if not assistant_shown and metadata_lines:
-                    output.extend(metadata_lines)
-                output.append(tool_use)
+                if text:
+                    if metadata_lines:
+                        output.extend(metadata_lines)
+                    user_label = f"{Colors.USER}{Colors.BOLD}User:{Colors.RESET}"
+                    user_prefix = f"\n{timestamp_str}{user_label}"
+                    output.append(f"{user_prefix} {Colors.USER}{text}{Colors.RESET}")
+                    user_shown = True
 
-        # Return None only if nothing was shown
-        if not output:
-            return None
+    # Check for tool results (independent of user text)
+    if show_options.tools:
+        tool_result = format_tool_result(entry, show_options)
+        if tool_result:
+            # Add metadata if not already added
+            if not user_shown and metadata_lines:
+                output.extend(metadata_lines)
+            output.append(tool_result)
 
-    elif entry_type == "system":
-        content = entry.get("content", "")
+    # Return None only if nothing was shown
+    return "\n".join(output) if output else None
 
-        # Check if this is a hook message
-        is_hook = "hook" in content.lower() or "PreToolUse" in content or "PostToolUse" in content
 
-        # Determine if we should show this system message
-        should_show = False
+def _format_assistant_entry(entry, show_options, timestamp_str, metadata_lines):
+    """Format an assistant entry."""
+    output = []
+    message = entry.get("message", {})
+    assistant_shown = False
 
-        # System option shows ALL system messages (including hooks)
-        if show_options.system:
-            should_show = True
-        # Hook option can be used to show ONLY hook messages
-        elif is_hook and show_options.hooks:
-            should_show = True
-        # Show important system messages by default (errors, etc.)
-        elif content and not content.startswith("[1m") and not is_hook:
-            if "Error" in content or ("completed successfully" not in content):
-                should_show = True
+    if show_options.assistant and isinstance(message, dict):
+        content = message.get("content", "")
+        text = extract_message_text(content)
 
-        if should_show and content:
+        if text:
             if metadata_lines:
                 output.extend(metadata_lines)
-            # Clean ANSI codes if present
-            content = re.sub(r"\[[\d;]*m", "", content)
-            output.append(f"\n{timestamp_str}{Colors.SYSTEM}System: {content}{Colors.RESET}")
+            max_len = show_options.get_max_length("default")
+            text = truncate_text(text, max_len)
+            assistant_label = f"{Colors.ASSISTANT}{Colors.BOLD}Claude:{Colors.RESET}"
+            assistant_prefix = f"\n{timestamp_str}{assistant_label}"
+            output.append(f"{assistant_prefix} {Colors.ASSISTANT}{text}{Colors.RESET}")
+            assistant_shown = True
+
+    # Check for tool uses (independent of assistant text)
+    if show_options.tools:
+        tool_use = format_tool_use(entry, show_options)
+        if tool_use:
+            # Add metadata if not already added
+            if not assistant_shown and metadata_lines:
+                output.extend(metadata_lines)
+            output.append(tool_use)
+
+    # Return None only if nothing was shown
+    return "\n".join(output) if output else None
+
+
+def _format_system_entry(entry, show_options, timestamp_str, metadata_lines):
+    """Format a system entry."""
+    output = []
+    content = entry.get("content", "")
+
+    # Check if this is a hook message
+    is_hook = "hook" in content.lower() or "PreToolUse" in content or "PostToolUse" in content
+
+    # Determine if we should show this system message
+    should_show = False
+
+    # System option shows ALL system messages (including hooks)
+    if show_options.system:
+        should_show = True
+    # Hook option can be used to show ONLY hook messages
+    elif is_hook and show_options.hooks:
+        should_show = True
+    # Show important system messages by default (errors, etc.)
+    elif content and not content.startswith("[1m") and not is_hook:
+        if "Error" in content or ("completed successfully" not in content):
+            should_show = True
+
+    if should_show and content:
+        if metadata_lines:
+            output.extend(metadata_lines)
+        # Sanitize terminal output for security
+        content = sanitize_terminal_output(content, strip_all_escapes=True)
+        output.append(f"\n{timestamp_str}{Colors.SYSTEM}System: {content}{Colors.RESET}")
 
     return "\n".join(output) if output else None

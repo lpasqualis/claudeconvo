@@ -44,7 +44,7 @@ class DarkTheme(ColorTheme):
     # Tool colors
     TOOL_NAME = "\033[35m"  # Magenta
     TOOL_PARAM = "\033[95m"  # Light magenta
-    TOOL_OUTPUT = "\033[90m"  # Gray
+    TOOL_OUTPUT = "\033[95m"  # Light magenta (same as tool params)
 
     # Other
     TIMESTAMP = "\033[37m"  # Light gray/white

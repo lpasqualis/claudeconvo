@@ -14,7 +14,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Claude log files format WILL CHANGE, the command needs to be able to have proper error handling and make it easy to adapt to changes
 - It should be possible to run claudelog from any subfolder of a project, and the correct project should be identified automatically
 - User experience using the CLI must be IMPECCABLE, and follow best practices for outstanding CLI experiences
-- Warnings are not acceptable, ANYWHERE. Fix all warnings you receive from any tool or test
+- Warnings, errors, exceltions are NEVER acceptable, ANYWHERE. Nothing is done until there are no warnings, no errors and no exceptions. Don't EVER tell me "we still have an error but we are done". We are NOT done.
 - Never put imports in the middle of the code, all the imports should be at the top
 
 ## Project Overview

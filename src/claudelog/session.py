@@ -14,6 +14,7 @@ from .constants import (
 )
 from .parsers.adaptive import AdaptiveParser
 from .themes import Colors
+from .tool_tracker import ToolInvocationTracker
 from .utils import log_debug
 
 
@@ -97,6 +98,7 @@ def parse_session_file(filepath):
     """Parse a JSONL session file and return its contents."""
     sessions = []
     parser = AdaptiveParser()  # Will auto-load config if available
+    tracker = ToolInvocationTracker()  # Track tool invocations
 
     # Validate file path
     filepath = Path(filepath)
@@ -126,6 +128,7 @@ def parse_session_file(filepath):
             # Check file size using fstat on open file handle to prevent TOCTOU
             try:
                 import os
+
                 file_stat = os.fstat(f.fileno())
                 if file_stat.st_size > MAX_FILE_SIZE:
                     size_str = format_file_size(file_stat.st_size)
@@ -146,6 +149,20 @@ def parse_session_file(filepath):
                         raw_data = json.loads(line)
                         # Use the adaptive parser to normalize the entry
                         parsed_data = parser.parse_entry(raw_data)
+
+                        # Track tool invocations
+                        tracker.track_tool_use(parsed_data)
+
+                        # If this is any tool result, enhance it with tool info
+                        if tracker.is_tool_result(parsed_data):
+                            tool_info = tracker.get_tool_info_for_entry(parsed_data)
+                            if tool_info:
+                                # Special handling for Task results
+                                if tracker.is_task_result(parsed_data):
+                                    parsed_data["_task_info"] = tool_info
+                                else:
+                                    parsed_data["_tool_info"] = tool_info
+
                         sessions.append(parsed_data)
                     except json.JSONDecodeError as e:
                         err_msg = f"{Colors.ERROR}Warning: JSON parse error on line {line_num}: {e}"
@@ -165,6 +182,87 @@ def parse_session_file(filepath):
         print(f"{err_msg}{Colors.RESET}", file=sys.stderr)
 
     return sessions
+
+
+def display_session(filepath, show_options, watch_mode=False, show_timestamp=False):
+    """Display a session file with optional watch mode.
+
+    Args:
+        filepath: Path to session file
+        show_options: ShowOptions instance for filtering/formatting
+        watch_mode: If True, watch for new entries continuously
+        show_timestamp: Whether to include timestamps in output
+    """
+    import time
+
+    from .formatters import format_conversation_entry
+    from .themes import Colors
+
+    if not filepath.exists():
+        print(f"{Colors.ERROR}Session file not found: {filepath}{Colors.RESET}", file=sys.stderr)
+        return
+
+    # Set up keyboard handling for ESC detection (needed for finally block)
+    old_settings = None
+    
+    if watch_mode:
+        print(f"\n{Colors.SYSTEM}Watching session: {filepath.name}{Colors.RESET}")
+        print(f"{Colors.DIM}Press ESC or Ctrl+C to exit{Colors.RESET}\n")
+        try:
+            import select
+            import termios
+            import tty
+
+            old_settings = termios.tcgetattr(sys.stdin)
+            tty.setcbreak(sys.stdin.fileno())
+        except (ImportError, OSError, AttributeError):
+            old_settings = None
+            print(f"{Colors.DIM}Press Ctrl+C to exit{Colors.RESET}\n")
+
+    try:
+        displayed_count = 0
+
+        while True:
+            # Parse the current session file
+            sessions = parse_session_file(filepath)
+
+            # Display any new entries
+            for i, entry in enumerate(sessions[displayed_count:], displayed_count):
+                formatted = format_conversation_entry(
+                    entry, show_options, show_timestamp=show_timestamp
+                )
+                if formatted:
+                    print(formatted)
+                    if watch_mode:
+                        sys.stdout.flush()  # Ensure immediate output in watch mode
+
+            displayed_count = len(sessions)
+
+            if not watch_mode:
+                break  # Normal mode: exit after displaying all entries
+
+            # Watch mode: check for ESC key and continue monitoring
+            if old_settings:
+                if sys.stdin in select.select([sys.stdin], [], [], 0)[0]:
+                    ch = sys.stdin.read(1)
+                    if ord(ch) == 27:  # ESC key
+                        print(f"\n{Colors.SYSTEM}Stopped watching{Colors.RESET}")
+                        break
+
+            time.sleep(0.5)  # Poll interval
+
+    except KeyboardInterrupt:
+        if watch_mode:
+            print(f"\n{Colors.SYSTEM}Interrupted{Colors.RESET}")
+    finally:
+        # Restore terminal settings
+        if old_settings:
+            try:
+                import termios
+
+                termios.tcsetattr(sys.stdin, termios.TCSADRAIN, old_settings)
+            except (ImportError, OSError, AttributeError):
+                pass
 
 
 def format_file_size(size_bytes):

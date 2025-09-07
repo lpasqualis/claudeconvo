@@ -165,28 +165,28 @@ def sanitize_terminal_output(text: str, strip_all_escapes: bool = False) -> str:
         return text
 
     # Remove null bytes and other control characters (except newlines, tabs)
-    text = "".join(ch for ch in text if ch == '\n' or ch == '\t' or ch >= ' ')
+    text = "".join(ch for ch in text if ch == "\n" or ch == "\t" or ch >= " ")
 
     if strip_all_escapes:
         # Remove all ANSI escape sequences
-        text = re.sub(r'\x1b\[[0-9;]*[a-zA-Z]', '', text)
-        text = re.sub(r'\x1b\].*?\x07', '', text)  # OSC sequences
-        text = re.sub(r'\x1b[PX^_].*?\x1b\\', '', text)  # Other escape sequences
+        text = re.sub(r"\x1b\[[0-9;]*[a-zA-Z]", "", text)
+        text = re.sub(r"\x1b\].*?\x07", "", text)  # OSC sequences
+        text = re.sub(r"\x1b[PX^_].*?\x1b\\", "", text)  # Other escape sequences
     else:
         # Selectively remove dangerous sequences while keeping color codes
         # Remove OSC (Operating System Command) sequences - can set window title, etc
-        text = re.sub(r'\x1b\].*?\x07', '', text)
-        text = re.sub(r'\x1b\].*?\x1b\\', '', text)
+        text = re.sub(r"\x1b\].*?\x07", "", text)
+        text = re.sub(r"\x1b\].*?\x1b\\", "", text)
 
         # Remove APC, DCS, PM, SOS sequences
-        text = re.sub(r'\x1b[PX^_].*?\x1b\\', '', text)
+        text = re.sub(r"\x1b[PX^_].*?\x1b\\", "", text)
 
         # Remove cursor movement and dangerous CSI sequences
         # but keep SGR (colors) - they end with 'm'
-        text = re.sub(r'\x1b\[(?![0-9;]*m)[0-9;]*[A-HJKSTfsu]', '', text)
+        text = re.sub(r"\x1b\[(?![0-9;]*m)[0-9;]*[A-HJKSTfsu]", "", text)
 
         # Remove any remaining ESC characters not part of ANSI codes
-        text = re.sub(r'(?<!\x1b\[)\x1b(?!\[)', '', text)
+        text = re.sub(r"(?<!\x1b\[)\x1b(?!\[)", "", text)
 
     return text
 

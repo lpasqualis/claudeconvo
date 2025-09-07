@@ -245,7 +245,9 @@ class TestSessionFunctions:
     @patch("builtins.open")
     @patch("claudelog.session.Path.is_symlink")
     @patch("claudelog.session.Path.resolve")
-    def test_parse_session_file(self, mock_resolve, mock_is_symlink, mock_open, mock_fstat, mock_adaptive_path):
+    def test_parse_session_file(
+        self, mock_resolve, mock_is_symlink, mock_open, mock_fstat, mock_adaptive_path
+    ):
         """Test parsing a session file."""
         # Mock adaptive parser config loading
         mock_config_path = Mock()
@@ -260,7 +262,7 @@ class TestSessionFunctions:
         home_sessions = Path.home() / ".claude" / "projects" / "test"
         test_file = home_sessions / "session.jsonl"
         mock_resolve.return_value = test_file
-        
+
         # Mock symlink check
         mock_is_symlink.return_value = False
 
@@ -279,9 +281,11 @@ class TestSessionFunctions:
         ]
 
         mock_file_handle = MagicMock()
-        mock_file_handle.__iter__ = Mock(return_value=iter([json.dumps(entry) + "\n" for entry in session_data]))
+        mock_file_handle.__iter__ = Mock(
+            return_value=iter([json.dumps(entry) + "\n" for entry in session_data])
+        )
         mock_file_handle.fileno = Mock(return_value=3)  # Mock file descriptor
-        
+
         mock_file = MagicMock()
         mock_file.__enter__.return_value = mock_file_handle
         mock_open.return_value = mock_file
@@ -319,6 +323,489 @@ class TestColorOutput:
         if output:
             assert Colors.USER in output
             assert Colors.RESET in output
+
+
+class TestTaskResultFormatting:
+    """Test Task/subagent result formatting."""
+
+    def test_format_task_result_as_subagent(self):
+        """Test that Task results are displayed as Subagent."""
+        # Create a Task result entry with _task_info
+        entry = {
+            "type": "user",
+            "_task_info": {
+                "name": "Task",
+                "subagent_type": "general-purpose",
+                "description": "Analyze code",
+            },
+            "message": {
+                "content": [
+                    {
+                        "type": "tool_result",
+                        "content": [{"type": "text", "text": "Task completed analysis"}],
+                    }
+                ]
+            },
+        }
+
+        output = format_conversation_entry(entry, ShowOptions("o"), False)
+        assert output is not None
+        assert "Subagent (general-purpose):" in output
+        assert "Task completed analysis" in output
+        assert "User:" not in output
+
+    def test_format_task_result_with_description(self):
+        """Test that Task descriptions are shown with tool_details."""
+        entry = {
+            "type": "user",
+            "_task_info": {
+                "name": "Task",
+                "subagent_type": "hack-spotter",
+                "description": "Security analysis",
+            },
+            "message": {
+                "content": [
+                    {
+                        "type": "tool_result",
+                        "content": [{"type": "text", "text": "Found vulnerabilities"}],
+                    }
+                ]
+            },
+        }
+
+        # Without tool_details - no description
+        output = format_conversation_entry(entry, ShowOptions("o"), False)
+        assert output is not None
+        assert "Subagent (hack-spotter):" in output
+        assert "[Security analysis]" not in output
+
+        # With tool_details - show description
+        output_detailed = format_conversation_entry(entry, ShowOptions("ot"), False)
+        assert output_detailed is not None
+        assert "Subagent (hack-spotter):" in output_detailed
+        assert "[Security analysis]" in output_detailed
+
+    def test_regular_tool_result_not_affected(self):
+        """Test that regular tool results are not affected by Task formatting."""
+        entry = {
+            "type": "user",
+            "toolUseResult": "Command executed successfully",
+        }
+
+        output = format_conversation_entry(entry, ShowOptions("o"), False)
+        assert output is not None
+        assert "✓ Result:" in output
+        assert "Command executed successfully" in output
+        assert "Subagent" not in output
+
+    def test_task_result_without_task_info(self):
+        """Test handling of tool_result without _task_info."""
+        entry = {
+            "type": "user",
+            "message": {
+                "content": [
+                    {
+                        "type": "tool_result",
+                        "content": [{"type": "text", "text": "Regular result"}],
+                    }
+                ]
+            },
+        }
+
+        # Without _task_info, should not be treated as Task result
+        output = format_conversation_entry(entry, ShowOptions("o"), False)
+        # Should either be None or not contain Subagent
+        if output:
+            assert "Subagent" not in output
+
+    def test_format_regular_tool_result(self):
+        """Test that regular tool results (e.g., TodoWrite) are displayed with proper labels."""
+        # Create a regular tool result entry with _tool_info
+        entry = {
+            "type": "user",
+            "_tool_info": {
+                "name": "TodoWrite",
+                "input": {"todos": []},
+            },
+            "message": {
+                "content": [
+                    {
+                        "type": "tool_result",
+                        "content": [
+                            {"type": "text", "text": "Todos have been modified successfully"}
+                        ],
+                    }
+                ]
+            },
+        }
+
+        output = format_conversation_entry(entry, ShowOptions("o"), False)
+        assert output is not None
+        assert "TodoWrite Result:" in output
+        assert "Todos have been modified successfully" in output
+        assert "User:" not in output  # Should not show as User
+
+    def test_format_bash_tool_result(self):
+        """Test that Bash tool results are displayed with proper labels."""
+        entry = {
+            "type": "user",
+            "_tool_info": {
+                "name": "Bash",
+                "input": {"command": "ls -la"},
+            },
+            "message": {
+                "content": [
+                    {
+                        "type": "tool_result",
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": "total 16\ndrwxr-xr-x  4 user  staff  128 Jan  1 12:00 .",
+                            }
+                        ],
+                    }
+                ]
+            },
+        }
+
+        output = format_conversation_entry(entry, ShowOptions("o"), False)
+        assert output is not None
+        assert "Bash Result:" in output
+        assert "total 16" in output
+        assert "User:" not in output  # Should not show as User
+
+    def test_tool_result_indentation(self):
+        """Test that tool results are properly indented when indent_results is True."""
+        import re
+        
+        entry = {
+            "type": "user",
+            "_tool_info": {
+                "name": "Bash",
+                "input": {"command": "echo test"},
+            },
+            "message": {
+                "content": [
+                    {
+                        "type": "tool_result",
+                        "content": "test output",
+                    }
+                ]
+            },
+        }
+
+        # Test with indentation enabled (default)
+        show_options = ShowOptions("o")
+        show_options.indent_results = True
+        output = format_conversation_entry(entry, show_options, False)
+        
+        # Remove ANSI codes for easier testing
+        clean_output = re.sub(r'\x1b\[[0-9;]*m', '', output)
+        
+        # Check the output format
+        assert output is not None
+        # Should start with newline (blank line for spacing)
+        assert output.startswith("\n")
+        # Should have indented label
+        assert "   Bash Result:" in clean_output
+        # Result should also be indented  
+        assert "   test output" in clean_output
+
+    def test_tool_result_no_indentation(self):
+        """Test that tool results are not indented when indent_results is False."""
+        entry = {
+            "type": "user",
+            "_tool_info": {
+                "name": "Bash",
+                "input": {"command": "echo test"},
+            },
+            "message": {
+                "content": [
+                    {
+                        "type": "tool_result",
+                        "content": "test output",
+                    }
+                ]
+            },
+        }
+
+        # Test with indentation disabled
+        show_options = ShowOptions("o")
+        show_options.indent_results = False
+        output = format_conversation_entry(entry, show_options, False)
+        
+        # Should have label and result on same line (ignoring color codes)
+        assert "Bash Result:" in output and "test output" in output
+        # Check they're on the same line
+        lines = output.split("\n")
+        for line in lines:
+            if "Bash Result:" in line:
+                assert "test output" in line  # Should be on same line
+
+    def test_multi_line_tool_result_indentation(self):
+        """Test that multi-line tool results maintain consistent indentation."""
+        entry = {
+            "type": "user",
+            "_tool_info": {
+                "name": "Bash",
+                "input": {"command": "ls -la"},
+            },
+            "message": {
+                "content": [
+                    {
+                        "type": "tool_result",
+                        "content": "Line 1\nLine 2\nLine 3",
+                    }
+                ]
+            },
+        }
+
+        # Test with indentation enabled
+        show_options = ShowOptions("o")
+        show_options.indent_results = True
+        output = format_conversation_entry(entry, show_options, False)
+        
+        lines = output.split("\n")
+        # Find lines with our content
+        content_lines = [l for l in lines if "Line " in l]
+        
+        # All content lines should be indented with 3 spaces
+        assert len(content_lines) == 3
+        for line in content_lines:
+            assert line.startswith("   ")
+            
+    def test_tool_result_color_consistency(self):
+        """Test that tool result labels use consistent colors."""
+        from claudelog.themes import Colors
+        
+        entry = {
+            "type": "user",
+            "_tool_info": {
+                "name": "Bash",
+                "input": {"command": "test"},
+            },
+            "message": {
+                "content": [
+                    {
+                        "type": "tool_result",
+                        "content": "output",
+                    }
+                ]
+            },
+        }
+
+        output = format_conversation_entry(entry, ShowOptions("o"), False)
+        
+        # Check that Bash Result: label contains TOOL_NAME color code
+        assert Colors.TOOL_NAME in output
+        # Check that output contains TOOL_OUTPUT color code
+        assert Colors.TOOL_OUTPUT in output
+        
+    def test_tool_result_blank_line_spacing(self):
+        """Test that there's a blank line between tool parameters and result."""
+        from claudelog.formatters import format_tool_use
+        
+        # First format a tool use
+        tool_entry = {
+            "message": {
+                "content": [
+                    {
+                        "type": "tool_use",
+                        "name": "Bash",
+                        "id": "test-id",
+                        "input": {"command": "echo test", "description": "Test command"},
+                    }
+                ]
+            }
+        }
+        
+        # Then format the result
+        result_entry = {
+            "type": "user",
+            "_tool_info": {
+                "name": "Bash",
+                "input": {"command": "echo test"},
+            },
+            "message": {
+                "content": [
+                    {
+                        "type": "tool_result",
+                        "content": "test output",
+                    }
+                ]
+            },
+        }
+        
+        show_options = ShowOptions("o")
+        show_options.indent_results = True
+        
+        tool_output = format_tool_use(tool_entry, show_options)
+        result_output = format_conversation_entry(result_entry, show_options, False)
+        
+        # Result output should start with a blank line (when indented)
+        lines = result_output.split("\n")
+        # First line should be empty (blank line for spacing)
+        assert lines[0] == ""
+
+
+class TestCLIIndentOption:
+    """Test CLI --no-indent option."""
+    
+    def test_cli_no_indent_option(self):
+        """Test that --no-indent CLI option disables indentation."""
+        from claudelog.cli import create_argument_parser
+        from claudelog.options import ShowOptions
+        
+        parser = create_argument_parser()
+        
+        # Test default (indentation enabled)
+        args = parser.parse_args([])
+        show_options = ShowOptions("o")
+        show_options.indent_results = not args.no_indent
+        assert show_options.indent_results is True
+        
+        # Test with --no-indent
+        args = parser.parse_args(["--no-indent"])
+        show_options = ShowOptions("o")
+        show_options.indent_results = not args.no_indent
+        assert show_options.indent_results is False
+
+
+class TestToolInvocationTracker:
+    """Test tool invocation tracking."""
+
+    def test_track_tool_use(self):
+        """Test tracking of tool invocations."""
+        from claudelog.tool_tracker import ToolInvocationTracker
+
+        tracker = ToolInvocationTracker()
+
+        # Track a regular tool use
+        entry = {
+            "type": "assistant",
+            "timestamp": "2025-01-01T12:00:00Z",
+            "uuid": "test-uuid",
+            "message": {
+                "content": [
+                    {
+                        "type": "tool_use",
+                        "id": "tool-123",
+                        "name": "Bash",
+                        "input": {"command": "ls -la"},
+                    }
+                ]
+            },
+        }
+
+        tracker.track_tool_use(entry)
+
+        # Verify tracking
+        info = tracker.get_tool_info("tool-123")
+        assert info is not None
+        assert info["name"] == "Bash"
+        assert info["input"]["command"] == "ls -la"
+        assert info["uuid"] == "test-uuid"
+
+    def test_track_task_invocation(self):
+        """Test tracking of Task invocations with subagent details."""
+        from claudelog.tool_tracker import ToolInvocationTracker
+
+        tracker = ToolInvocationTracker()
+
+        # Track a Task invocation
+        entry = {
+            "type": "assistant",
+            "message": {
+                "content": [
+                    {
+                        "type": "tool_use",
+                        "id": "task-456",
+                        "name": "Task",
+                        "input": {
+                            "subagent_type": "hack-spotter",
+                            "description": "Security audit",
+                            "prompt": "Analyze security",
+                        },
+                    }
+                ]
+            },
+        }
+
+        tracker.track_tool_use(entry)
+
+        # Verify Task-specific tracking
+        info = tracker.get_tool_info("task-456")
+        assert info is not None
+        assert info["name"] == "Task"
+        assert info["subagent_type"] == "hack-spotter"
+        assert info["description"] == "Security audit"
+
+    def test_is_task_result(self):
+        """Test identification of Task results."""
+        from claudelog.tool_tracker import ToolInvocationTracker
+
+        tracker = ToolInvocationTracker()
+
+        # Test Task result (with array content)
+        task_result = {
+            "type": "user",
+            "message": {
+                "content": [
+                    {
+                        "type": "tool_result",
+                        "content": [{"type": "text", "text": "Result"}],
+                    }
+                ]
+            },
+        }
+        assert tracker.is_task_result(task_result) is True
+
+        # Test regular tool result (string content)
+        regular_result = {
+            "type": "user",
+            "toolUseResult": "Simple result",
+        }
+        assert tracker.is_task_result(regular_result) is False
+
+        # Test non-user entry
+        assistant_entry = {
+            "type": "assistant",
+            "message": {"content": "Response"},
+        }
+        assert tracker.is_task_result(assistant_entry) is False
+
+    def test_get_task_info_for_entry(self):
+        """Test retrieving Task info for a tool_result entry."""
+        from claudelog.tool_tracker import ToolInvocationTracker
+
+        tracker = ToolInvocationTracker()
+
+        # First track the invocation
+        tracker.tool_invocations["task-789"] = {
+            "name": "Task",
+            "subagent_type": "delegate",
+            "description": "Check with GPT",
+        }
+
+        # Create a result entry
+        result_entry = {
+            "type": "user",
+            "message": {
+                "content": [
+                    {
+                        "type": "tool_result",
+                        "tool_use_id": "task-789",
+                        "content": [{"type": "text", "text": "GPT response"}],
+                    }
+                ]
+            },
+        }
+
+        # Get Task info
+        info = tracker.get_task_info_for_entry(result_entry)
+        assert info is not None
+        assert info["subagent_type"] == "delegate"
+        assert info["description"] == "Check with GPT"
 
 
 class TestColorThemes:

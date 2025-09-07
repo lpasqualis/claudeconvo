@@ -209,8 +209,130 @@ def _format_user_entry(entry, show_options, timestamp_str, metadata_lines):
     output = []
     user_shown = False
 
-    # Process user message if enabled
-    if show_options.user:
+    # Check if this is a Task/subagent result
+    task_info = entry.get("_task_info")
+    tool_info = entry.get("_tool_info")
+
+    if task_info and show_options.tools:
+        # This is a Task result - format it specially
+        if metadata_lines:
+            output.extend(metadata_lines)
+
+        # Create appropriate label based on task type
+        task_name = task_info.get("name", "Task")
+        if task_name == "Task":
+            subagent_type = task_info.get("subagent_type", "unknown")
+            description = task_info.get("description", "")
+            if subagent_type != "unknown":
+                label = f"{Colors.TOOL_NAME}{Colors.BOLD}Subagent ({subagent_type}):{Colors.RESET}"
+            else:
+                label = f"{Colors.TOOL_NAME}{Colors.BOLD}Task Result:{Colors.RESET}"
+
+            # Add description if available
+            if description and show_options.tool_details:
+                output.append(f"\n{Colors.METADATA}[{description}]{Colors.RESET}")
+        else:
+            label = f"{Colors.TOOL_NAME}{Colors.BOLD}{task_name} Result:{Colors.RESET}"
+
+        # Extract and format the actual content
+        message = entry.get("message", {})
+        if isinstance(message, dict):
+            content = message.get("content", [])
+            if isinstance(content, list) and content:
+                first_item = content[0]
+                if isinstance(first_item, dict) and first_item.get("type") == "tool_result":
+                    result_content = first_item.get("content", [])
+                    text = None
+                    
+                    # Handle both string and list formats
+                    if isinstance(result_content, str):
+                        # Direct string content
+                        text = result_content
+                    elif isinstance(result_content, list) and result_content:
+                        # List format - find text item
+                        for item in result_content:
+                            if isinstance(item, dict) and item.get("type") == "text":
+                                text = item.get("text", "")
+                                break
+                    
+                    if text:
+                        max_len = show_options.get_max_length("tool_result")
+                        text = truncate_text(text, max_len)
+                        
+                        if show_options.indent_results:
+                            # Add blank line, then put label indented to align with tool parameters
+                            output.append("")  # Blank line for spacing
+                            output.append(f"   {label}")
+                            
+                            # Handle multi-line content by indenting each line
+                            lines = text.split('\n')
+                            for line in lines:
+                                output.append(f"   {Colors.TOOL_OUTPUT}{line}{Colors.RESET}")
+                        else:
+                            # Original format: label and result on same line
+                            result_text = f"{Colors.TOOL_OUTPUT}{text}{Colors.RESET}"
+                            output.append(f"\n{timestamp_str}{label} {result_text}")
+                        user_shown = True
+
+        # If we formatted it as a task, we're done
+        if user_shown:
+            return "\n".join(output) if output else None
+
+    elif tool_info and show_options.tools:
+        # This is a regular tool result - format it as such
+        if metadata_lines:
+            output.extend(metadata_lines)
+
+        # Create label for regular tool
+        tool_name = tool_info.get("name", "Tool")
+        label = f"{Colors.TOOL_NAME}{Colors.BOLD}{tool_name} Result:{Colors.RESET}"
+
+        # Extract and format the actual content
+        message = entry.get("message", {})
+        if isinstance(message, dict):
+            content = message.get("content", [])
+            if isinstance(content, list) and content:
+                first_item = content[0]
+                if isinstance(first_item, dict) and first_item.get("type") == "tool_result":
+                    result_content = first_item.get("content", [])
+                    text = None
+                    
+                    # Handle both string and list formats
+                    if isinstance(result_content, str):
+                        # Direct string content
+                        text = result_content
+                    elif isinstance(result_content, list) and result_content:
+                        # List format - find text item
+                        for item in result_content:
+                            if isinstance(item, dict) and item.get("type") == "text":
+                                text = item.get("text", "")
+                                break
+                    
+                    if text:
+                        max_len = show_options.get_max_length("tool_result")
+                        text = truncate_text(text, max_len)
+                        
+                        if show_options.indent_results:
+                            # Add blank line, then put label indented to align with tool parameters
+                            output.append("")  # Blank line for spacing
+                            output.append(f"   {label}")
+                            
+                            # Handle multi-line content by indenting each line
+                            lines = text.split('\n')
+                            for line in lines:
+                                output.append(f"   {Colors.TOOL_OUTPUT}{line}{Colors.RESET}")
+                        else:
+                            # Original format: label and result on same line
+                            result_text = f"{Colors.TOOL_OUTPUT}{text}{Colors.RESET}"
+                            output.append(f"\n{timestamp_str}{label} {result_text}")
+                        user_shown = True
+
+        # If we formatted it as a tool result, we're done
+        if user_shown:
+            return "\n".join(output) if output else None
+
+    # Process user message if enabled (not a Task or tool result)
+    if show_options.user and not task_info and not tool_info:
         message = entry.get("message", {})
         if isinstance(message, dict):
             content = message.get("content", "")
@@ -237,7 +359,8 @@ def _format_user_entry(entry, show_options, timestamp_str, metadata_lines):
                     user_shown = True
 
     # Check for tool results (independent of user text)
-    if show_options.tools:
+    # Skip if this was already handled as a Task or tool result
+    if show_options.tools and not task_info and not tool_info:
         tool_result = format_tool_result(entry, show_options)
         if tool_result:
             # Add metadata if not already added

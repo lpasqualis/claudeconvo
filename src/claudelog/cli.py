@@ -9,14 +9,13 @@ from pathlib import Path
 from .config import determine_theme, load_config
 from .constants import CLAUDE_PROJECTS_DIR, LIST_ITEM_NUMBER_WIDTH
 from .diagnostics import run_diagnostics
-from .formatters import format_conversation_entry
 from .options import ShowOptions
 from .session import (
+    display_session,
     find_project_root,
     format_file_size,
     get_project_session_dir,
     list_session_files,
-    parse_session_file,
     path_to_session_dir,
 )
 from .themes import THEME_DESCRIPTIONS, THEMES, Colors, get_color_theme
@@ -24,7 +23,8 @@ from .utils import (
     get_filename_display_width,
     get_separator_width,
 )
-from .watcher import watch_sessions
+
+# Removed watcher import - now using unified display_session
 
 
 def create_argument_parser():
@@ -130,6 +130,9 @@ Examples:
     parser.add_argument(
         "--verbose", action="store_true", help="Show verbose output in diagnostic mode"
     )
+    parser.add_argument(
+        "--no-indent", action="store_true", help="Disable indentation alignment for tool results"
+    )
     return parser
 
 
@@ -144,6 +147,7 @@ def handle_diagnostics_mode(args):
         config = load_config()
         theme_name = determine_theme(args, config)
         from .themes import Colors
+
         Colors.set_theme(get_color_theme(theme_name))
 
         # Run diagnostics
@@ -181,6 +185,7 @@ def handle_project_listing(args):
         return None
 
     from .themes import Colors
+
     projects_dir = Path.home() / CLAUDE_PROJECTS_DIR
 
     if projects_dir.exists():
@@ -266,6 +271,7 @@ def get_files_to_show(args, session_files):
         List of files to show or None on error
     """
     from .themes import Colors
+
     files_to_show = []
 
     if args.file:
@@ -303,38 +309,7 @@ def get_files_to_show(args, session_files):
     return files_to_show
 
 
-def display_sessions(files_to_show, show_options, show_timestamp):
-    """Display session files in normal mode."""
-    from .themes import Colors
-
-    for filepath in files_to_show:
-        if len(files_to_show) > 1:
-            sep_width = get_separator_width()
-            print(f"\n{Colors.SEPARATOR}{'=' * sep_width}{Colors.RESET}")
-            print(f"{Colors.BOLD}Session: {filepath.name}{Colors.RESET}")
-            file_stat = filepath.stat()  # Single stat call to avoid TOCTOU
-            mtime = datetime.fromtimestamp(file_stat.st_mtime)
-            date_str = mtime.strftime("%Y-%m-%d %H:%M:%S")
-            print(f"{Colors.TIMESTAMP}Date: {date_str}{Colors.RESET}")
-            print(f"{Colors.SEPARATOR}{'=' * sep_width}{Colors.RESET}")
-
-        sessions = parse_session_file(filepath)
-
-        if not sessions:
-            print(f"{Colors.ERROR}No data found in {filepath.name}{Colors.RESET}")
-            continue
-
-        # Display as conversation
-        for entry in sessions:
-            formatted = format_conversation_entry(
-                entry, show_options, show_timestamp=show_timestamp
-            )
-            if formatted:
-                print(formatted)
-
-        sep_width = get_separator_width()
-        print(f"\n{Colors.SEPARATOR}{'─' * sep_width}{Colors.RESET}")
-        print(f"{Colors.TIMESTAMP}End of session{Colors.RESET}")
+# Removed display_sessions function - now using unified display_session
 
 
 def main():
@@ -354,6 +329,9 @@ def main():
     # Create show options object (use config default if no CLI arg)
     show_str = args.show if args.show else config.get("default_show_options", "")
     show_options = ShowOptions(show_str)
+    
+    # Set formatting options based on CLI arguments
+    show_options.indent_results = not args.no_indent
 
     # Determine theme
     theme_name = determine_theme(args, config)
@@ -392,13 +370,32 @@ def main():
     if files_to_show is None:
         return 1
 
-    # Check if we should watch or just dump
-    if args.watch:
-        # Watch mode - tail the session(s) for new entries
-        watch_sessions(files_to_show, show_options, show_timestamp=args.timestamp)
-    else:
-        # Normal mode - dump and exit
-        display_sessions(files_to_show, show_options, args.timestamp)
+    # Display sessions using unified approach
+    for filepath in files_to_show:
+        if len(files_to_show) > 1:
+            sep_width = get_separator_width()
+            print(f"\n{Colors.SEPARATOR}{'=' * sep_width}{Colors.RESET}")
+            print(f"{Colors.BOLD}Session: {filepath.name}{Colors.RESET}")
+            file_stat = filepath.stat()  # Single stat call to avoid TOCTOU
+            mtime = datetime.fromtimestamp(file_stat.st_mtime)
+            date_str = mtime.strftime("%Y-%m-%d %H:%M:%S")
+            print(f"{Colors.TIMESTAMP}Date: {date_str}{Colors.RESET}")
+            print(f"{Colors.SEPARATOR}{'=' * sep_width}{Colors.RESET}")
+
+        # Use unified display function for both normal and watch mode
+        display_session(
+            filepath, show_options, watch_mode=args.watch, show_timestamp=args.timestamp
+        )
+
+        if not args.watch and len(files_to_show) > 1:
+            sep_width = get_separator_width()
+            print(f"\n{Colors.SEPARATOR}{'─' * sep_width}{Colors.RESET}")
+            print(f"{Colors.TIMESTAMP}End of session{Colors.RESET}")
+
+    if not args.watch and len(files_to_show) == 1:
+        sep_width = get_separator_width()
+        print(f"\n{Colors.SEPARATOR}{'─' * sep_width}{Colors.RESET}")
+        print(f"{Colors.TIMESTAMP}End of session{Colors.RESET}")
 
     return 0
 

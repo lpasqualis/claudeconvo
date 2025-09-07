@@ -43,12 +43,12 @@ class TestPathSecurity:
             mock_resolve.return_value = test_file
             with patch("claudelog.session.Path.is_symlink") as mock_is_symlink:
                 mock_is_symlink.return_value = False
-                
+
                 # Create a proper mock file handle
                 test_data_json = '{"type": "user", "content": "test"}\n'
                 m = mock_open(read_data=test_data_json)
                 m.return_value.fileno = Mock(return_value=3)
-                
+
                 with patch("builtins.open", m):
                     with patch("os.fstat") as mock_fstat:
                         mock_fstat.return_value = Mock(st_size=100)
@@ -67,12 +67,12 @@ class TestPathSecurity:
             mock_resolve.return_value = test_file
             with patch("claudelog.session.Path.is_symlink") as mock_is_symlink:
                 mock_is_symlink.return_value = False
-                
-                # Create a proper mock file handle  
+
+                # Create a proper mock file handle
                 test_data_json = '{"type": "user", "content": "test"}\n'
                 m = mock_open(read_data=test_data_json)
                 m.return_value.fileno = Mock(return_value=3)
-                
+
                 with patch("builtins.open", m):
                     with patch("os.fstat") as mock_fstat:
                         # Create a file larger than 100MB
@@ -138,7 +138,9 @@ class TestExceptionHandling:
                     captured = capsys.readouterr()
                     assert "[DEBUG] Failed to load config from" in captured.err
                     # The error message should be included (could be JSONDecodeError or the actual error message)
-                    assert "Unterminated string" in captured.err or "JSONDecodeError" in captured.err
+                    assert (
+                        "Unterminated string" in captured.err or "JSONDecodeError" in captured.err
+                    )
 
     def test_session_parser_error_sanitization(self, capsys):
         """Test that parser errors don't expose full error details."""
@@ -147,14 +149,14 @@ class TestExceptionHandling:
         with patch("claudelog.session.Path.resolve") as mock_resolve:
             home_sessions = Path.home() / ".claude" / "projects" / "test"
             mock_resolve.return_value = home_sessions / "session.jsonl"
-            
+
             with patch("claudelog.session.Path.is_symlink") as mock_is_symlink:
                 mock_is_symlink.return_value = False
-                
+
                 # Create a proper mock file handle
                 m = mock_open(read_data=test_data)
                 m.return_value.fileno = Mock(return_value=3)
-                
+
                 with patch("builtins.open", m):
                     with patch("os.fstat") as mock_fstat:
                         mock_fstat.return_value = Mock(st_size=100)

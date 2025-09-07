@@ -1,8 +1,11 @@
 """Utility functions for claudelog."""
 
 import json
+import logging
 import os
+import re
 import shutil
+import sys
 from pathlib import Path
 from typing import Any, Dict, Optional
 
@@ -10,6 +13,13 @@ from .constants import (
     FILENAME_DISPLAY_WIDTH,
     UUID_DISPLAY_LENGTH,
 )
+
+# Terminal width constants
+DEFAULT_TERMINAL_WIDTH = 80
+MAX_CONTENT_WIDTH = 120
+MIN_COMFORTABLE_WIDTH = 80
+WIDE_TERMINAL_THRESHOLD = 120
+TERMINAL_MARGIN = 2
 
 
 def get_terminal_width() -> int:
@@ -23,9 +33,9 @@ def get_terminal_width() -> int:
     except (AttributeError, ValueError, OSError):
         # Fallback to environment variable or default
         try:
-            return int(os.environ.get("COLUMNS", 80))
+            return int(os.environ.get("COLUMNS", DEFAULT_TERMINAL_WIDTH))
         except (ValueError, TypeError):
-            return 80
+            return DEFAULT_TERMINAL_WIDTH
 
 
 def get_separator_width() -> int:
@@ -36,7 +46,8 @@ def get_separator_width() -> int:
     """
     term_width = get_terminal_width()
     # Use terminal width but cap at a reasonable maximum
-    return min(term_width - 2, 120)  # Leave some margin, cap at 120
+    # Leave some margin, cap at reasonable width
+    return min(term_width - TERMINAL_MARGIN, MAX_CONTENT_WIDTH)
 
 
 def get_filename_display_width() -> int:
@@ -46,10 +57,10 @@ def get_filename_display_width() -> int:
         Width for filename display
     """
     term_width = get_terminal_width()
-    if term_width < 80:
+    if term_width < MIN_COMFORTABLE_WIDTH:
         # Narrow terminal - use less space for filenames
         return max(20, term_width // 3)
-    elif term_width < 120:
+    elif term_width < WIDE_TERMINAL_THRESHOLD:
         # Normal terminal
         return FILENAME_DISPLAY_WIDTH
     else:
@@ -137,6 +148,49 @@ def format_bold(text: str, colors) -> str:
     return format_with_color(text, colors.BOLD, colors.RESET)
 
 
+def sanitize_terminal_output(text: str, strip_all_escapes: bool = False) -> str:
+    """Sanitize text for safe terminal output.
+
+    Removes or escapes potentially dangerous terminal control sequences
+    while preserving legitimate ANSI color codes (unless strip_all requested).
+
+    Args:
+        text: Text to sanitize
+        strip_all_escapes: If True, remove all escape sequences including colors
+
+    Returns:
+        Sanitized text safe for terminal output
+    """
+    if not text:
+        return text
+
+    # Remove null bytes and other control characters (except newlines, tabs)
+    text = "".join(ch for ch in text if ch == '\n' or ch == '\t' or ch >= ' ')
+
+    if strip_all_escapes:
+        # Remove all ANSI escape sequences
+        text = re.sub(r'\x1b\[[0-9;]*[a-zA-Z]', '', text)
+        text = re.sub(r'\x1b\].*?\x07', '', text)  # OSC sequences
+        text = re.sub(r'\x1b[PX^_].*?\x1b\\', '', text)  # Other escape sequences
+    else:
+        # Selectively remove dangerous sequences while keeping color codes
+        # Remove OSC (Operating System Command) sequences - can set window title, etc
+        text = re.sub(r'\x1b\].*?\x07', '', text)
+        text = re.sub(r'\x1b\].*?\x1b\\', '', text)
+
+        # Remove APC, DCS, PM, SOS sequences
+        text = re.sub(r'\x1b[PX^_].*?\x1b\\', '', text)
+
+        # Remove cursor movement and dangerous CSI sequences
+        # but keep SGR (colors) - they end with 'm'
+        text = re.sub(r'\x1b\[(?![0-9;]*m)[0-9;]*[A-HJKSTfsu]', '', text)
+
+        # Remove any remaining ESC characters not part of ANSI codes
+        text = re.sub(r'(?<!\x1b\[)\x1b(?!\[)', '', text)
+
+    return text
+
+
 def load_json_config(config_path: Path, default: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     """Load a JSON configuration file with error handling.
 
@@ -158,7 +212,20 @@ def load_json_config(config_path: Path, default: Optional[Dict[str, Any]] = None
             return json.load(f)
     except (OSError, json.JSONDecodeError) as e:
         # Log error for debugging but continue with defaults
-        import sys
 
-        print(f"Warning: Failed to load config from {config_path}: {e}", file=sys.stderr)
+        log_debug(f"Failed to load config from {config_path}: {e}")
         return default
+
+
+def log_debug(message: str) -> None:
+    """Log debug messages if debug mode is enabled.
+
+    Args:
+        message: Debug message to log
+    """
+    # Check if debug mode is enabled via environment variable
+    if os.environ.get("CLAUDELOG_DEBUG"):
+        print(f"[DEBUG] {message}", file=sys.stderr)
+
+    # Also use standard logging in case it's configured
+    logging.debug(message)

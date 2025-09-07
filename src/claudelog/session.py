@@ -14,6 +14,7 @@ from .constants import (
 )
 from .parsers.adaptive import AdaptiveParser
 from .themes import Colors
+from .utils import log_debug
 
 
 def path_to_session_dir(path):
@@ -98,7 +99,20 @@ def parse_session_file(filepath):
     parser = AdaptiveParser()  # Will auto-load config if available
 
     # Validate file path
-    filepath = Path(filepath).resolve()
+    filepath = Path(filepath)
+
+    # Check if path is a symlink and refuse to follow symlinks for security
+    try:
+        if filepath.is_symlink():
+            err_msg = f"{Colors.ERROR}Security: Refusing to follow symlink for session file"
+            print(f"{err_msg}{Colors.RESET}", file=sys.stderr)
+            return sessions
+    except (OSError, TypeError) as e:
+        # Path doesn't exist or is mocked in tests - continue with validation
+        log_debug(f"Could not check symlink status for {filepath}: {e}")
+
+    # Resolve to absolute path after symlink check
+    filepath = filepath.resolve()
     home_sessions = Path.home() / CLAUDE_PROJECTS_DIR
 
     # Ensure the file is within the expected Claude sessions directory
@@ -107,21 +121,24 @@ def parse_session_file(filepath):
         print(f"{err_msg}{Colors.RESET}", file=sys.stderr)
         return sessions
 
-    # Check file size to prevent memory exhaustion
-    try:
-        file_size = filepath.stat().st_size
-        if file_size > MAX_FILE_SIZE:
-            size_str = format_file_size(file_size)
-            max_mb = f"{MAX_FILE_SIZE_MB}MB"
-            err_msg = f"{Colors.ERROR}Warning: File too large ({size_str}). "
-            err_msg += f"Maximum size is {max_mb}"
-            print(f"{err_msg}{Colors.RESET}", file=sys.stderr)
-            return sessions
-    except OSError:
-        pass  # Continue if we can't get file size
-
     try:
         with open(filepath) as f:
+            # Check file size using fstat on open file handle to prevent TOCTOU
+            try:
+                import os
+                file_stat = os.fstat(f.fileno())
+                if file_stat.st_size > MAX_FILE_SIZE:
+                    size_str = format_file_size(file_stat.st_size)
+                    max_mb = f"{MAX_FILE_SIZE_MB}MB"
+                    err_msg = f"{Colors.ERROR}Warning: File too large ({size_str}). "
+                    err_msg += f"Maximum size is {max_mb}"
+                    print(f"{err_msg}{Colors.RESET}", file=sys.stderr)
+                    return sessions
+            except OSError as e:
+                # Log for debugging if needed but continue processing
+                # File size check is a safety measure, not a hard requirement
+                log_debug(f"Could not check file size for {filepath}: {e}")
+
             for line_num, line in enumerate(f, 1):
                 line = line.strip()
                 if line:
@@ -143,7 +160,9 @@ def parse_session_file(filepath):
                         raw_data["_parse_error"] = type(e).__name__
                         sessions.append(raw_data)
     except Exception as e:
-        print(f"{Colors.ERROR}Error reading file {filepath}: {e}{Colors.RESET}", file=sys.stderr)
+        # Sanitize error message to avoid exposing sensitive paths
+        err_msg = f"{Colors.ERROR}Error reading session file: {type(e).__name__}"
+        print(f"{err_msg}{Colors.RESET}", file=sys.stderr)
 
     return sessions
 

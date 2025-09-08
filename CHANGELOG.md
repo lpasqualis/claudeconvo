@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.1] - 2025-09-08
+
 ### Added
 - Watch mode (`-w`/`--watch`) for tailing session logs in real-time
 - ESC key support to exit watch mode (in addition to Ctrl+C)
@@ -44,7 +46,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Session listing and selection
 - Configurable display options via command-line flags
 
-[Unreleased]: https://github.com/lpasqualis/claudeconvo/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/lpasqualis/claudeconvo/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/lpasqualis/claudeconvo/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/lpasqualis/claudeconvo/releases/tag/v0.1.0
 ## [0.2.0] - 2025-09-08
 

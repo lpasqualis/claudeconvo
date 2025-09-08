@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "claudeconvo"
-version = "0.1.0"
+version = "0.1.1"
 description = "View Claude Code session history as a conversation"
 readme = "README.md"
 license = {text = "MIT"}
@@ -79,7 +79,7 @@ select = [
 ignore = []
 
 [tool.mypy]
-python_version = "3.8"
+python_version = "3.9"
 warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = true

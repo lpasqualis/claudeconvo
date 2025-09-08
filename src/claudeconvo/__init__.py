@@ -5,7 +5,7 @@ A command-line utility to view and analyze Claude Code session files stored
 in ~/.claude/projects/, formatted as readable conversations with colored output.
 """
 
-__version__ = "0.1.0"
+__version__ = "0.1.1"
 __author__  = "Lorenzo Pasqualis"
 
 from .claudeconvo import main

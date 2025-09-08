@@ -33,7 +33,7 @@ Additional template options:
 
 import re
 import textwrap
-from typing import Any, Callable, Dict, Optional
+from typing import Any, Callable, Dict, Optional, cast
 
 from .themes import Colors
 from .utils import get_terminal_width
@@ -335,14 +335,14 @@ def eval_terminal_expr(expr: str) -> int:
 
 ################################################################################
 
-def expand_repeat_macro(match) -> str:
+def expand_repeat_macro(match: Any) -> str:
     """Expand repeat macros like {{repeat:char:width}}."""
     parts = match.group(1).split(':')
     if len(parts) == 3 and parts[0] == 'repeat':
         char = parts[1]
         width = eval_terminal_expr(parts[2])
-        return char * width
-    return match.group(0)
+        return str(char * width)
+    return str(match.group(0))
 
 
 ################################################################################
@@ -436,7 +436,7 @@ def expand_macros(template: str, context: Dict[str, Any]) -> str:
         return template
 
     # Handle function calls {{func:name:arg1:arg2}}
-    def replace_func(match):
+    def replace_func(match: Any) -> str:
         parts = match.group(1).split(':')
         if parts[0] == 'func' and len(parts) > 1:
             func_name = parts[1]
@@ -456,10 +456,10 @@ def expand_macros(template: str, context: Dict[str, Any]) -> str:
                         resolved_args.append(arg)
 
                 try:
-                    return STYLE_FUNCTIONS[func_name](*resolved_args)
+                    return str(STYLE_FUNCTIONS[func_name](*resolved_args))
                 except Exception:
                     return ''
-        return match.group(0)
+        return str(match.group(0))
 
     template = re.sub(r'{{(func:[^}]+)}}', replace_func, template)
 
@@ -467,12 +467,12 @@ def expand_macros(template: str, context: Dict[str, Any]) -> str:
     template = re.sub(r'{{(repeat:[^}]+)}}', expand_repeat_macro, template)
 
     # Handle padding macros {{content:pad:width}}
-    def replace_pad(match):
+    def replace_pad(match: Any) -> str:
         parts = match.group(1).split(':')
         if len(parts) == 3 and parts[1] == 'pad':
             content = context.get(parts[0], '')
             return expand_pad_macro(str(content), parts[2])
-        return match.group(0)
+        return str(match.group(0))
 
     template = re.sub(r'{{(\w+:pad:[^}]+)}}', replace_pad, template)
 
@@ -495,12 +495,12 @@ def expand_macros(template: str, context: Dict[str, Any]) -> str:
     template = template.replace('{{nl}}', '\n')
 
     # Handle spaces {{sp:N}}
-    def replace_spaces(match):
+    def replace_spaces(match: Any) -> str:
         try:
             count = int(match.group(1))
             return ' ' * count
         except ValueError:
-            return match.group(0)
+            return str(match.group(0))
 
     template = re.sub(r'{{sp:(\d+)}}', replace_spaces, template)
 
@@ -530,7 +530,7 @@ class StyleRenderer:
         msg_type : str,
         content  : str = "",
         context  : Optional[Dict[str, Any]] = None,
-        **kwargs
+        **kwargs: Any
     ) -> str:
         """Render content using the style templates.
 
@@ -547,7 +547,7 @@ class StyleRenderer:
             # Fallback to plain text if template not found
             return content
 
-        template = self.style.templates[msg_type]
+        template: Dict[str, Any] = cast(Dict[str, Any], self.style.templates[msg_type])
 
         # Build context
         full_context = context or {}
@@ -578,7 +578,7 @@ class StyleRenderer:
             full_context['color'] = color_map.get(msg_type, '')
 
         # Build output
-        output = []
+        output: list[str] = []
 
         # Add label if present
         if template.get('label'):
@@ -662,7 +662,7 @@ class StyleRenderer:
         msg_type : str,
         content  : str = "",
         context  : Optional[Dict[str, Any]] = None,
-        **kwargs
+        **kwargs: Any
     ) -> str:
         """Render content inline (no label or separators).
 
@@ -680,7 +680,7 @@ class StyleRenderer:
         if msg_type not in self.style.templates:
             return content
 
-        template = self.style.templates[msg_type]
+        template: Dict[str, Any] = cast(Dict[str, Any], self.style.templates[msg_type])
 
         # Build context
         full_context = context or {}
@@ -731,7 +731,7 @@ def set_style(style_name: str) -> None:
 
 ################################################################################
 
-def render(msg_type: str, content: str = "", **context) -> str:
+def render(msg_type: str, content: str = "", **context: Any) -> str:
     """Render content using the global style.
 
     Args:
@@ -747,7 +747,7 @@ def render(msg_type: str, content: str = "", **context) -> str:
 
 ################################################################################
 
-def render_inline(msg_type: str, content: str = "", **context) -> str:
+def render_inline(msg_type: str, content: str = "", **context: Any) -> str:
     """Render content inline using the global style.
 
     Args:

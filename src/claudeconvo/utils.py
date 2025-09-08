@@ -234,7 +234,8 @@ def load_json_config(
 
     try:
         with open(config_path) as f:
-            return json.load(f)
+            data = json.load(f)
+            return data  # type: ignore[no-any-return]
     except (OSError, json.JSONDecodeError) as e:
         # Log error for debugging but continue with defaults
 

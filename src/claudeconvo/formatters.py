@@ -40,7 +40,7 @@ def truncate_text(
     if max_length == float("inf") and not force_truncate:
         return text
     if len(text) > max_length:
-        return text[:max_length] + "..."
+        return text[:int(max_length)] + "..."
     return text
 
 ################################################################################
@@ -61,7 +61,8 @@ def extract_message_text(message_content: Any) -> str:
     parser = AdaptiveParser()
 
     # Use parser's extraction method
-    return parser._extract_text_from_content(message_content)
+    result = parser._extract_text_from_content(message_content)
+    return result or ""
 
 ################################################################################
 
@@ -310,7 +311,7 @@ def format_conversation_entry(
     Returns:
         Formatted conversation entry or None if entry should be skipped
     """
-    output     = []
+    output: list[str] = []
     entry_type = entry.get("type", "unknown")
 
     # Handle summaries

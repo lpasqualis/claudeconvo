@@ -35,7 +35,30 @@ class ShowOptions:
     # Default options that are enabled without any flags
     DEFAULT_ENABLED = ["user", "assistant", "tools"]
 
-    def __init__(self, options_string=""):
+    # Dynamic attributes that will be set in __init__ based on OPTIONS
+    # Type stubs to help mypy understand what attributes will be available
+    user: bool
+    assistant: bool
+    summaries: bool
+    hooks: bool
+    metadata: bool
+    commands: bool
+    system: bool
+    tool_details: bool
+    tools: bool
+    errors: bool
+    request_ids: bool
+    flow: bool
+    unfiltered: bool
+    diagnostics: bool
+    paths: bool
+    levels: bool
+    sidechains: bool
+    user_types: bool
+    model: bool
+    all: bool
+
+    def __init__(self, options_string: str = "") -> None:
         """Initialize with a string of option flags (e.g., 'shm')."""
         # Set all options to False by default
         for _, attr, _ in self.OPTIONS:
@@ -55,7 +78,7 @@ class ShowOptions:
             # Parse the options string
             self.parse_options(options_string)
 
-    def parse_options(self, options_string):
+    def parse_options(self, options_string: str) -> None:
         """Parse option string and set corresponding flags.
 
         Lowercase letters enable options, uppercase letters disable them.
@@ -82,7 +105,7 @@ class ShowOptions:
         else:
             self.parse_options_internal(options_string)
 
-    def print_status(self):
+    def print_status(self) -> None:
         """Print the current status of all options."""
         # Import styles here to avoid circular import
         from .styles import render_inline

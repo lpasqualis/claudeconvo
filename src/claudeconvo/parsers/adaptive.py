@@ -32,7 +32,7 @@ class AdaptiveParser:
         Args:
             config_path: Path to field mappings config file. If None, uses defaults.
         """
-        self._field_cache = {}
+        self._field_cache: dict[str, Any] = {}
         self._load_config(config_path)
 
     ################################################################################
@@ -156,7 +156,7 @@ class AdaptiveParser:
 
     ################################################################################
 
-    def _find_field(self, obj: Dict[str, Any], candidates: List[str]) -> Optional[Any]:
+    def _find_field(self, obj: Dict[str, Any], candidates: List[str]) -> Any:
         """Find the first matching field from a list of candidates.
 
         This allows us to handle field renames across versions.
@@ -168,7 +168,7 @@ class AdaptiveParser:
 
     ################################################################################
 
-    def _extract_message(self, entry: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    def _extract_message(self, entry: Dict[str, Any]) -> Any:
         """Extract and normalize message content from various formats."""
         # Look for message in common locations
         message = self._find_field(entry, ["message", "msg", "data", "payload"])
@@ -322,7 +322,7 @@ class AdaptiveParser:
 
     def extract_tool_info(self, entry: Dict[str, Any]) -> Dict[str, Any]:
         """Extract tool-related information from any format."""
-        result = {"tool_uses": [], "tool_result": None}
+        result: Dict[str, Any] = {"tool_uses": [], "tool_result": None}
 
         message = entry.get("message")
         if isinstance(message, dict):
@@ -332,13 +332,15 @@ class AdaptiveParser:
                     if isinstance(item, dict):
                         item_type = item.get("type")
                         if item_type == "tool_use":
-                            result["tool_uses"].append(
-                                {
-                                    "name": item.get("name"),
-                                    "id": item.get("id"),
-                                    "input": item.get("input"),
-                                }
-                            )
+                            tool_uses = result["tool_uses"]
+                            if isinstance(tool_uses, list):  # Type guard for mypy
+                                tool_uses.append(
+                                    {
+                                        "name": item.get("name"),
+                                        "id": item.get("id"),
+                                        "input": item.get("input"),
+                                    }
+                                )
 
         # Look for tool results
         tool_result_fields = self.field_aliases.get("tool_result", ["toolUseResult"])

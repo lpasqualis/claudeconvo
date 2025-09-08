@@ -80,18 +80,18 @@ def determine_theme(
     """
     # 1. Command-line has highest priority
     if hasattr(args, "theme") and args.theme and args.theme != "list":
-        return args.theme
+        return str(args.theme)
     if hasattr(args, "no_color") and args.no_color:
         return "mono"
 
     # 2. Environment variable
     env_theme = os.environ.get("CLAUDECONVO_THEME")
     if env_theme:
-        return env_theme
+        return str(env_theme)
 
     # 3. Config file
     if config and "theme" in config:
-        return config["theme"]
+        return str(config["theme"])
 
     # 4. Default
     return "dark"

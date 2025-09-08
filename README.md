@@ -22,13 +22,6 @@ View Claude Code session history as a conversation
 pip install claudeconvo
 ```
 
-### Using Homebrew (macOS/Linux)
-
-```bash
-brew tap lpasqualis/tap
-brew install claudeconvo
-```
-
 ### From source
 
 ```bash

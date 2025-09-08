@@ -65,7 +65,7 @@ def path_to_session_dir(path: str) -> Path:
 
 ################################################################################
 
-def find_project_root(start_path: str = None) -> str:
+def find_project_root(start_path: str | None = None) -> str:
     """
     Find the project root by looking for markers like .git, .claude, etc.
 
@@ -139,7 +139,7 @@ def parse_session_file(filepath: Path) -> list[dict[str, Any]]:
     Returns:
         List of parsed session entries
     """
-    sessions = []
+    sessions: list[dict[str, Any]] = []
     parser   = AdaptiveParser()  # Will auto-load config if available
     tracker  = ToolInvocationTracker()  # Track tool invocations
 

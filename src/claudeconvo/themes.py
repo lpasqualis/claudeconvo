@@ -274,7 +274,7 @@ THEME_DESCRIPTIONS = {
 }
 
 
-def get_color_theme(theme_name="dark"):
+def get_color_theme(theme_name: str = "dark") -> ColorTheme:
     """Get a color theme instance by name.
 
     Args:
@@ -303,13 +303,13 @@ class _ColorsWrapper:
 
     def set_theme(self, theme: ColorTheme) -> None:
         """Set the current theme."""
-        self._theme = theme
+        self._theme = theme  # type: ignore[assignment]
 
     ################################################################################
 
     def __getattr__(self, name: str) -> str:
         """Delegate attribute access to the current theme."""
-        return getattr(self._theme, name)
+        return getattr(self._theme, name)  # type: ignore[no-any-return]
 
 
 # Single global instance that can be updated

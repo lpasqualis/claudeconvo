@@ -37,7 +37,7 @@ class LogAnalyzer:
         """
         self.verbose = verbose
         self.parser  = AdaptiveParser()
-        self.stats   = {
+        self.stats: Dict[str, Any] = {
             "versions"           : Counter(),
             "entry_types"        : Counter(),
             "field_patterns"     : defaultdict(set),
@@ -61,7 +61,7 @@ class LogAnalyzer:
             Analysis results for the file including entry counts,
             versions found, types discovered, and any errors
         """
-        file_stats = {
+        file_stats: Dict[str, Any] = {
             "filename" : filepath.name,
             "entries"  : 0,
             "versions" : set(),
@@ -262,7 +262,7 @@ class LogAnalyzer:
         # Missing Expected Fields
         if self.stats["missing_expected"]:
             report.append(f"\n{Colors.WARNING}Missing Expected Fields:{Colors.RESET}")
-            summary = defaultdict(int)
+            summary: Dict[str, int] = defaultdict(int)
             for version, issues in self.stats["missing_expected"].items():
                 for issue in issues:
                     key = f"{version}/{issue['type']}/{issue['field']}"
@@ -294,7 +294,7 @@ class LogAnalyzer:
         Returns:
             Test results including success rate and failure details
         """
-        results = {
+        results: Dict[str, Any] = {
             "total_tested" : 0,
             "successful"   : 0,
             "failed"       : [],

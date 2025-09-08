@@ -1,4 +1,4 @@
-.PHONY: help install install-dev test lint format clean build upload check-release
+.PHONY: help install install-dev test lint clean build upload check-release
 
 help:
 	@echo "Available commands:"
@@ -6,7 +6,6 @@ help:
 	@echo "  make install-dev   Install the package in development mode with dev dependencies"
 	@echo "  make test          Run tests with coverage"
 	@echo "  make lint          Run linting checks (ruff and mypy)"
-	@echo "  make format        Format code with black"
 	@echo "  make clean         Remove build artifacts and cache files"
 	@echo "  make build         Build distribution packages"
 	@echo "  make check-release Check if package is ready for release"
@@ -24,10 +23,6 @@ test:
 lint:
 	ruff check src/
 	mypy src/
-
-format:
-	black src/ tests/
-	ruff check src/ --fix
 
 clean:
 	rm -rf build/

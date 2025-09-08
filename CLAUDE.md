@@ -12,14 +12,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Keep it clean, don't accumulate temporary junk
 - Test it! All functionality must have unit tests, and tests must pass
 - Claude log files format WILL CHANGE, the command needs to be able to have proper error handling and make it easy to adapt to changes
-- It should be possible to run claudelog from any subfolder of a project, and the correct project should be identified automatically
+- It should be possible to run claudeconvo from any subfolder of a project, and the correct project should be identified automatically
 - User experience using the CLI must be IMPECCABLE, and follow best practices for outstanding CLI experiences
 - Warnings, errors, exceltions are NEVER acceptable, ANYWHERE. Nothing is done until there are no warnings, no errors and no exceptions. Don't EVER tell me "we still have an error but we are done". We are NOT done.
 - Never put imports in the middle of the code, all the imports should be at the top
+- ALWAYS follow the style guide in docs/python_code_style.py
 
 ## Project Overview
 
-`claudelog` is a command-line utility that displays Claude Code session history stored in `~/.claude/projects/` as readable, colored conversations. It has no external dependencies and works with Python 3.8+.
+`claudeconvo` is a command-line utility that displays Claude Code session history stored in `~/.claude/projects/` as readable, colored conversations. It has no external dependencies and works with Python 3.8+.
 
 
 ## Development Setup
@@ -42,7 +43,7 @@ make install-dev
 make test
 
 # Run specific test
-pytest tests/test_claudelog.py::TestShowOptions::test_default_options -v
+pytest tests/test_claudeconvo.py::TestShowOptions::test_default_options -v
 
 # Clean all build artifacts
 # Lint and type check
@@ -64,30 +65,30 @@ make check-release
 
 ### Core Components
 
-**ShowOptions** (`src/claudelog/options.py`)
+**ShowOptions** (`src/claudeconvo/options.py`)
 - Manages display filtering via single-letter flags (q=user, w=assistant, o=tools, etc.)
 - Implements complex parsing logic: lowercase enables, uppercase disables, 'a'=all, 'A'=none
 - Default shows user, assistant, and tools only
 
-**Session Management** (`src/claudelog/session.py`)
+**Session Management** (`src/claudeconvo/session.py`)
 - Handles session file discovery in `~/.claude/projects/`
 - Maps working directories to session storage using path_to_session_dir()
 - Integrates with adaptive parser for format normalization
 - Supports relative/absolute session references
 
-**Message Formatting** (`src/claudelog/formatters.py`)
+**Message Formatting** (`src/claudeconvo/formatters.py`)
 - Renders messages with ANSI colors based on ShowOptions
 - Handles tool executions, system messages, metadata
 - Implements smart truncation and text wrapping
 - Uses adaptive parser for content extraction
 
-**Color Themes** (`src/claudelog/themes.py`)
+**Color Themes** (`src/claudeconvo/themes.py`)
 - 8 built-in themes: dark, light, solarized-dark/light, dracula, nord, mono, high-contrast
 - Inheritance-based theme system to avoid repetition
 - Runtime theme switching via proxy pattern
 - Configurable via CLI, environment variable, or config file
 
-**Adaptive Parser** (`src/claudelog/parsers/adaptive.py`)
+**Adaptive Parser** (`src/claudeconvo/parsers/adaptive.py`)
 - Detects and normalizes different Claude log format versions
 - Handles format variations between Claude versions
 - Extensible parser system for future format changes
@@ -103,7 +104,7 @@ make check-release
 ## Testing Strategy
 
 ### Test Structure
-- Tests are organized by functional area in `tests/test_claudelog.py`
+- Tests are organized by functional area in `tests/test_claudeconvo.py`
 - Each major component has its own test class (TestShowOptions, TestMessageFormatting, TestSessionFunctions, etc.)
 - Coverage target: maintain high coverage for critical parsing and formatting logic
 
@@ -129,7 +130,7 @@ Tests use mocking to avoid filesystem and external dependencies:
 
 ## Release Process
 
-1. Update version in `pyproject.toml` and `src/claudelog/__init__.py`
+1. Update version in `pyproject.toml` and `src/claudeconvo/__init__.py`
 2. Update CHANGELOG.md
 3. Create and push tag: `git tag v0.1.0 && git push --tags`
 4. GitHub Actions handles PyPI release (requires PYPI_API_TOKEN secret)
@@ -145,7 +146,7 @@ Tests use mocking to avoid filesystem and external dependencies:
 
 ## Project-Specific Considerations
 
-- The main script `claudelog.py` is intentionally a single file for simplicity
+- The main script `claudeconvo.py` is intentionally a single file for simplicity
 - Color codes are optimized for dark terminals (may need adjustment for light themes)
 - Session file format is Claude Code's internal JSON structure - handle missing fields gracefully
 - Tool output truncation is context-aware (different limits for params vs results)

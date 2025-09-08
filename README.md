@@ -1,8 +1,8 @@
-# claudelog
+# claudeconvo
 
 View Claude Code session history as a conversation
 
-`claudelog` is a command-line utility that loads and displays Claude Code session files stored in `~/.claude/projects/` for the current working directory, formatted as readable conversations with colored output for different speakers and tool executions.
+`claudeconvo` is a command-line utility that loads and displays Claude Code session files stored in `~/.claude/projects/` for the current working directory, formatted as readable conversations with colored output for different speakers and tool executions.
 
 ## Features
 
@@ -19,21 +19,21 @@ View Claude Code session history as a conversation
 ### Using pip
 
 ```bash
-pip install claudelog
+pip install claudeconvo
 ```
 
 ### Using Homebrew (macOS/Linux)
 
 ```bash
 brew tap lpasqualis/tap
-brew install claudelog
+brew install claudeconvo
 ```
 
 ### From source
 
 ```bash
-git clone https://github.com/lpasqualis/claudelog.git
-cd claudelog
+git clone https://github.com/lpasqualis/claudeconvo.git
+cd claudeconvo
 pip install -e .
 ```
 
@@ -43,19 +43,19 @@ pip install -e .
 
 ```bash
 # View the most recent session
-claudelog
+claudeconvo
 
 # View a specific session by number
-claudelog 3
+claudeconvo 3
 
 # View previous session
-claudelog -1
+claudeconvo -1
 
 # Watch a session for new entries (tail mode)
-claudelog -w
+claudeconvo -w
 
 # Watch a specific session
-claudelog -f session-123 -w
+claudeconvo -f session-123 -w
 ```
 
 ### Filtering Options
@@ -64,16 +64,16 @@ Use single-letter flags to control what content is displayed:
 
 ```bash
 # Show only user and assistant messages (default)
-claudelog
+claudeconvo
 
 # Show all content
-claudelog -a
+claudeconvo -a
 
 # Show summaries and metadata
-claudelog -sm
+claudeconvo -sm
 
 # Show tool executions with full details
-claudelog -ot
+claudeconvo -ot
 ```
 
 #### Available Options
@@ -108,13 +108,13 @@ Choose from multiple color themes optimized for different terminal backgrounds:
 
 ```bash
 # Use light theme for white/light terminals
-claudelog --theme light
+claudeconvo --theme light
 
 # Use high contrast theme for accessibility
-claudelog --theme high-contrast
+claudeconvo --theme high-contrast
 
 # Disable colors entirely
-claudelog --no-color
+claudeconvo --no-color
 ```
 
 Available themes:
@@ -128,12 +128,12 @@ Available themes:
 - `high-contrast` - Maximum contrast for accessibility
 
 Set a default theme using:
-- Environment variable: `export CLAUDELOG_THEME=light`
-- Config file: Create `~/.claudelogrc` with `{"theme": "light"}`
+- Environment variable: `export CLAUDECONVO_THEME=light`
+- Config file: Create `~/.claudeconvorc` with `{"theme": "light"}`
 
 ### Configuration
 
-Create a `~/.claudelogrc` file to set persistent preferences:
+Create a `~/.claudeconvorc` file to set persistent preferences:
 
 ```json
 {
@@ -145,20 +145,20 @@ Create a `~/.claudelogrc` file to set persistent preferences:
 Configuration priority (highest to lowest):
 1. Command-line arguments
 2. Environment variables
-3. Config file (`~/.claudelogrc`)
+3. Config file (`~/.claudeconvorc`)
 4. Built-in defaults
 
 ### Help and Available Sessions
 
 ```bash
 # Show help
-claudelog --help
+claudeconvo --help
 
 # List available sessions
-claudelog --list
+claudeconvo --list
 
 # Show what options would display
-claudelog -?sm
+claudeconvo -?sm
 ```
 
 ## Requirements
@@ -171,8 +171,8 @@ claudelog -?sm
 ### Setting up development environment
 
 ```bash
-git clone https://github.com/lpasqualis/claudelog.git
-cd claudelog
+git clone https://github.com/lpasqualis/claudeconvo.git
+cd claudeconvo
 pip install -e ".[dev]"
 ```
 
@@ -210,4 +210,4 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## Support
 
-If you encounter any problems or have suggestions, please [open an issue](https://github.com/lpasqualis/claudelog/issues).
+If you encounter any problems or have suggestions, please [open an issue](https://github.com/lpasqualis/claudeconvo/issues).

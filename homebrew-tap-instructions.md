@@ -1,6 +1,6 @@
 # Homebrew Tap Setup Instructions
 
-To make claudelog available via Homebrew, you'll need to create a separate tap repository.
+To make claudeconvo available via Homebrew, you'll need to create a separate tap repository.
 
 ## Steps to Create Your Homebrew Tap
 
@@ -17,18 +17,18 @@ To make claudelog available via Homebrew, you'll need to create a separate tap r
 
 3. **Copy the formula** from this project:
    ```bash
-   cp /path/to/claudelog/Formula/claudelog.rb Formula/claudelog.rb
+   cp /path/to/claudeconvo/Formula/claudeconvo.rb Formula/claudeconvo.rb
    ```
 
 4. **After releasing a version**, update the formula:
    - Replace the `url` with the actual release tarball URL
-   - Calculate the SHA256: `curl -L https://github.com/lpasqualis/claudelog/archive/refs/tags/v0.1.0.tar.gz | shasum -a 256`
+   - Calculate the SHA256: `curl -L https://github.com/lpasqualis/claudeconvo/archive/refs/tags/v0.1.0.tar.gz | shasum -a 256`
    - Update the `sha256` field in the formula
 
 5. **Commit and push** the formula:
    ```bash
-   git add Formula/claudelog.rb
-   git commit -m "Add claudelog formula"
+   git add Formula/claudeconvo.rb
+   git commit -m "Add claudeconvo formula"
    git push
    ```
 
@@ -36,12 +36,12 @@ To make claudelog available via Homebrew, you'll need to create a separate tap r
 
 ```bash
 brew tap lpasqualis/tap
-brew install claudelog
+brew install claudeconvo
 ```
 
 Or in a single command:
 ```bash
-brew install lpasqualis/tap/claudelog
+brew install lpasqualis/tap/claudeconvo
 ```
 
 ## Updating the Formula
@@ -50,7 +50,7 @@ When you release new versions:
 
 1. Update the `url` and `sha256` in the formula
 2. Commit and push to your tap repository
-3. Users can update with: `brew upgrade claudelog`
+3. Users can update with: `brew upgrade claudeconvo`
 
 ## Alternative: Homebrew Core
 

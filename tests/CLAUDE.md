@@ -1,13 +1,13 @@
-# Testing Documentation for claudelog
+# Testing Documentation for claudeconvo
 
 ## Overview
 
-This document describes the testing approach for `claudelog`, including the comprehensive fixture system, test organization, and testing best practices.
+This document describes the testing approach for `claudeconvo`, including the comprehensive fixture system, test organization, and testing best practices.
 
 ## Test Organization
 
 ### Test Structure
-- **Main test file**: `tests/test_claudelog.py` - Core functionality tests
+- **Main test file**: `tests/test_claudeconvo.py` - Core functionality tests
 - **Version compatibility**: `tests/test_version_compatibility.py` - Tests against all collected fixtures
 - **Test classes**: Organized by functional area (TestShowOptions, TestMessageFormatting, TestSessionFunctions, etc.)
 
@@ -18,7 +18,7 @@ This document describes the testing approach for `claudelog`, including the comp
 make test
 
 # Run specific test
-pytest tests/test_claudelog.py::TestShowOptions::test_default_options -v
+pytest tests/test_claudeconvo.py::TestShowOptions::test_default_options -v
 
 # Run with verbose output
 pytest -v
@@ -46,7 +46,7 @@ Tests use extensive mocking to avoid filesystem dependencies:
 
 ## Test Fixtures System
 
-The test suite includes a comprehensive fixture system to ensure `claudelog` remains compatible with all versions of Claude Code logs as they evolve. Claude Code releases new versions frequently (often daily), and the log format can change between versions.
+The test suite includes a comprehensive fixture system to ensure `claudeconvo` remains compatible with all versions of Claude Code logs as they evolve. Claude Code releases new versions frequently (often daily), and the log format can change between versions.
 
 ## Fixture Collection System
 
@@ -86,7 +86,7 @@ The anonymization script replaces:
 - **Personal names**: "Lorenzo", "Pasqualis" → removed
 - **Project paths**: `/Dropbox/`, `/Google Drive/` → `/Projects/`
 - **Company names**: "DreamBox", "UIEvolution" → generic names
-- **Project names**: "claudelog" → "LogViewer", "WritingWithClaude" → "ExampleProject"
+- **Project names**: "claudeconvo" → "LogViewer", "WritingWithClaude" → "ExampleProject"
 - **UUIDs**: Replaced with deterministic fake UUIDs
 - **Session IDs**: → "session-xxx"
 - **Message content**: → "Sample text" or generic content
@@ -124,7 +124,7 @@ Update fixtures when:
 
 5. **Check for parser issues**:
    ```bash
-   claudelog --diagnose
+   claudeconvo --diagnose
    ```
 
 ## Test Coverage
@@ -144,7 +144,7 @@ The `test_version_compatibility.py` test suite verifies:
 The parser uses an adaptive approach rather than version-specific schemas:
 
 1. **Field Discovery**: Dynamically discovers fields in each entry
-2. **Alias Mapping**: Uses `src/claudelog/field_mappings.json` to handle field name variations
+2. **Alias Mapping**: Uses `src/claudeconvo/field_mappings.json` to handle field name variations
 3. **Graceful Degradation**: Shows what it can parse, preserves what it can't
 4. **Forward Compatibility**: Unknown fields are preserved as `_unknown_*`
 
@@ -155,10 +155,10 @@ When encountering new log formats:
 1. **Collect samples** from the new version
 2. **Run diagnostics** to identify unknown fields:
    ```bash
-   claudelog --diagnose --verbose
+   claudeconvo --diagnose --verbose
    ```
 
-3. **Update field mappings** in `src/claudelog/field_mappings.json`:
+3. **Update field mappings** in `src/claudeconvo/field_mappings.json`:
    ```json
    {
      "field_aliases": {
@@ -195,7 +195,7 @@ If sensitive data is detected after anonymization:
 
 ### Test Failures
 If compatibility tests fail:
-- Run `claudelog --diagnose` to understand the issue
+- Run `claudeconvo --diagnose` to understand the issue
 - Update field mappings if new fields are discovered
 - Consider if the parser logic needs enhancement
 
@@ -218,10 +218,10 @@ python tests/fixtures/anonymize.py
 pytest tests/test_version_compatibility.py -v
 
 # 6. If tests fail, diagnose the issue
-claudelog --diagnose --verbose
+claudeconvo --diagnose --verbose
 
 # 7. Update field mappings if needed
-# Edit src/claudelog/field_mappings.json
+# Edit src/claudeconvo/field_mappings.json
 
 # 8. Re-run tests to confirm fixes
 pytest tests/test_version_compatibility.py -v

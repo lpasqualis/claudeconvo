@@ -1,6 +1,6 @@
-# Contributing to claudelog
+# Contributing to claudeconvo
 
-Thank you for your interest in contributing to claudelog! This document provides guidelines and instructions for contributing.
+Thank you for your interest in contributing to claudeconvo! This document provides guidelines and instructions for contributing.
 
 ## Code of Conduct
 
@@ -10,7 +10,7 @@ Please be respectful and constructive in all interactions.
 
 ### Reporting Issues
 
-1. Check if the issue already exists in the [issue tracker](https://github.com/lpasqualis/claudelog/issues)
+1. Check if the issue already exists in the [issue tracker](https://github.com/lpasqualis/claudeconvo/issues)
 2. If not, create a new issue with:
    - Clear title and description
    - Steps to reproduce (if applicable)
@@ -65,8 +65,8 @@ Please be respectful and constructive in all interactions.
 
 1. Clone your fork:
    ```bash
-   git clone https://github.com/YOUR_USERNAME/claudelog.git
-   cd claudelog
+   git clone https://github.com/YOUR_USERNAME/claudeconvo.git
+   cd claudeconvo
    ```
 
 2. Install in development mode:
@@ -104,7 +104,7 @@ Please be respectful and constructive in all interactions.
 
 Releases are managed by maintainers:
 
-1. Update version in `pyproject.toml` and `src/claudelog/__init__.py`
+1. Update version in `pyproject.toml` and `src/claudeconvo/__init__.py`
 2. Update CHANGELOG.md
 3. Create git tag: `git tag -a v0.1.0 -m "Release version 0.1.0"`
 4. Push tag: `git push origin v0.1.0`

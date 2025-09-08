@@ -2,7 +2,7 @@
 
 ## Overview
 
-`claudelog` includes a diagnostic mode to help understand and adapt to evolving Claude log formats. As Claude Code releases new versions frequently, the log format can change, and this diagnostic tool helps identify those changes.
+`claudeconvo` includes a diagnostic mode to help understand and adapt to evolving Claude log formats. As Claude Code releases new versions frequently, the log format can change, and this diagnostic tool helps identify those changes.
 
 ## Usage
 
@@ -11,7 +11,7 @@
 Run diagnostics on collected fixture samples:
 
 ```bash
-claudelog --diagnose
+claudeconvo --diagnose
 ```
 
 ### Analyze Specific File
@@ -19,7 +19,7 @@ claudelog --diagnose
 Analyze a specific session file:
 
 ```bash
-claudelog --diagnose-file ~/.claude/projects/your-project/session.jsonl
+claudeconvo --diagnose-file ~/.claude/projects/your-project/session.jsonl
 ```
 
 ### Verbose Mode
@@ -27,7 +27,7 @@ claudelog --diagnose-file ~/.claude/projects/your-project/session.jsonl
 Get detailed field pattern information:
 
 ```bash
-claudelog --diagnose --verbose
+claudeconvo --diagnose --verbose
 ```
 
 ## What It Analyzes
@@ -57,7 +57,7 @@ This collects sample entries from your local Claude logs and saves them as test 
 
 When the diagnostic tool identifies unknown fields:
 
-1. **Update field mappings**: Edit `src/claudelog/field_mappings.json` to add new field aliases
+1. **Update field mappings**: Edit `src/claudeconvo/field_mappings.json` to add new field aliases
 2. **Run tests**: Verify compatibility with `make test`
 3. **Collect new samples**: Update fixtures if encountering new versions
 

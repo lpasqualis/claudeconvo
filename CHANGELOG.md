@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to claudelog will be documented in this file.
+All notable changes to claudeconvo will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
@@ -13,8 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Multiple color themes optimized for different terminal backgrounds
 - Support for 8 built-in themes: dark, light, solarized-dark/light, dracula, nord, mono, high-contrast
 - `--theme` command-line option to select color themes
-- Environment variable `CLAUDELOG_THEME` for setting default theme
-- Configuration file support (`~/.claudelogrc`) for persistent settings
+- Environment variable `CLAUDECONVO_THEME` for setting default theme
+- Configuration file support (`~/.claudeconvorc`) for persistent settings
 - Ability to set default show options in config file
 
 ### Changed
@@ -44,5 +44,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Session listing and selection
 - Configurable display options via command-line flags
 
-[Unreleased]: https://github.com/lpasqualis/claudelog/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/lpasqualis/claudelog/releases/tag/v0.1.0
+[Unreleased]: https://github.com/lpasqualis/claudeconvo/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/lpasqualis/claudeconvo/releases/tag/v0.1.0
+## [0.2.0] - 2025-09-08
+
+### Changed
+- **BREAKING**: Renamed project from `claudelog` to `claudeconvo`
+  - Command changed from `claudelog` to `claudeconvo`
+  - Package name changed from `claudelog` to `claudeconvo`
+  - All imports must be updated to use `claudeconvo`
+  - Environment variables changed from `CLAUDELOG_*` to `CLAUDECONVO_*`
+- Updated all documentation to reflect new name
+- GitHub repository will be renamed to match
+
+### Migration
+- Users should uninstall `claudelog` and install `claudeconvo` instead
+- See docs/MIGRATION.md for detailed migration instructions

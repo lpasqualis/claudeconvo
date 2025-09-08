@@ -14,7 +14,7 @@ Example usage:
 import json
 from collections import Counter, defaultdict
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Set
 
 from .constants import MAX_PARSE_ERRORS_DISPLAY, MAX_TYPE_COUNTS_DISPLAY
 from .parsers.adaptive import AdaptiveParser
@@ -46,6 +46,44 @@ class LogAnalyzer:
             "tool_patterns"      : defaultdict(set),
             "content_structures" : defaultdict(set),
             "missing_expected"   : defaultdict(list),
+        }
+        self._load_known_fields()
+
+    ################################################################################
+
+    def _load_known_fields(self) -> None:
+        """Load known fields from field_mappings.json."""
+        self.known_fields: Set[str] = set()
+
+        # Load field mappings configuration
+        mappings_file = Path(__file__).parent / "field_mappings.json"
+        if mappings_file.exists():
+            try:
+                with open(mappings_file) as f:
+                    mappings = json.load(f)
+
+                # Add all field aliases from the mappings
+                for field_aliases in mappings.get("field_aliases", {}).values():
+                    self.known_fields.update(field_aliases)
+
+                # Add basic fields that might not be in aliases
+                self.known_fields.update([
+                    "type", "message", "summary", "leafUuid"
+                ])
+            except Exception:
+                # Fall back to a minimal set if loading fails
+                self._use_fallback_known_fields()
+        else:
+            self._use_fallback_known_fields()
+
+    def _use_fallback_known_fields(self) -> None:
+        """Use fallback known fields if field_mappings.json is unavailable."""
+        self.known_fields = {
+            "type", "version", "timestamp", "sessionId", "uuid",
+            "parentUuid", "isSidechain", "isMeta", "userType", "cwd",
+            "gitBranch", "level", "requestId", "message", "toolUseResult",
+            "summary", "leafUuid", "content", "role", "toolUseID",
+            "isCompactSummary", "isVisibleInTranscriptOnly", "subtype"
         }
 
     ################################################################################
@@ -126,15 +164,8 @@ class LogAnalyzer:
         self.stats["field_patterns"][version].add(fields)
 
         # Check for unknown fields not in our parser config
-        known_fields = {
-            "type", "version", "timestamp", "sessionId", "uuid",
-            "parentUuid", "isSidechain", "isMeta", "userType", "cwd",
-            "gitBranch", "level", "requestId", "message", "toolUseResult",
-            "summary", "leafUuid", "content", "role",
-        }
-
         for field in entry.keys():
-            if field not in known_fields:
+            if field not in self.known_fields:
                 self.stats["unknown_fields"][version].add(field)
                 if self.verbose:
                     file_stats["warnings"].append(

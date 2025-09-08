@@ -172,14 +172,15 @@ def handle_theme_listing(args):
         True if themes were listed, False otherwise
     """
     if hasattr(args, "theme") and args.theme == "list":
-        print("\nAvailable color themes:")
-        print(SEPARATOR_CHAR * THEME_LIST_SEPARATOR_WIDTH)
+        from .styles import render_inline
+        print("\n" + render_inline("header", "Available color themes:"))
+        print(render_inline("separator", ""))
         for name, desc in THEME_DESCRIPTIONS.items():
             print(f"  {name:{THEME_NAME_DISPLAY_WIDTH}} - {desc}")
-        print(SEPARATOR_CHAR * THEME_LIST_SEPARATOR_WIDTH)
-        print("\nUsage: claudelog --theme <theme_name>")
-        print("Set default: export CLAUDELOG_THEME=<theme_name>")
-        print("Config file: ~/.claudelogrc")
+        print(render_inline("separator", ""))
+        print("\n" + render_inline("info", "Usage: claudelog --theme <theme_name>"))
+        print(render_inline("info", "Set default: export CLAUDELOG_THEME=<theme_name>"))
+        print(render_inline("info", "Config file: ~/.claudelogrc"))
         return True
     return False
 
@@ -193,14 +194,14 @@ def handle_project_listing(args):
     if not args.list_projects:
         return None
 
-    from .themes import Colors
+    from .styles import render_inline
 
     projects_dir = Path.home() / CLAUDE_PROJECTS_DIR
 
     if projects_dir.exists():
         projects = sorted([d for d in projects_dir.iterdir() if d.is_dir()])
         msg = f"Found {len(projects)} project(s) with session history:"
-        print(f"\n{Colors.BOLD}{msg}{Colors.RESET}")
+        print("\n" + render_inline("header", msg))
         for project in projects:
             # Convert back to path for display
             name = project.name[1:]  # Remove leading dash
@@ -211,10 +212,10 @@ def handle_project_listing(args):
 
             # Count sessions
             session_count = len(list(project.glob("*.jsonl")))
-            print(f"  {Colors.BOLD}{path}{Colors.RESET} ({session_count} sessions)")
+            print(f"  {render_inline('header', path)} ({session_count} sessions)")
         return 0
     else:
-        print(f"{Colors.ERROR}No projects found{Colors.RESET}")
+        print(render_inline("error", "No projects found"))
         return 1
 
 
@@ -237,25 +238,26 @@ def get_session_directory(args):
 
 def handle_no_session_directory(project_path):
     """Handle the case when no session directory is found."""
-    from .themes import Colors
+    from .styles import render_inline
 
-    print(f"{Colors.ERROR}No session history found for project: {project_path}{Colors.RESET}")
+    print(render_inline("error", f"No session history found for project: {project_path}"))
     tip = "Tip: Use --list-projects to see all projects with sessions"
-    print(f"{Colors.TIMESTAMP}{tip}{Colors.RESET}")
+    print(render_inline("info", tip))
     note = "Note: Both underscores and slashes in paths become dashes in session folders"
-    print(f"{Colors.TIMESTAMP}{note}{Colors.RESET}")
+    print(render_inline("info", note))
     # Try with underscores converted to dashes
     if "_" in project_path:
         alt_path = project_path.replace("_", "-")
         cmd = f"{os.path.basename(sys.argv[0])} -p {alt_path}"
-        print(f"{Colors.TIMESTAMP}Try: {cmd}{Colors.RESET}")
+        print(render_inline("info", f"Try: {cmd}"))
 
 
 def list_files_only(session_files):
     """Display list of session files."""
+    from .styles import render_inline
     from .themes import Colors
 
-    print(f"\n{Colors.BOLD}Found {len(session_files)} session file(s):{Colors.RESET}")
+    print("\n" + render_inline("header", f"Found {len(session_files)} session file(s):"))
     for i, filepath in enumerate(session_files):
         file_stat = filepath.stat()  # Single stat call to avoid TOCTOU
         mtime = datetime.fromtimestamp(file_stat.st_mtime)
@@ -269,7 +271,7 @@ def list_files_only(session_files):
         idx_str = f"{i+1:{LIST_ITEM_NUMBER_WIDTH}}"
         print(
             f"  {Colors.BOLD}{idx_str}.{Colors.RESET} {truncated_name:{filename_width}} "
-            f"{Colors.TIMESTAMP}{timestamp}  {size_str:>8}{Colors.RESET}"
+            f"{render_inline('info', timestamp + '  ' + size_str.rjust(8))}"
         )
 
 
@@ -279,7 +281,7 @@ def get_files_to_show(args, session_files):
     Returns:
         List of files to show or None on error
     """
-    from .themes import Colors
+    from .styles import render_inline
 
     files_to_show = []
 
@@ -291,18 +293,18 @@ def get_files_to_show(args, session_files):
                 # Add explicit length check before conversion to prevent extremely large numbers
                 if len(args.file) > MAX_FILE_INDEX_DIGITS:
                     error_msg = f"Error: Index value too large: {args.file}"
-                    print(f"{Colors.ERROR}{error_msg}{Colors.RESET}")
+                    print(render_inline("error", error_msg))
                     return None
                 idx = int(args.file) - 1
                 if 0 <= idx < len(session_files):
                     files_to_show = [session_files[idx]]
                 else:
                     error_msg = f"Error: Index {args.file} out of range (1-{len(session_files)})"
-                    print(f"{Colors.ERROR}{error_msg}{Colors.RESET}")
+                    print(render_inline("error", error_msg))
                     return None
             except (ValueError, OverflowError):
                 error_msg = f"Error: Invalid index value: {args.file}"
-                print(f"{Colors.ERROR}{error_msg}{Colors.RESET}")
+                print(render_inline("error", error_msg))
                 return None
         else:
             # Treat as filename
@@ -311,7 +313,7 @@ def get_files_to_show(args, session_files):
                     files_to_show = [f]
                     break
             if not files_to_show:
-                print(f"{Colors.ERROR}Error: File '{args.file}' not found{Colors.RESET}")
+                print(render_inline("error", f"Error: File '{args.file}' not found"))
                 return None
     else:
         # Show recent files
@@ -352,8 +354,11 @@ def main():
 
     # Apply theme
     from .themes import Colors
+    from .styles import set_style
 
     Colors.set_theme(get_color_theme(theme_name))
+    # Also set the formatting style (for now, use default)
+    set_style("default")
 
     # Handle project listing
     project_list_result = handle_project_listing(args)
@@ -371,7 +376,8 @@ def main():
     session_files = list_session_files(session_dir)
 
     if not session_files:
-        print(f"{Colors.ERROR}No session files found{Colors.RESET}")
+        from .styles import render_inline
+        print(render_inline("error", "No session files found"))
         return 1
 
     # If listing files only
@@ -387,14 +393,15 @@ def main():
     # Display sessions using unified approach
     for filepath in files_to_show:
         if len(files_to_show) > 1:
+            from .styles import render_inline
             sep_width = get_separator_width()
-            print(f"\n{Colors.SEPARATOR}{'=' * sep_width}{Colors.RESET}")
-            print(f"{Colors.BOLD}Session: {filepath.name}{Colors.RESET}")
+            print("\n" + render_inline("separator", "="* sep_width))
+            print(render_inline("header", f"Session: {filepath.name}"))
             file_stat = filepath.stat()  # Single stat call to avoid TOCTOU
             mtime = datetime.fromtimestamp(file_stat.st_mtime)
             date_str = mtime.strftime("%Y-%m-%d %H:%M:%S")
-            print(f"{Colors.TIMESTAMP}Date: {date_str}{Colors.RESET}")
-            print(f"{Colors.SEPARATOR}{'=' * sep_width}{Colors.RESET}")
+            print(render_inline("info", f"Date: {date_str}"))
+            print(render_inline("separator", "="* sep_width))
 
         # Use unified display function for both normal and watch mode
         display_session(
@@ -402,14 +409,16 @@ def main():
         )
 
         if not args.watch and len(files_to_show) > 1:
+            from .styles import render_inline
             sep_width = get_separator_width()
-            print(f"\n{Colors.SEPARATOR}{'─' * sep_width}{Colors.RESET}")
-            print(f"{Colors.TIMESTAMP}End of session{Colors.RESET}")
+            print("\n" + render_inline("separator", "─" * sep_width))
+            print(render_inline("info", "End of session"))
 
     if not args.watch and len(files_to_show) == 1:
+        from .styles import render_inline
         sep_width = get_separator_width()
-        print(f"\n{Colors.SEPARATOR}{'─' * sep_width}{Colors.RESET}")
-        print(f"{Colors.TIMESTAMP}End of session{Colors.RESET}")
+        print("\n" + render_inline("separator", "─" * sep_width))
+        print(render_inline("info", "End of session"))
 
     return 0
 
@@ -418,7 +427,8 @@ if __name__ == "__main__":
     try:
         sys.exit(main())
     except KeyboardInterrupt:
-        print(f"\n{Colors.ERROR}Interrupted{Colors.RESET}")
+        from .styles import render_inline
+        print("\n" + render_inline("error", "Interrupted"))
         sys.exit(1)
     except BrokenPipeError:
         # Handle pipe errors gracefully (e.g., when piping to head)

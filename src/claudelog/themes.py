@@ -1,4 +1,34 @@
-"""Color theme definitions for claudelog."""
+"""Color theme definitions for claudelog.
+
+This module provides a flexible color theming system using ANSI escape codes.
+It supports multiple built-in themes and allows runtime theme switching.
+
+Built-in themes:
+  - dark: Optimized for dark terminal backgrounds (default)
+  - light: Optimized for light terminal backgrounds
+  - solarized-dark: Solarized Dark color scheme
+  - solarized-light: Solarized Light color scheme
+  - dracula: Dracula color theme
+  - nord: Nord color theme
+  - mono: Monochrome (no colors, only bold/dim)
+  - high-contrast: High contrast colors for accessibility
+
+The theme system uses:
+  - Inheritance: Themes inherit from ColorTheme base class
+  - Runtime switching: Colors proxy allows changing themes without restart
+  - Semantic colors: Named by purpose (USER, ASSISTANT, ERROR) not hue
+  - ANSI codes: Direct terminal escape sequences for maximum compatibility
+
+Color categories:
+  - Message types: USER, ASSISTANT, SYSTEM
+  - Tool-related: TOOL_NAME, TOOL_PARAM, TOOL_OUTPUT
+  - Status: ERROR, WARNING, SUCCESS
+  - UI elements: SEPARATOR, METADATA, TIMESTAMP
+  - Formatting: BOLD, DIM, RESET
+
+The Colors object is a proxy that delegates to the current theme,
+allowing themes to be changed at runtime via set_theme().
+"""
 
 
 class ColorTheme:

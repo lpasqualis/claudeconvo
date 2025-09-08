@@ -4,6 +4,7 @@ import re
 from datetime import datetime
 
 from .parsers.adaptive import AdaptiveParser
+from .styles import render, render_inline
 from .themes import Colors
 from .utils import format_uuid, sanitize_terminal_output
 
@@ -52,20 +53,21 @@ def format_tool_use(entry, show_options):
                     tool_id = item.get("id", "")
                     tool_input = item.get("input", {})
 
-                    output.append(f"\n{Colors.TOOL_NAME}🔧 Tool: {tool_name}{Colors.RESET}")
+                    # Render tool invocation
+                    output.append(render("tool_invocation", name=tool_name))
 
                     # Show tool ID if requested
                     if show_options.tool_details and tool_id:
-                        output.append(f"   {Colors.METADATA}ID: {tool_id}{Colors.RESET}")
+                        output.append(render("metadata", content=f"   ID: {tool_id}"))
 
                     # Format parameters
                     if tool_input:
                         max_len = show_options.get_max_length("tool_param")
                         for key, value in tool_input.items():
                             value_str = truncate_text(str(value), max_len)
-                            output.append(f"   {Colors.TOOL_PARAM}{key}: {value_str}{Colors.RESET}")
+                            output.append(render("tool_parameter", key=key, value=value_str))
 
-    return "\n".join(output) if output else None
+    return ''.join(output) if output else None
 
 
 def format_tool_result(entry, show_options):
@@ -80,10 +82,10 @@ def format_tool_result(entry, show_options):
             if result.startswith("Error:"):
                 error_max = show_options.get_max_length("error")
                 result = truncate_text(result, error_max)
-                return f"{Colors.ERROR}   ❌ {result}{Colors.RESET}"
+                return render("tool_result_error", content=result)
             else:
                 result = truncate_text(result, max_len)
-                return f"{Colors.TOOL_OUTPUT}   ✓ Result: {result}{Colors.RESET}"
+                return render("tool_result_success", content=result)
         elif isinstance(tool_result, list):
             results = []
             for item in tool_result:
@@ -91,7 +93,7 @@ def format_tool_result(entry, show_options):
                     content = item["content"]
                     if isinstance(content, str):
                         content = truncate_text(content, max_len)
-                        results.append(f"{Colors.TOOL_OUTPUT}   ✓ {content}{Colors.RESET}")
+                        results.append(render("tool_result_success", content=content))
             return "\n".join(results) if results else None
     return None
 
@@ -102,10 +104,10 @@ def _format_summary_entry(entry, show_options):
         return None
     output = []
     summary = entry.get("summary", "N/A")
-    output.append(f"\n{Colors.SEPARATOR}📝 Summary: {summary}{Colors.RESET}")
+    output.append(render("summary", content=summary))
     if show_options.metadata and "leafUuid" in entry:
-        output.append(f"   {Colors.METADATA}Session: {entry['leafUuid']}{Colors.RESET}")
-    return "\n".join(output)
+        output.append(render("metadata", content=f"   Session: {entry['leafUuid']}"))
+    return ''.join(output)
 
 
 def _format_timestamp(entry, show_timestamp):
@@ -114,7 +116,7 @@ def _format_timestamp(entry, show_timestamp):
     if show_timestamp and "timestamp" in entry:
         try:
             dt = datetime.fromisoformat(entry["timestamp"].replace("Z", "+00:00"))
-            timestamp_str = f"{Colors.TIMESTAMP}[{dt.strftime('%H:%M:%S')}] {Colors.RESET}"
+            timestamp_str = render_inline("timestamp", content=dt.strftime('%H:%M:%S'))
         except (ValueError, TypeError, AttributeError):
             # ValueError: Invalid timestamp format
             # TypeError: timestamp is not a string
@@ -146,7 +148,7 @@ def _build_metadata_lines(entry, show_options):
                     model_display = model_name
             else:
                 model_display = model_name
-            metadata_lines.append(f"{Colors.METADATA}[Model: {model_display}]{Colors.RESET}")
+            metadata_lines.append(render("metadata", content=f"Model: {model_display}"))
 
     # Basic metadata
     if show_options.metadata:
@@ -160,34 +162,34 @@ def _build_metadata_lines(entry, show_options):
         if "gitBranch" in entry:
             meta_items.append(f"git:{entry['gitBranch']}")
         if meta_items:
-            metadata_lines.append(f"{Colors.METADATA}[{' | '.join(meta_items)}]{Colors.RESET}")
+            metadata_lines.append(render("metadata", content=' | '.join(meta_items)))
 
     # Request IDs
     if show_options.request_ids and "requestId" in entry:
-        metadata_lines.append(f"{Colors.METADATA}Request: {entry['requestId']}{Colors.RESET}")
+        metadata_lines.append(render("metadata", content=f"Request: {entry['requestId']}"))
 
     # Flow information
     if show_options.flow and "parentUuid" in entry and entry["parentUuid"]:
         parent_id = format_uuid(entry["parentUuid"])
-        metadata_lines.append(f"{Colors.METADATA}Parent: {parent_id}...{Colors.RESET}")
+        metadata_lines.append(render("metadata", content=f"Parent: {parent_id}..."))
 
     # Working directory
     if show_options.paths and "cwd" in entry:
-        metadata_lines.append(f"{Colors.METADATA}Path: {entry['cwd']}{Colors.RESET}")
+        metadata_lines.append(render("metadata", content=f"Path: {entry['cwd']}"))
 
     # User type
     if show_options.user_types and "userType" in entry:
-        metadata_lines.append(f"{Colors.METADATA}UserType: {entry['userType']}{Colors.RESET}")
+        metadata_lines.append(render("metadata", content=f"UserType: {entry['userType']}"))
 
     # Level
     if show_options.levels and "level" in entry:
-        metadata_lines.append(f"{Colors.METADATA}Level: {entry['level']}{Colors.RESET}")
+        metadata_lines.append(render("metadata", content=f"Level: {entry['level']}"))
 
     # Sidechain indicator
     if "isSidechain" in entry and entry["isSidechain"]:
         if not show_options.sidechains:
             return None  # Signal to skip this entry
-        metadata_lines.append(f"{Colors.METADATA}[SIDECHAIN]{Colors.RESET}")
+        metadata_lines.append(render("metadata", content="SIDECHAIN"))
 
     return metadata_lines
 
@@ -222,7 +224,7 @@ def format_conversation_entry(entry, show_options, show_timestamp=False):
     elif entry_type == "system":
         return _format_system_entry(entry, show_options, timestamp_str, metadata_lines)
 
-    return "\n".join(output) if output else None
+    return ''.join(output) if output else None
 
 
 def _extract_and_format_tool_result(message, label, show_options, timestamp_str=""):
@@ -273,16 +275,31 @@ def _extract_and_format_tool_result(message, label, show_options, timestamp_str=
     if show_options.indent_results:
         # Add blank line, then put label indented to align with tool parameters
         output.append("")  # Blank line for spacing
-        output.append(f"   {label}")
+        # Format the label directly with color - use TOOL_NAME for the label
+        from .themes import Colors
+        output.append(f"   {Colors.TOOL_NAME}✓ {label}{Colors.RESET}")
         
-        # Handle multi-line content by indenting each line
-        lines = text.split('\n')
-        for line in lines:
-            output.append(f"   {Colors.TOOL_OUTPUT}{line}{Colors.RESET}")
+        # Use the content-only template to get proper wrapping without duplicate label
+        rendered_content = render("tool_result_success_content", content=text)
+        if rendered_content:
+            output.append(rendered_content)
     else:
-        # Original format: label and result on same line
-        result_text = f"{Colors.TOOL_OUTPUT}{text}{Colors.RESET}"
-        output.append(f"\n{timestamp_str}{label} {result_text}")
+        # Original format: label and result on same line - also use render for wrapping
+        from .themes import Colors
+        # For non-indented, combine label and first part of content
+        label_line = f"\n{timestamp_str}   {Colors.TOOL_NAME}✓ {label}{Colors.RESET} "
+        # Render the content with wrapping
+        rendered_content = render("tool_result_success", content=text)
+        # Combine label with first line of content
+        lines = rendered_content.split('\n')
+        if lines and lines[0].strip():
+            # Remove leading spaces from first line since we have the label
+            first_line = lines[0].lstrip()
+            output.append(label_line + first_line)
+            # Add remaining lines if any
+            output.extend(lines[1:])
+        else:
+            output.append(label_line)
     
     return output
 
@@ -307,15 +324,15 @@ def _format_user_entry(entry, show_options, timestamp_str, metadata_lines):
             subagent_type = task_info.get("subagent_type", "unknown")
             description = task_info.get("description", "")
             if subagent_type != "unknown":
-                label = f"{Colors.TOOL_NAME}{Colors.BOLD}Subagent ({subagent_type}):{Colors.RESET}"
+                label = f"Subagent ({subagent_type}):"
             else:
-                label = f"{Colors.TOOL_NAME}{Colors.BOLD}Task Result:{Colors.RESET}"
+                label = "Task Result:"
 
             # Add description if available
             if description and show_options.tool_details:
-                output.append(f"\n{Colors.METADATA}[{description}]{Colors.RESET}")
+                output.append(render("metadata", content=description))
         else:
-            label = f"{Colors.TOOL_NAME}{Colors.BOLD}{task_name} Result:{Colors.RESET}"
+            label = f"{task_name} Result:"
 
         # Extract and format the actual content
         message = entry.get("message", {})
@@ -326,7 +343,7 @@ def _format_user_entry(entry, show_options, timestamp_str, metadata_lines):
 
         # If we formatted it as a task, we're done
         if user_shown:
-            return "\n".join(output) if output else None
+            return ''.join(output) if output else None
 
     elif tool_info and show_options.tools:
         # This is a regular tool result - format it as such
@@ -335,7 +352,7 @@ def _format_user_entry(entry, show_options, timestamp_str, metadata_lines):
 
         # Create label for regular tool
         tool_name = tool_info.get("name", "Tool")
-        label = f"{Colors.TOOL_NAME}{Colors.BOLD}{tool_name} Result:{Colors.RESET}"
+        label = f"{tool_name} Result:"
 
         # Extract and format the actual content
         message = entry.get("message", {})
@@ -346,7 +363,7 @@ def _format_user_entry(entry, show_options, timestamp_str, metadata_lines):
 
         # If we formatted it as a tool result, we're done
         if user_shown:
-            return "\n".join(output) if output else None
+            return ''.join(output) if output else None
 
     # Process user message if enabled (not a Task or tool result)
     if show_options.user and not task_info and not tool_info:
@@ -370,9 +387,12 @@ def _format_user_entry(entry, show_options, timestamp_str, metadata_lines):
                 if text:
                     if metadata_lines:
                         output.extend(metadata_lines)
-                    user_label = f"{Colors.USER}{Colors.BOLD}User:{Colors.RESET}"
-                    user_prefix = f"\n{timestamp_str}{user_label}"
-                    output.append(f"{user_prefix} {Colors.USER}{text}{Colors.RESET}")
+                    user_msg = render("user", content=text)
+                    # Prepend timestamp if present
+                    if timestamp_str:
+                        output.append(timestamp_str + user_msg)
+                    else:
+                        output.append(user_msg)
                     user_shown = True
 
     # Check for tool results (independent of user text)
@@ -386,7 +406,7 @@ def _format_user_entry(entry, show_options, timestamp_str, metadata_lines):
             output.append(tool_result)
 
     # Return None only if nothing was shown
-    return "\n".join(output) if output else None
+    return ''.join(output) if output else None
 
 
 def _format_assistant_entry(entry, show_options, timestamp_str, metadata_lines):
@@ -404,9 +424,12 @@ def _format_assistant_entry(entry, show_options, timestamp_str, metadata_lines):
                 output.extend(metadata_lines)
             max_len = show_options.get_max_length("default")
             text = truncate_text(text, max_len)
-            assistant_label = f"{Colors.ASSISTANT}{Colors.BOLD}Claude:{Colors.RESET}"
-            assistant_prefix = f"\n{timestamp_str}{assistant_label}"
-            output.append(f"{assistant_prefix} {Colors.ASSISTANT}{text}{Colors.RESET}")
+            assistant_msg = render("assistant", content=text)
+            # Prepend timestamp if present
+            if timestamp_str:
+                output.append(timestamp_str + assistant_msg)
+            else:
+                output.append(assistant_msg)
             assistant_shown = True
 
     # Check for tool uses (independent of assistant text)
@@ -419,7 +442,7 @@ def _format_assistant_entry(entry, show_options, timestamp_str, metadata_lines):
             output.append(tool_use)
 
     # Return None only if nothing was shown
-    return "\n".join(output) if output else None
+    return ''.join(output) if output else None
 
 
 def _format_system_entry(entry, show_options, timestamp_str, metadata_lines):
@@ -449,6 +472,11 @@ def _format_system_entry(entry, show_options, timestamp_str, metadata_lines):
             output.extend(metadata_lines)
         # Sanitize terminal output for security
         content = sanitize_terminal_output(content, strip_all_escapes=True)
-        output.append(f"\n{timestamp_str}{Colors.SYSTEM}System: {content}{Colors.RESET}")
+        system_msg = render("system", content=content)
+        # Prepend timestamp if present
+        if timestamp_str:
+            output.append(timestamp_str + system_msg)
+        else:
+            output.append(system_msg)
 
-    return "\n".join(output) if output else None
+    return ''.join(output) if output else None

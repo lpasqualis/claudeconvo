@@ -15,6 +15,7 @@ from .constants import (
     WATCH_POLL_INTERVAL,
 )
 from .parsers.adaptive import AdaptiveParser
+from .styles import render, render_inline
 from .themes import Colors
 from .tool_tracker import ToolInvocationTracker
 from .utils import log_debug
@@ -108,8 +109,8 @@ def parse_session_file(filepath):
     # Check if path is a symlink and refuse to follow symlinks for security
     try:
         if filepath.is_symlink():
-            err_msg = f"{Colors.ERROR}Security: Refusing to follow symlink for session file"
-            print(f"{err_msg}{Colors.RESET}", file=sys.stderr)
+            err_msg = "Security: Refusing to follow symlink for session file"
+            print(render_inline("error", err_msg), file=sys.stderr)
             return sessions
     except (OSError, TypeError) as e:
         # Path doesn't exist or is mocked in tests - continue with validation
@@ -121,8 +122,8 @@ def parse_session_file(filepath):
 
     # Ensure the file is within the expected Claude sessions directory
     if not (home_sessions in filepath.parents or filepath.parent == home_sessions):
-        err_msg = f"{Colors.ERROR}Security: Refusing to read file outside Claude sessions directory"
-        print(f"{err_msg}{Colors.RESET}", file=sys.stderr)
+        err_msg = "Security: Refusing to read file outside Claude sessions directory"
+        print(render_inline("error", err_msg), file=sys.stderr)
         return sessions
 
     try:
@@ -135,9 +136,9 @@ def parse_session_file(filepath):
                 if file_stat.st_size > MAX_FILE_SIZE:
                     size_str = format_file_size(file_stat.st_size)
                     max_mb = f"{MAX_FILE_SIZE_MB}MB"
-                    err_msg = f"{Colors.ERROR}Warning: File too large ({size_str}). "
+                    err_msg = f"Warning: File too large ({size_str}). "
                     err_msg += f"Maximum size is {max_mb}"
-                    print(f"{err_msg}{Colors.RESET}", file=sys.stderr)
+                    print(render_inline("warning", err_msg), file=sys.stderr)
                     return sessions
             except OSError as e:
                 # Log for debugging if needed but continue processing
@@ -167,29 +168,28 @@ def parse_session_file(filepath):
 
                         sessions.append(parsed_data)
                     except json.JSONDecodeError as e:
-                        err_msg = f"{Colors.ERROR}Warning: JSON parse error on line {line_num}: {e}"
-                        print(f"{err_msg}{Colors.RESET}", file=sys.stderr)
+                        err_msg = f"Warning: JSON parse error on line {line_num}: {e}"
+                        print(render_inline("warning", err_msg), file=sys.stderr)
                     except (ValueError, TypeError, KeyError, AttributeError) as e:
                         # Parser errors - log but don't expose full error details
                         err_type = type(e).__name__
-                        err_msg = f"{Colors.ERROR}Warning: Parse error on line {line_num}: "
-                        err_msg += err_type
-                        print(f"{err_msg}{Colors.RESET}", file=sys.stderr)
+                        err_msg = f"Warning: Parse error on line {line_num}: {err_type}"
+                        print(render_inline("warning", err_msg), file=sys.stderr)
                         # Add raw data with sanitized error flag
                         raw_data["_parse_error"] = type(e).__name__
                         sessions.append(raw_data)
     except (OSError, IOError, PermissionError) as e:
         # Sanitize error message to avoid exposing sensitive paths
-        err_msg = f"{Colors.ERROR}Error reading session file: {type(e).__name__}"
-        print(f"{err_msg}{Colors.RESET}", file=sys.stderr)
+        err_msg = f"Error reading session file: {type(e).__name__}"
+        print(render_inline("error", err_msg), file=sys.stderr)
     except UnicodeDecodeError:
         # Handle encoding issues
-        err_msg = f"{Colors.ERROR}Error reading session file: Encoding error"
-        print(f"{err_msg}{Colors.RESET}", file=sys.stderr)
+        err_msg = "Error reading session file: Encoding error"
+        print(render_inline("error", err_msg), file=sys.stderr)
     except MemoryError:
         # Handle large file memory issues
-        err_msg = f"{Colors.ERROR}Error reading session file: Out of memory"
-        print(f"{err_msg}{Colors.RESET}", file=sys.stderr)
+        err_msg = "Error reading session file: Out of memory"
+        print(render_inline("error", err_msg), file=sys.stderr)
 
     return sessions
 
@@ -206,18 +206,17 @@ def display_session(filepath, show_options, watch_mode=False, show_timestamp=Fal
     import time
 
     from .formatters import format_conversation_entry
-    from .themes import Colors
 
     if not filepath.exists():
-        print(f"{Colors.ERROR}Session file not found: {filepath}{Colors.RESET}", file=sys.stderr)
+        print(render_inline("error", f"Session file not found: {filepath}"), file=sys.stderr)
         return
 
     # Set up keyboard handling for ESC detection (needed for finally block)
     old_settings = None
     
     if watch_mode:
-        print(f"\n{Colors.SYSTEM}Watching session: {filepath.name}{Colors.RESET}")
-        print(f"{Colors.DIM}Press ESC or Ctrl+C to exit{Colors.RESET}\n")
+        print(render("system", content=f"Watching session: {filepath.name}"))
+        print(render_inline("info", "Press ESC or Ctrl+C to exit") + "\n")
         try:
             import select
             import termios
@@ -227,7 +226,7 @@ def display_session(filepath, show_options, watch_mode=False, show_timestamp=Fal
             tty.setcbreak(sys.stdin.fileno())
         except (ImportError, OSError, AttributeError):
             old_settings = None
-            print(f"{Colors.DIM}Press Ctrl+C to exit{Colors.RESET}\n")
+            print(render_inline("info", "Press Ctrl+C to exit") + "\n")
 
     try:
         displayed_count = 0
@@ -256,14 +255,14 @@ def display_session(filepath, show_options, watch_mode=False, show_timestamp=Fal
                 if sys.stdin in select.select([sys.stdin], [], [], 0)[0]:
                     ch = sys.stdin.read(1)
                     if ord(ch) == ESC_KEY_CODE:  # ESC key
-                        print(f"\n{Colors.SYSTEM}Stopped watching{Colors.RESET}")
+                        print(render("system", content="Stopped watching"))
                         break
 
             time.sleep(WATCH_POLL_INTERVAL)  # Poll interval
 
     except KeyboardInterrupt:
         if watch_mode:
-            print(f"\n{Colors.SYSTEM}Interrupted{Colors.RESET}")
+            print(render("system", content="Interrupted"))
     finally:
         # Restore terminal settings
         if old_settings:

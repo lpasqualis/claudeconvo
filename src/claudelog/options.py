@@ -84,11 +84,11 @@ class ShowOptions:
 
     def print_status(self):
         """Print the current status of all options."""
-        # Import Colors here to avoid circular import
-        from .themes import Colors
+        # Import styles here to avoid circular import
+        from .styles import render_inline
 
-        print("\nShow Options Status:")
-        print("-" * 40)
+        print("\n" + render_inline("header", "Show Options Status:"))
+        print(render_inline("separator", ""))
 
         # Group options for better readability
         enabled = []
@@ -105,16 +105,18 @@ class ShowOptions:
                 disabled.append(status_line)
 
         if enabled:
+            from .themes import Colors
             print(f"{Colors.ASSISTANT}ENABLED:{Colors.RESET}")
             for line in enabled:
                 print(f"{Colors.ASSISTANT}{line}{Colors.RESET}")
 
         if disabled:
+            from .themes import Colors
             print(f"\n{Colors.DIM}DISABLED:{Colors.RESET}")
             for line in disabled:
                 print(f"{Colors.DIM}{line}{Colors.RESET}")
 
-        print("-" * 40)
+        print(render_inline("separator", ""))
         print()
 
     def parse_options_internal(self, options_string):

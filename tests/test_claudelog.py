@@ -506,8 +506,8 @@ class TestTaskResultFormatting:
         assert output is not None
         # Should start with newline (blank line for spacing)
         assert output.startswith("\n")
-        # Should have indented label
-        assert "   Bash Result:" in clean_output
+        # Should have indented label with checkmark
+        assert "   ✓ Bash Result:" in clean_output
         # Result should also be indented  
         assert "   test output" in clean_output
 

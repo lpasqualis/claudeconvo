@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Setup script for claudelog - for backward compatibility."""
+"""Setup script for claudeconvo - for backward compatibility."""
 
 from setuptools import setup
 

@@ -1,4 +1,10 @@
-"""Command-line interface for claudelog."""
+"""Command-line interface for claudeconvo.
+
+Provides the main entry point and command-line argument parsing for the
+claudeconvo utility, handling session display, theme selection, and file operations.
+"""
+
+from __future__ import annotations
 
 import argparse
 import os
@@ -9,11 +15,8 @@ from pathlib import Path
 from .config import determine_theme, load_config
 from .constants import (
     CLAUDE_PROJECTS_DIR,
-    HEADER_SEPARATOR_CHAR,
     LIST_ITEM_NUMBER_WIDTH,
     MAX_FILE_INDEX_DIGITS,
-    SEPARATOR_CHAR,
-    THEME_LIST_SEPARATOR_WIDTH,
     THEME_NAME_DISPLAY_WIDTH,
 )
 from .diagnostics import run_diagnostics
@@ -32,11 +35,18 @@ from .utils import (
     get_separator_width,
 )
 
-# Removed watcher import - now using unified display_session
+# CLI Configuration Constants
+DEFAULT_SESSION_COUNT = 1
 
+################################################################################
 
-def create_argument_parser():
-    """Create and configure the argument parser."""
+def create_argument_parser() -> argparse.ArgumentParser:
+    """
+    Create and configure the argument parser.
+
+    Returns:
+        Configured ArgumentParser instance
+    """
     parser = argparse.ArgumentParser(
         description="View Claude Code session history as a conversation",
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -94,7 +104,7 @@ Examples:
         "-n",
         "--number",
         type=int,
-        default=1,
+        default=DEFAULT_SESSION_COUNT,
         help="Number of recent sessions to show (default: 1, use 0 for all)",
     )
     parser.add_argument(
@@ -145,8 +155,14 @@ Examples:
     return parser
 
 
-def handle_diagnostics_mode(args):
-    """Handle diagnostic mode if requested.
+################################################################################
+
+def handle_diagnostics_mode(args: argparse.Namespace) -> bool:
+    """
+    Handle diagnostic mode if requested.
+
+    Args:
+        args: Parsed command-line arguments
 
     Returns:
         True if diagnostics were run, False otherwise
@@ -165,8 +181,14 @@ def handle_diagnostics_mode(args):
     return False
 
 
-def handle_theme_listing(args):
-    """Handle theme listing if requested.
+################################################################################
+
+def handle_theme_listing(args: argparse.Namespace) -> bool:
+    """
+    Handle theme listing if requested.
+
+    Args:
+        args: Parsed command-line arguments
 
     Returns:
         True if themes were listed, False otherwise
@@ -178,15 +200,21 @@ def handle_theme_listing(args):
         for name, desc in THEME_DESCRIPTIONS.items():
             print(f"  {name:{THEME_NAME_DISPLAY_WIDTH}} - {desc}")
         print(render_inline("separator", ""))
-        print("\n" + render_inline("info", "Usage: claudelog --theme <theme_name>"))
-        print(render_inline("info", "Set default: export CLAUDELOG_THEME=<theme_name>"))
-        print(render_inline("info", "Config file: ~/.claudelogrc"))
+        print("\n" + render_inline("info", "Usage: claudeconvo --theme <theme_name>"))
+        print(render_inline("info", "Set default: export CLAUDECONVO_THEME=<theme_name>"))
+        print(render_inline("info", "Config file: ~/.claudeconvorc"))
         return True
     return False
 
 
-def handle_project_listing(args):
-    """Handle project listing if requested.
+################################################################################
+
+def handle_project_listing(args: argparse.Namespace) -> int | None:
+    """
+    Handle project listing if requested.
+
+    Args:
+        args: Parsed command-line arguments
 
     Returns:
         0 on success, 1 on failure, None if not handling project listing
@@ -219,25 +247,38 @@ def handle_project_listing(args):
         return 1
 
 
-def get_session_directory(args):
-    """Get the session directory based on arguments.
+################################################################################
+
+def get_session_directory(args: argparse.Namespace) -> tuple[str, Path]:
+    """
+    Get the session directory based on arguments.
+
+    Args:
+        args: Parsed command-line arguments
 
     Returns:
-        Tuple of (project_path, session_dir) or (None, None) on error
+        Tuple of (project_path, session_dir)
     """
     if args.project:
         # Use specified project path
         project_path = args.project
-        session_dir = path_to_session_dir(project_path)
+        session_dir  = path_to_session_dir(project_path)
     else:
         project_path = find_project_root()
-        session_dir = get_project_session_dir()
+        session_dir  = get_project_session_dir()
 
     return project_path, session_dir
 
 
-def handle_no_session_directory(project_path):
-    """Handle the case when no session directory is found."""
+################################################################################
+
+def handle_no_session_directory(project_path: str) -> None:
+    """
+    Handle the case when no session directory is found.
+
+    Args:
+        project_path: Path of the project that has no session directory
+    """
     from .styles import render_inline
 
     print(render_inline("error", f"No session history found for project: {project_path}"))
@@ -252,10 +293,16 @@ def handle_no_session_directory(project_path):
         print(render_inline("info", f"Try: {cmd}"))
 
 
-def list_files_only(session_files):
-    """Display list of session files."""
+################################################################################
+
+def list_files_only(session_files: list[Path]) -> None:
+    """
+    Display list of session files.
+
+    Args:
+        session_files: List of session file paths to display
+    """
     from .styles import render_inline
-    from .themes import Colors
 
     print("\n" + render_inline("header", f"Found {len(session_files)} session file(s):"))
     for i, filepath in enumerate(session_files):
@@ -275,8 +322,18 @@ def list_files_only(session_files):
         )
 
 
-def get_files_to_show(args, session_files):
-    """Determine which files to show based on arguments.
+################################################################################
+
+def get_files_to_show(
+    args          : argparse.Namespace,
+    session_files : list[Path]
+) -> list[Path] | None:
+    """
+    Determine which files to show based on arguments.
+
+    Args:
+        args: Parsed command-line arguments
+        session_files: Available session files
 
     Returns:
         List of files to show or None on error
@@ -328,9 +385,11 @@ def get_files_to_show(args, session_files):
 # Removed display_sessions function - now using unified display_session
 
 
-def main():
+################################################################################
+
+def main() -> int:
     parser = create_argument_parser()
-    args = parser.parse_args()
+    args   = parser.parse_args()
 
     # Handle special modes
     if handle_diagnostics_mode(args):
@@ -345,7 +404,7 @@ def main():
     # Create show options object (use config default if no CLI arg)
     show_str = args.show if args.show else config.get("default_show_options", "")
     show_options = ShowOptions(show_str)
-    
+
     # Set formatting options based on CLI arguments
     show_options.indent_results = not args.no_indent
 
@@ -353,7 +412,6 @@ def main():
     theme_name = determine_theme(args, config)
 
     # Apply theme
-    from .themes import Colors
     from .styles import set_style
 
     Colors.set_theme(get_color_theme(theme_name))

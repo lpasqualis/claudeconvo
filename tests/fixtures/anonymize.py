@@ -20,7 +20,7 @@ PATTERNS = {
     r'/iCloud[^/\s"]*': "/Cloud",
     # Project names (preserve structure but anonymize)
     r"WritingWithClaude": "ExampleProject",
-    r"claudelog": "LogViewer",
+    r"claudeconvo": "LogViewer",
     r"acor-cli": "CLI-Tool",
     r"lpclaude": "DevProject",
     # Git branches (skip main/master/develop)

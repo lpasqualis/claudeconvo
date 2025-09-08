@@ -2,7 +2,7 @@
 
 import json
 import pytest
-from src.claudelog.parsers.adaptive import AdaptiveParser
+from src.claudeconvo.parsers.adaptive import AdaptiveParser
 
 
 class TestAdaptiveParser:

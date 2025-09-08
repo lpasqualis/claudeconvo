@@ -3,7 +3,7 @@
 import unittest
 from unittest.mock import Mock, patch
 
-from claudelog.styles import (
+from claudeconvo.styles import (
     CompactStyle,
     FormatStyle,
     MinimalStyle,
@@ -25,7 +25,7 @@ class TestStyleMacros(unittest.TestCase):
 
     def test_eval_terminal_expr(self):
         """Test terminal width expression evaluation."""
-        with patch("claudelog.styles.get_terminal_width", return_value=80):
+        with patch("claudeconvo.styles.get_terminal_width", return_value=80):
             self.assertEqual(eval_terminal_expr("terminal"), 80)
             self.assertEqual(eval_terminal_expr("terminal-4"), 76)
             self.assertEqual(eval_terminal_expr("terminal+10"), 90)
@@ -38,7 +38,7 @@ class TestStyleMacros(unittest.TestCase):
         """Test repeat macro expansion."""
         import re
 
-        with patch("claudelog.styles.get_terminal_width", return_value=40):
+        with patch("claudeconvo.styles.get_terminal_width", return_value=40):
             # Test simple repeat
             match = re.match(r"{{(repeat:[^}]+)}}", "{{repeat:=:10}}")
             result = expand_repeat_macro(match)
@@ -73,7 +73,7 @@ class TestStyleMacros(unittest.TestCase):
     def test_expand_macros(self):
         """Test full macro expansion."""
         # Mock Colors
-        with patch("claudelog.styles.Colors") as mock_colors:
+        with patch("claudeconvo.styles.Colors") as mock_colors:
             mock_colors.BOLD = "[BOLD]"
             mock_colors.RESET = "[RESET]"
             mock_colors.DIM = "[DIM]"
@@ -98,7 +98,7 @@ class TestStyleMacros(unittest.TestCase):
             self.assertEqual(result, "   Text")
 
             # Test repeat macros
-            with patch("claudelog.styles.get_terminal_width", return_value=10):
+            with patch("claudeconvo.styles.get_terminal_width", return_value=10):
                 result = expand_macros("{{repeat:=:5}}", context)
                 self.assertEqual(result, "=====")
 
@@ -155,7 +155,7 @@ class TestStyleRenderer(unittest.TestCase):
     def setUp(self):
         """Set up test fixtures."""
         # Mock Colors
-        self.color_patcher = patch("claudelog.styles.Colors")
+        self.color_patcher = patch("claudeconvo.styles.Colors")
         mock_colors = self.color_patcher.start()
         mock_colors.BOLD = "[BOLD]"
         mock_colors.RESET = "[RESET]"
@@ -263,7 +263,7 @@ class TestGlobalFunctions(unittest.TestCase):
 
     def setUp(self):
         """Set up test fixtures."""
-        self.color_patcher = patch("claudelog.styles.Colors")
+        self.color_patcher = patch("claudeconvo.styles.Colors")
         mock_colors = self.color_patcher.start()
         mock_colors.BOLD = "[BOLD]"
         mock_colors.RESET = "[RESET]"
@@ -323,7 +323,7 @@ class TestCustomFunctions(unittest.TestCase):
 
     def test_register_function(self):
         """Test registering custom functions."""
-        from claudelog.styles import STYLE_FUNCTIONS
+        from claudeconvo.styles import STYLE_FUNCTIONS
 
         # Clear any existing functions
         STYLE_FUNCTIONS.clear()
@@ -337,7 +337,7 @@ class TestCustomFunctions(unittest.TestCase):
 
         # Test using the function in a template
         context = {}
-        with patch("claudelog.styles.get_terminal_width", return_value=10):
+        with patch("claudeconvo.styles.get_terminal_width", return_value=10):
             result = expand_macros("{{func:border:5}}", context)
             self.assertEqual(result, "=====")
 
@@ -351,7 +351,7 @@ class TestStyleIntegration(unittest.TestCase):
 
     def setUp(self):
         """Set up test fixtures."""
-        self.color_patcher = patch("claudelog.styles.Colors")
+        self.color_patcher = patch("claudeconvo.styles.Colors")
         mock_colors = self.color_patcher.start()
         mock_colors.BOLD = ""
         mock_colors.RESET = ""

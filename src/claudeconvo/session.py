@@ -1,9 +1,16 @@
-"""Session file management for claudelog."""
+"""Session file management for claudeconvo.
+
+Provides functionality for discovering, parsing, and displaying Claude session files,
+with support for security validation, format adaptation, and watch mode.
+"""
+
+from __future__ import annotations
 
 import json
 import os
 import sys
 from pathlib import Path
+from typing import Any
 
 from .constants import (
     BYTES_PER_KB,
@@ -16,13 +23,18 @@ from .constants import (
 )
 from .parsers.adaptive import AdaptiveParser
 from .styles import render, render_inline
-from .themes import Colors
 from .tool_tracker import ToolInvocationTracker
 from .utils import log_debug
 
+# Session processing constants
+ROOT_MARKERS = [".git", ".claude", ".hg", ".svn", "pyproject.toml", "setup.py", "package.json"]
 
-def path_to_session_dir(path):
-    """Convert a file path to Claude's session directory naming convention.
+
+################################################################################
+
+def path_to_session_dir(path: str) -> Path:
+    """
+    Convert a file path to Claude's session directory naming convention.
 
     Args:
         path: File system path to convert
@@ -34,8 +46,9 @@ def path_to_session_dir(path):
     # Format: Leading dash, path with slashes replaced by dashes
     # Hidden folders (starting with .) get the dot removed and double dash
     # Underscores also become dashes
-    parts = path.split("/")
+    parts           = path.split("/")
     converted_parts = []
+
     for part in parts:
         if part:  # Skip empty parts from leading/trailing slashes
             # Replace underscores with dashes
@@ -50,8 +63,11 @@ def path_to_session_dir(path):
     return Path.home() / CLAUDE_PROJECTS_DIR / project_name
 
 
-def find_project_root(start_path=None):
-    """Find the project root by looking for markers like .git, .claude, etc.
+################################################################################
+
+def find_project_root(start_path: str = None) -> str:
+    """
+    Find the project root by looking for markers like .git, .claude, etc.
 
     Args:
         start_path: Starting directory (defaults to current working directory)
@@ -64,13 +80,10 @@ def find_project_root(start_path=None):
 
     current = Path(start_path).resolve()
 
-    # Markers that indicate a project root
-    root_markers = [".git", ".claude", ".hg", ".svn", "pyproject.toml", "setup.py", "package.json"]
-
     # Walk up the directory tree
     while current != current.parent:
         # Check for any root markers
-        for marker in root_markers:
+        for marker in ROOT_MARKERS:
             if (current / marker).exists():
                 return str(current)
         current = current.parent
@@ -79,15 +92,32 @@ def find_project_root(start_path=None):
     return start_path
 
 
-def get_project_session_dir():
-    """Get the session directory for the current project."""
+################################################################################
+
+def get_project_session_dir() -> Path:
+    """
+    Get the session directory for the current project.
+
+    Returns:
+        Path to the session directory for the current project
+    """
     # Find the project root first
     project_root = find_project_root()
     return path_to_session_dir(project_root)
 
 
-def list_session_files(session_dir):
-    """List all session files in the directory, sorted by modification time."""
+################################################################################
+
+def list_session_files(session_dir: Path) -> list[Path]:
+    """
+    List all session files in the directory, sorted by modification time.
+
+    Args:
+        session_dir: Directory to search for session files
+
+    Returns:
+        List of session file paths, sorted by modification time (newest first)
+    """
     if not session_dir.exists():
         return []
 
@@ -97,11 +127,21 @@ def list_session_files(session_dir):
     return jsonl_files
 
 
-def parse_session_file(filepath):
-    """Parse a JSONL session file and return its contents."""
+################################################################################
+
+def parse_session_file(filepath: Path) -> list[dict[str, Any]]:
+    """
+    Parse a JSONL session file and return its contents.
+
+    Args:
+        filepath: Path to the JSONL session file to parse
+
+    Returns:
+        List of parsed session entries
+    """
     sessions = []
-    parser = AdaptiveParser()  # Will auto-load config if available
-    tracker = ToolInvocationTracker()  # Track tool invocations
+    parser   = AdaptiveParser()  # Will auto-load config if available
+    tracker  = ToolInvocationTracker()  # Track tool invocations
 
     # Validate file path
     filepath = Path(filepath)
@@ -117,7 +157,7 @@ def parse_session_file(filepath):
         log_debug(f"Could not check symlink status for {filepath}: {e}")
 
     # Resolve to absolute path after symlink check
-    filepath = filepath.resolve()
+    filepath      = filepath.resolve()
     home_sessions = Path.home() / CLAUDE_PROJECTS_DIR
 
     # Ensure the file is within the expected Claude sessions directory
@@ -135,8 +175,8 @@ def parse_session_file(filepath):
                 file_stat = os.fstat(f.fileno())
                 if file_stat.st_size > MAX_FILE_SIZE:
                     size_str = format_file_size(file_stat.st_size)
-                    max_mb = f"{MAX_FILE_SIZE_MB}MB"
-                    err_msg = f"Warning: File too large ({size_str}). "
+                    max_mb   = f"{MAX_FILE_SIZE_MB}MB"
+                    err_msg  = f"Warning: File too large ({size_str}). "
                     err_msg += f"Maximum size is {max_mb}"
                     print(render_inline("warning", err_msg), file=sys.stderr)
                     return sessions
@@ -149,7 +189,7 @@ def parse_session_file(filepath):
                 line = line.strip()
                 if line:
                     try:
-                        raw_data = json.loads(line)
+                        raw_data    = json.loads(line)
                         # Use the adaptive parser to normalize the entry
                         parsed_data = parser.parse_entry(raw_data)
 
@@ -178,7 +218,7 @@ def parse_session_file(filepath):
                         # Add raw data with sanitized error flag
                         raw_data["_parse_error"] = type(e).__name__
                         sessions.append(raw_data)
-    except (OSError, IOError, PermissionError) as e:
+    except (OSError, PermissionError) as e:
         # Sanitize error message to avoid exposing sensitive paths
         err_msg = f"Error reading session file: {type(e).__name__}"
         print(render_inline("error", err_msg), file=sys.stderr)
@@ -194,8 +234,16 @@ def parse_session_file(filepath):
     return sessions
 
 
-def display_session(filepath, show_options, watch_mode=False, show_timestamp=False):
-    """Display a session file with optional watch mode.
+################################################################################
+
+def display_session(
+    filepath       : Path,
+    show_options   : Any,
+    watch_mode     : bool = False,
+    show_timestamp : bool = False
+) -> None:
+    """
+    Display a session file with optional watch mode.
 
     Args:
         filepath: Path to session file
@@ -213,7 +261,7 @@ def display_session(filepath, show_options, watch_mode=False, show_timestamp=Fal
 
     # Set up keyboard handling for ESC detection (needed for finally block)
     old_settings = None
-    
+
     if watch_mode:
         print(render("system", content=f"Watching session: {filepath.name}"))
         print(render_inline("info", "Press ESC or Ctrl+C to exit") + "\n")
@@ -274,8 +322,18 @@ def display_session(filepath, show_options, watch_mode=False, show_timestamp=Fal
                 pass
 
 
-def format_file_size(size_bytes):
-    """Format file size in human-readable format."""
+################################################################################
+
+def format_file_size(size_bytes: int) -> str:
+    """
+    Format file size in human-readable format.
+
+    Args:
+        size_bytes: Size in bytes to format
+
+    Returns:
+        Human-readable size string (e.g., "1.2KB", "5.3MB")
+    """
     if size_bytes < BYTES_PER_KB:
         return f"{size_bytes}B"
     elif size_bytes < BYTES_PER_MB:

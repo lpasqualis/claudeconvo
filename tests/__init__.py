@@ -1,1 +1,1 @@
-"""Test suite for claudelog."""
+"""Test suite for claudeconvo."""

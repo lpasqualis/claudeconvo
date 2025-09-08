@@ -1,4 +1,4 @@
-"""Tests for claudelog main functionality."""
+"""Tests for claudeconvo main functionality."""
 
 import json
 import sys
@@ -8,11 +8,11 @@ from unittest.mock import Mock, patch, MagicMock
 import os
 import pytest
 
-# Add src to path to import claudelog
+# Add src to path to import claudeconvo
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from claudelog.options import ShowOptions
-from claudelog.themes import (
+from claudeconvo.options import ShowOptions
+from claudeconvo.themes import (
     Colors,
     ColorTheme,
     DarkTheme,
@@ -21,15 +21,15 @@ from claudelog.themes import (
     get_color_theme,
     THEMES,
 )
-from claudelog.config import determine_theme, load_config
-from claudelog.session import (
+from claudeconvo.config import determine_theme, load_config
+from claudeconvo.session import (
     path_to_session_dir,
     get_project_session_dir,
     list_session_files,
     parse_session_file,
     find_project_root,
 )
-from claudelog.formatters import format_conversation_entry
+from claudeconvo.formatters import format_conversation_entry
 
 
 class TestShowOptions:
@@ -168,7 +168,7 @@ class TestSessionFunctions:
         result = path_to_session_dir("/home/user/.hidden")
         assert result.name == "-home-user--hidden"
 
-    @patch("claudelog.session.Path")
+    @patch("claudeconvo.session.Path")
     def test_find_project_root(self, mock_path_class):
         """Test finding project root from subdirectories."""
         # Create mock paths for the directory hierarchy
@@ -210,8 +210,8 @@ class TestSessionFunctions:
         result = find_project_root("/home/user/project/src/subdir")
         assert result == "/home/user/project"
 
-    @patch("claudelog.session.Path.glob")
-    @patch("claudelog.session.Path.exists")
+    @patch("claudeconvo.session.Path.glob")
+    @patch("claudeconvo.session.Path.exists")
     def test_list_session_files(self, mock_exists, mock_glob):
         """Test listing session files."""
         mock_exists.return_value = True
@@ -240,11 +240,11 @@ class TestSessionFunctions:
         assert files[0] == mock_files[1]  # session2 has newer mtime
         assert files[1] == mock_files[0]  # session1 has older mtime
 
-    @patch("claudelog.parsers.adaptive.Path")
+    @patch("claudeconvo.parsers.adaptive.Path")
     @patch("os.fstat")
     @patch("builtins.open")
-    @patch("claudelog.session.Path.is_symlink")
-    @patch("claudelog.session.Path.resolve")
+    @patch("claudeconvo.session.Path.is_symlink")
+    @patch("claudeconvo.session.Path.resolve")
     def test_parse_session_file(
         self, mock_resolve, mock_is_symlink, mock_open, mock_fstat, mock_adaptive_path
     ):
@@ -576,7 +576,7 @@ class TestTaskResultFormatting:
             
     def test_tool_result_color_consistency(self):
         """Test that tool result labels use consistent colors."""
-        from claudelog.themes import Colors
+        from claudeconvo.themes import Colors
         
         entry = {
             "type": "user",
@@ -603,7 +603,7 @@ class TestTaskResultFormatting:
         
     def test_tool_result_blank_line_spacing(self):
         """Test that there's a blank line between tool parameters and result."""
-        from claudelog.formatters import format_tool_use
+        from claudeconvo.formatters import format_tool_use
         
         # First format a tool use
         tool_entry = {
@@ -653,8 +653,8 @@ class TestCLIIndentOption:
     
     def test_cli_no_indent_option(self):
         """Test that --no-indent CLI option disables indentation."""
-        from claudelog.cli import create_argument_parser
-        from claudelog.options import ShowOptions
+        from claudeconvo.cli import create_argument_parser
+        from claudeconvo.options import ShowOptions
         
         parser = create_argument_parser()
         
@@ -676,7 +676,7 @@ class TestToolInvocationTracker:
 
     def test_track_tool_use(self):
         """Test tracking of tool invocations."""
-        from claudelog.tool_tracker import ToolInvocationTracker
+        from claudeconvo.tool_tracker import ToolInvocationTracker
 
         tracker = ToolInvocationTracker()
 
@@ -708,7 +708,7 @@ class TestToolInvocationTracker:
 
     def test_track_task_invocation(self):
         """Test tracking of Task invocations with subagent details."""
-        from claudelog.tool_tracker import ToolInvocationTracker
+        from claudeconvo.tool_tracker import ToolInvocationTracker
 
         tracker = ToolInvocationTracker()
 
@@ -742,7 +742,7 @@ class TestToolInvocationTracker:
 
     def test_is_task_result(self):
         """Test identification of Task results."""
-        from claudelog.tool_tracker import ToolInvocationTracker
+        from claudeconvo.tool_tracker import ToolInvocationTracker
 
         tracker = ToolInvocationTracker()
 
@@ -776,7 +776,7 @@ class TestToolInvocationTracker:
 
     def test_get_task_info_for_entry(self):
         """Test retrieving Task info for a tool_result entry."""
-        from claudelog.tool_tracker import ToolInvocationTracker
+        from claudeconvo.tool_tracker import ToolInvocationTracker
 
         tracker = ToolInvocationTracker()
 
@@ -875,7 +875,7 @@ class TestColorThemes:
 
         # Test env var (when no CLI arg)
         args = Namespace(theme=None, no_color=False)
-        with patch.dict("os.environ", {"CLAUDELOG_THEME": "nord"}):
+        with patch.dict("os.environ", {"CLAUDECONVO_THEME": "nord"}):
             assert determine_theme(args, config) == "nord"
 
         # Test config file (when no CLI or env)
@@ -886,7 +886,7 @@ class TestColorThemes:
         args = Namespace(theme=None, no_color=False)
         assert determine_theme(args, {}) == "dark"
 
-    @patch("claudelog.config.Path.exists")
+    @patch("claudeconvo.config.Path.exists")
     @patch("builtins.open")
     def test_load_config(self, mock_open, mock_exists):
         """Test loading configuration from file."""

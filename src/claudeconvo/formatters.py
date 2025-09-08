@@ -1,21 +1,39 @@
-"""Message formatting functions for claudelog."""
+"""Message formatting functions for claudeconvo.
+
+This module provides comprehensive formatting capabilities for Claude session data,
+handling message display, tool execution results, and conversation presentation.
+"""
+
+from __future__ import annotations
 
 import re
 from datetime import datetime
+from typing import Any
 
 from .parsers.adaptive import AdaptiveParser
 from .styles import render, render_inline
-from .themes import Colors
 from .utils import format_uuid, sanitize_terminal_output
 
+# Formatting constants
+DEFAULT_MAX_LENGTH = 500
 
-def truncate_text(text, max_length=500, force_truncate=False):
-    """Truncate text to max length with ellipsis if needed.
+################################################################################
+
+def truncate_text(
+    text         : str | Any,
+    max_length   : int | float = DEFAULT_MAX_LENGTH,
+    force_truncate: bool = False
+) -> str | Any:
+    """
+    Truncate text to max length with ellipsis if needed.
 
     Args:
         text: Text to potentially truncate
         max_length: Maximum length (can be float('inf') for no truncation)
         force_truncate: If True, always truncate regardless of max_length being inf
+
+    Returns:
+        Truncated text or original text/object if no truncation needed
     """
     if not isinstance(text, str):
         return text
@@ -25,11 +43,19 @@ def truncate_text(text, max_length=500, force_truncate=False):
         return text[:max_length] + "..."
     return text
 
+################################################################################
 
-def extract_message_text(message_content):
-    """Extract text from various message content formats.
+def extract_message_text(message_content: Any) -> str:
+    """
+    Extract text from various message content formats.
 
     Uses the adaptive parser for robust content extraction.
+
+    Args:
+        message_content: Content to extract text from
+
+    Returns:
+        Extracted text string
     """
     # Create a parser instance (cached internally)
     parser = AdaptiveParser()
@@ -37,9 +63,22 @@ def extract_message_text(message_content):
     # Use parser's extraction method
     return parser._extract_text_from_content(message_content)
 
+################################################################################
 
-def format_tool_use(entry, show_options):
-    """Format tool use information from an entry."""
+def format_tool_use(
+    entry        : dict[str, Any],
+    show_options : Any
+) -> str | None:
+    """
+    Format tool use information from an entry.
+
+    Args:
+        entry: Session entry containing tool use data
+        show_options: Display options configuration
+
+    Returns:
+        Formatted tool use string or None if no tool use found
+    """
     output = []
 
     # Look for tool use in message content
@@ -49,8 +88,8 @@ def format_tool_use(entry, show_options):
         if isinstance(content, list):
             for item in content:
                 if isinstance(item, dict) and item.get("type") == "tool_use":
-                    tool_name = item.get("name", "Unknown Tool")
-                    tool_id = item.get("id", "")
+                    tool_name  = item.get("name", "Unknown Tool")
+                    tool_id    = item.get("id", "")
                     tool_input = item.get("input", {})
 
                     # Render tool invocation
@@ -70,8 +109,22 @@ def format_tool_use(entry, show_options):
     return ''.join(output) if output else None
 
 
-def format_tool_result(entry, show_options):
-    """Format tool result from an entry."""
+################################################################################
+
+def format_tool_result(
+    entry        : dict[str, Any],
+    show_options : Any
+) -> str | None:
+    """
+    Format tool result from an entry.
+
+    Args:
+        entry: Session entry containing tool result data
+        show_options: Display options configuration
+
+    Returns:
+        Formatted tool result string or None if no result found
+    """
     tool_result = entry.get("toolUseResult")
     if tool_result:
         max_len = show_options.get_max_length("tool_result")
@@ -81,7 +134,7 @@ def format_tool_result(entry, show_options):
             result = tool_result.strip()
             if result.startswith("Error:"):
                 error_max = show_options.get_max_length("error")
-                result = truncate_text(result, error_max)
+                result    = truncate_text(result, error_max)
                 return render("tool_result_error", content=result)
             else:
                 result = truncate_text(result, max_len)
@@ -98,24 +151,55 @@ def format_tool_result(entry, show_options):
     return None
 
 
-def _format_summary_entry(entry, show_options):
-    """Format a summary entry."""
+################################################################################
+
+def _format_summary_entry(
+    entry        : dict[str, Any],
+    show_options : Any
+) -> str | None:
+    """
+    Format a summary entry.
+
+    Args:
+        entry: Session entry containing summary data
+        show_options: Display options configuration
+
+    Returns:
+        Formatted summary string or None if summaries disabled
+    """
     if not show_options.summaries:
         return None
-    output = []
+
+    output  = []
     summary = entry.get("summary", "N/A")
     output.append(render("summary", content=summary))
+
     if show_options.metadata and "leafUuid" in entry:
         output.append(render("metadata", content=f"   Session: {entry['leafUuid']}"))
+
     return ''.join(output)
 
 
-def _format_timestamp(entry, show_timestamp):
-    """Format timestamp for an entry."""
+################################################################################
+
+def _format_timestamp(
+    entry          : dict[str, Any],
+    show_timestamp : bool
+) -> str:
+    """
+    Format timestamp for an entry.
+
+    Args:
+        entry: Session entry that may contain timestamp
+        show_timestamp: Whether to format timestamp
+
+    Returns:
+        Formatted timestamp string or empty string
+    """
     timestamp_str = ""
     if show_timestamp and "timestamp" in entry:
         try:
-            dt = datetime.fromisoformat(entry["timestamp"].replace("Z", "+00:00"))
+            dt            = datetime.fromisoformat(entry["timestamp"].replace("Z", "+00:00"))
             timestamp_str = render_inline("timestamp", content=dt.strftime('%H:%M:%S'))
         except (ValueError, TypeError, AttributeError):
             # ValueError: Invalid timestamp format
@@ -125,10 +209,24 @@ def _format_timestamp(entry, show_timestamp):
     return timestamp_str
 
 
-def _build_metadata_lines(entry, show_options):
-    """Build metadata lines for an entry."""
+################################################################################
+
+def _build_metadata_lines(
+    entry        : dict[str, Any],
+    show_options : Any
+) -> list[str] | None:
+    """
+    Build metadata lines for an entry.
+
+    Args:
+        entry: Session entry containing metadata
+        show_options: Display options configuration
+
+    Returns:
+        List of formatted metadata lines or None to signal skip
+    """
     metadata_lines = []
-    
+
     # Model information (for assistant messages)
     if show_options.model:
         message = entry.get("message", {})
@@ -194,9 +292,25 @@ def _build_metadata_lines(entry, show_options):
     return metadata_lines
 
 
-def format_conversation_entry(entry, show_options, show_timestamp=False):
-    """Format a single entry as part of a conversation."""
-    output = []
+################################################################################
+
+def format_conversation_entry(
+    entry          : dict[str, Any],
+    show_options   : Any,
+    show_timestamp : bool = False
+) -> str | None:
+    """
+    Format a single entry as part of a conversation.
+
+    Args:
+        entry: Session entry to format
+        show_options: Display options configuration
+        show_timestamp: Whether to include timestamps
+
+    Returns:
+        Formatted conversation entry or None if entry should be skipped
+    """
+    output     = []
     entry_type = entry.get("type", "unknown")
 
     # Handle summaries
@@ -227,34 +341,42 @@ def format_conversation_entry(entry, show_options, show_timestamp=False):
     return ''.join(output) if output else None
 
 
-def _extract_and_format_tool_result(message, label, show_options, timestamp_str=""):
-    """Extract and format tool result content from a message.
-    
+################################################################################
+
+def _extract_and_format_tool_result(
+    message       : dict[str, Any],
+    label         : str,
+    show_options  : Any,
+    timestamp_str : str = ""
+) -> list[str] | None:
+    """
+    Extract and format tool result content from a message.
+
     Args:
         message: The message dict containing the tool result
         label: The formatted label for the tool result
         show_options: ShowOptions instance
         timestamp_str: Optional timestamp string
-    
+
     Returns:
-        list: Output lines or None if no content found
+        List of output lines or None if no content found
     """
     output = []
-    
+
     if not isinstance(message, dict):
         return None
-        
+
     content = message.get("content", [])
     if not (isinstance(content, list) and len(content) > 0):
         return None
-        
+
     first_item = content[0]
     if not (isinstance(first_item, dict) and first_item.get("type") == "tool_result"):
         return None
-        
+
     result_content = first_item.get("content", [])
-    text = None
-    
+    text           = None
+
     # Handle both string and list formats
     if isinstance(result_content, str):
         # Direct string content
@@ -265,20 +387,20 @@ def _extract_and_format_tool_result(message, label, show_options, timestamp_str=
             if isinstance(item, dict) and item.get("type") == "text":
                 text = item.get("text", "")
                 break
-    
+
     if not text:
         return None
-        
+
     max_len = show_options.get_max_length("tool_result")
-    text = truncate_text(text, max_len)
-    
+    text    = truncate_text(text, max_len)
+
     if show_options.indent_results:
         # Add blank line, then put label indented to align with tool parameters
-        output.append("")  # Blank line for spacing
+        output.append("\n")  # Blank line for spacing
         # Format the label directly with color - use TOOL_NAME for the label
         from .themes import Colors
         output.append(f"   {Colors.TOOL_NAME}✓ {label}{Colors.RESET}")
-        
+
         # Use the content-only template to get proper wrapping without duplicate label
         rendered_content = render("tool_result_success_content", content=text)
         if rendered_content:
@@ -300,13 +422,31 @@ def _extract_and_format_tool_result(message, label, show_options, timestamp_str=
             output.extend(lines[1:])
         else:
             output.append(label_line)
-    
+
     return output
 
 
-def _format_user_entry(entry, show_options, timestamp_str, metadata_lines):
-    """Format a user entry."""
-    output = []
+################################################################################
+
+def _format_user_entry(
+    entry          : dict[str, Any],
+    show_options   : Any,
+    timestamp_str  : str,
+    metadata_lines : list[str] | None
+) -> str | None:
+    """
+    Format a user entry.
+
+    Args:
+        entry: User session entry to format
+        show_options: Display options configuration
+        timestamp_str: Formatted timestamp string
+        metadata_lines: Pre-built metadata lines
+
+    Returns:
+        Formatted user entry or None if entry should be skipped
+    """
+    output     = []
     user_shown = False
 
     # Check if this is a Task/subagent result
@@ -409,10 +549,28 @@ def _format_user_entry(entry, show_options, timestamp_str, metadata_lines):
     return ''.join(output) if output else None
 
 
-def _format_assistant_entry(entry, show_options, timestamp_str, metadata_lines):
-    """Format an assistant entry."""
-    output = []
-    message = entry.get("message", {})
+################################################################################
+
+def _format_assistant_entry(
+    entry          : dict[str, Any],
+    show_options   : Any,
+    timestamp_str  : str,
+    metadata_lines : list[str] | None
+) -> str | None:
+    """
+    Format an assistant entry.
+
+    Args:
+        entry: Assistant session entry to format
+        show_options: Display options configuration
+        timestamp_str: Formatted timestamp string
+        metadata_lines: Pre-built metadata lines
+
+    Returns:
+        Formatted assistant entry or None if entry should be skipped
+    """
+    output          = []
+    message         = entry.get("message", {})
     assistant_shown = False
 
     if show_options.assistant and isinstance(message, dict):
@@ -422,8 +580,8 @@ def _format_assistant_entry(entry, show_options, timestamp_str, metadata_lines):
         if text:
             if metadata_lines:
                 output.extend(metadata_lines)
-            max_len = show_options.get_max_length("default")
-            text = truncate_text(text, max_len)
+            max_len       = show_options.get_max_length("default")
+            text          = truncate_text(text, max_len)
             assistant_msg = render("assistant", content=text)
             # Prepend timestamp if present
             if timestamp_str:
@@ -445,9 +603,27 @@ def _format_assistant_entry(entry, show_options, timestamp_str, metadata_lines):
     return ''.join(output) if output else None
 
 
-def _format_system_entry(entry, show_options, timestamp_str, metadata_lines):
-    """Format a system entry."""
-    output = []
+################################################################################
+
+def _format_system_entry(
+    entry          : dict[str, Any],
+    show_options   : Any,
+    timestamp_str  : str,
+    metadata_lines : list[str] | None
+) -> str | None:
+    """
+    Format a system entry.
+
+    Args:
+        entry: System session entry to format
+        show_options: Display options configuration
+        timestamp_str: Formatted timestamp string
+        metadata_lines: Pre-built metadata lines
+
+    Returns:
+        Formatted system entry or None if entry should be skipped
+    """
+    output  = []
     content = entry.get("content", "")
 
     # Check if this is a hook message
@@ -471,7 +647,7 @@ def _format_system_entry(entry, show_options, timestamp_str, metadata_lines):
         if metadata_lines:
             output.extend(metadata_lines)
         # Sanitize terminal output for security
-        content = sanitize_terminal_output(content, strip_all_escapes=True)
+        content    = sanitize_terminal_output(content, strip_all_escapes=True)
         system_msg = render("system", content=content)
         # Prepend timestamp if present
         if timestamp_str:

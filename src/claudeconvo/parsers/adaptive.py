@@ -1,4 +1,15 @@
-"""Adaptive parser that handles any Claude log format version."""
+"""
+Adaptive parser that handles any Claude log format version.
+
+This module provides a self-adapting parser that can handle different
+Claude log format versions by discovering field structures and normalizing
+them into a consistent format for display.
+
+Example usage:
+    parser = AdaptiveParser()
+    normalized = parser.parse_entry(entry)
+    text = parser.extract_content_text(normalized)
+"""
 
 import json
 from pathlib import Path
@@ -7,12 +18,16 @@ from typing import Any, Dict, List, Optional
 from ..constants import MAX_RECURSION_DEPTH
 from ..utils import load_json_config, log_debug, sanitize_terminal_output
 
+################################################################################
 
 class AdaptiveParser:
     """Self-adapting parser that handles any log format through field discovery."""
 
+    ################################################################################
+
     def __init__(self, config_path: Optional[str] = None):
-        """Initialize the adaptive parser.
+        """
+        Initialize the adaptive parser.
 
         Args:
             config_path: Path to field mappings config file. If None, uses defaults.
@@ -20,8 +35,16 @@ class AdaptiveParser:
         self._field_cache = {}
         self._load_config(config_path)
 
-    def _load_config(self, config_path: Optional[str] = None):
-        """Load field mapping configuration."""
+    ################################################################################
+
+    def _load_config(self, config_path: Optional[str] = None) -> None:
+        """
+        Load field mapping configuration.
+
+        Loads field alias mappings from config file or uses defaults.
+        These mappings allow the parser to handle field name variations
+        across different Claude log format versions.
+        """
         # Try to load from file
         if not config_path:
             # Look for config in package directory
@@ -38,26 +61,35 @@ class AdaptiveParser:
 
         # Simplified field configuration - only actual field names used in Claude logs
         self.field_aliases = {
-            "timestamp": ["timestamp"],
-            "version": ["version"],
-            "uuid": ["uuid"],
-            "session_id": ["sessionId"],
-            "request_id": ["requestId"],
-            "parent_uuid": ["parentUuid"],
-            "is_meta": ["isMeta"],
-            "is_sidechain": ["isSidechain"],
-            "tool_result": ["toolUseResult"],
-            "working_dir": ["cwd"],
-            "git_branch": ["gitBranch"],
-            "user_type": ["userType"],
-            "level": ["level"],
+            "timestamp"    : ["timestamp"],
+            "version"      : ["version"],
+            "uuid"         : ["uuid"],
+            "session_id"   : ["sessionId"],
+            "request_id"   : ["requestId"],
+            "parent_uuid"  : ["parentUuid"],
+            "is_meta"      : ["isMeta"],
+            "is_sidechain" : ["isSidechain"],
+            "tool_result"  : ["toolUseResult"],
+            "working_dir"  : ["cwd"],
+            "git_branch"   : ["gitBranch"],
+            "user_type"    : ["userType"],
+            "level"        : ["level"],
         }
 
+    ################################################################################
+
     def parse_entry(self, entry: Dict[str, Any]) -> Dict[str, Any]:
-        """Parse any log entry by discovering its structure.
+        """
+        Parse any log entry by discovering its structure.
 
         This method doesn't assume any specific format - it discovers
-        what's available and normalizes it.
+        what's available and normalizes it into a consistent structure.
+
+        Args:
+            entry: Raw log entry dictionary
+
+        Returns:
+            Normalized entry dictionary with consistent field names
         """
         if not isinstance(entry, dict):
             return {"_raw": entry, "_parse_error": "Not a dictionary"}
@@ -122,6 +154,8 @@ class AdaptiveParser:
 
         return normalized
 
+    ################################################################################
+
     def _find_field(self, obj: Dict[str, Any], candidates: List[str]) -> Optional[Any]:
         """Find the first matching field from a list of candidates.
 
@@ -131,6 +165,8 @@ class AdaptiveParser:
             if field in obj:
                 return obj[field]
         return None
+
+    ################################################################################
 
     def _extract_message(self, entry: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """Extract and normalize message content from various formats."""
@@ -156,6 +192,8 @@ class AdaptiveParser:
 
         return None
 
+    ################################################################################
+
     def _normalize_message_dict(self, message: Dict[str, Any]) -> Dict[str, Any]:
         """Normalize a message dictionary."""
         normalized = {}
@@ -175,6 +213,8 @@ class AdaptiveParser:
 
         return normalized
 
+    ################################################################################
+
     def _guess_role(self, entry: Dict[str, Any]) -> str:
         """Guess the role from entry type or other fields."""
         entry_type = self._find_field(entry, ["type", "entryType"])
@@ -185,6 +225,8 @@ class AdaptiveParser:
         elif entry_type in ["system", "info", "meta"]:
             return "system"
         return "unknown"
+
+    ################################################################################
 
     def extract_content_text(self, entry: Dict[str, Any]) -> Optional[str]:
         """Extract readable text from any entry format."""
@@ -198,7 +240,13 @@ class AdaptiveParser:
 
         return self._extract_text_from_content(content)
 
-    def _extract_text_from_content(self, content: Any, depth: int = 0) -> Optional[str]:
+    ################################################################################
+
+    def _extract_text_from_content(
+        self,
+        content : Any,
+        depth   : int = 0
+    ) -> Optional[str]:
         """Extract text from various content formats.
 
         Args:
@@ -269,6 +317,8 @@ class AdaptiveParser:
             # Only catch specific exceptions that could occur during serialization
             log_debug(f"Failed to serialize content to string: {type(e).__name__}")
             return None
+
+    ################################################################################
 
     def extract_tool_info(self, entry: Dict[str, Any]) -> Dict[str, Any]:
         """Extract tool-related information from any format."""

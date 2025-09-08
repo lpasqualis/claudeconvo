@@ -1,4 +1,4 @@
-"""Utility functions for claudelog."""
+"""Utility functions for claudeconvo."""
 
 import json
 import logging
@@ -13,7 +13,6 @@ from .constants import (
     FILENAME_DISPLAY_WIDTH,
     MAX_TOOL_WIDTH,
     MIN_TOOL_WIDTH,
-    SEPARATOR_WIDTH,
     TOOL_WIDTH_DIVISOR,
     TOOL_WIDTH_HALF_DIVISOR,
     UUID_DISPLAY_LENGTH,
@@ -101,8 +100,11 @@ def format_with_color(text: str, color: str, reset: str) -> str:
     return f"{color}{text}{reset}"
 
 
-def format_error(text: str, colors) -> str:
-    """Format an error message.
+################################################################################
+
+def format_error(text: str, colors: Any) -> str:
+    """
+    Format an error message.
 
     Args:
         text: Error text
@@ -114,8 +116,11 @@ def format_error(text: str, colors) -> str:
     return format_with_color(text, colors.ERROR, colors.RESET)
 
 
-def format_success(text: str, colors) -> str:
-    """Format a success message.
+################################################################################
+
+def format_success(text: str, colors: Any) -> str:
+    """
+    Format a success message.
 
     Args:
         text: Success text
@@ -127,8 +132,11 @@ def format_success(text: str, colors) -> str:
     return format_with_color(text, colors.ASSISTANT, colors.RESET)
 
 
-def format_info(text: str, colors) -> str:
-    """Format an info message.
+################################################################################
+
+def format_info(text: str, colors: Any) -> str:
+    """
+    Format an info message.
 
     Args:
         text: Info text
@@ -140,8 +148,11 @@ def format_info(text: str, colors) -> str:
     return format_with_color(text, colors.DIM, colors.RESET)
 
 
-def format_bold(text: str, colors) -> str:
-    """Format text in bold.
+################################################################################
+
+def format_bold(text: str, colors: Any) -> str:
+    """
+    Format text in bold.
 
     Args:
         text: Text to make bold
@@ -153,8 +164,11 @@ def format_bold(text: str, colors) -> str:
     return format_with_color(text, colors.BOLD, colors.RESET)
 
 
+################################################################################
+
 def sanitize_terminal_output(text: str, strip_all_escapes: bool = False) -> str:
-    """Sanitize text for safe terminal output.
+    """
+    Sanitize text for safe terminal output.
 
     Removes or escapes potentially dangerous terminal control sequences
     while preserving legitimate ANSI color codes (unless strip_all requested).
@@ -196,8 +210,14 @@ def sanitize_terminal_output(text: str, strip_all_escapes: bool = False) -> str:
     return text
 
 
-def load_json_config(config_path: Path, default: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
-    """Load a JSON configuration file with error handling.
+################################################################################
+
+def load_json_config(
+    config_path : Path,
+    default     : Optional[Dict[str, Any]] = None
+) -> Dict[str, Any]:
+    """
+    Load a JSON configuration file with error handling.
 
     Args:
         config_path: Path to the configuration file
@@ -222,14 +242,17 @@ def load_json_config(config_path: Path, default: Optional[Dict[str, Any]] = None
         return default
 
 
+################################################################################
+
 def log_debug(message: str) -> None:
-    """Log debug messages if debug mode is enabled.
+    """
+    Log debug messages if debug mode is enabled.
 
     Args:
         message: Debug message to log
     """
     # Check if debug mode is enabled via environment variable
-    if os.environ.get("CLAUDELOG_DEBUG"):
+    if os.environ.get("CLAUDECONVO_DEBUG"):
         print(f"[DEBUG] {message}", file=sys.stderr)
 
     # Also use standard logging in case it's configured

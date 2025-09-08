@@ -1,4 +1,4 @@
-"""Display options management for claudelog."""
+"""Display options management for claudeconvo."""
 
 import sys
 
@@ -43,7 +43,7 @@ class ShowOptions:
 
         # Debug mode for internal error reporting (not user-facing)
         self.debug = False
-        
+
         # Formatting options (not part of the flag system)
         self.indent_results = True  # Default to enabled
 
@@ -119,8 +119,15 @@ class ShowOptions:
         print(render_inline("separator", ""))
         print()
 
-    def parse_options_internal(self, options_string):
-        """Internal parsing logic (separated for ? handling)."""
+    ################################################################################
+
+    def parse_options_internal(self, options_string: str) -> None:
+        """
+        Internal parsing logic (separated for ? handling).
+
+        Args:
+            options_string: String of option characters to parse
+        """
         # Start with defaults
         for attr in self.DEFAULT_ENABLED:
             setattr(self, attr, True)
@@ -144,8 +151,18 @@ class ShowOptions:
                         setattr(self, attr, not char.isupper())
                         break
 
-    def should_truncate(self, text_type="default"):
-        """Determine if text should be truncated based on options."""
+    ################################################################################
+
+    def should_truncate(self, text_type: str = "default") -> bool:
+        """
+        Determine if text should be truncated based on options.
+
+        Args:
+            text_type: Type of text being checked for truncation
+
+        Returns:
+            True if text should be truncated, False otherwise
+        """
         if self.unfiltered:
             return False
         # Check if tool_details is enabled for any tool-related text type
@@ -153,8 +170,18 @@ class ShowOptions:
             return False
         return True
 
-    def get_max_length(self, text_type="default"):
-        """Get maximum text length based on options and text type."""
+    ################################################################################
+
+    def get_max_length(self, text_type: str = "default") -> float:
+        """
+        Get maximum text length based on options and text type.
+
+        Args:
+            text_type: Type of text to get max length for
+
+        Returns:
+            Maximum length (float('inf') for no limit)
+        """
         if not self.should_truncate(text_type):
             return float("inf")
 

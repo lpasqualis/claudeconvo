@@ -1,4 +1,4 @@
-"""Color theme definitions for claudelog.
+"""Color theme definitions for claudeconvo.
 
 This module provides a flexible color theming system using ANSI escape codes.
 It supports multiple built-in themes and allows runtime theme switching.
@@ -31,6 +31,8 @@ allowing themes to be changed at runtime via set_theme().
 """
 
 
+################################################################################
+
 class ColorTheme:
     """Base class for color themes."""
 
@@ -38,26 +40,28 @@ class ColorTheme:
 
     # Base attributes - all themes inherit or override these
     RESET = "\033[0m"
-    BOLD = "\033[1m"
-    DIM = "\033[2m"
+    BOLD  = "\033[1m"
+    DIM   = "\033[2m"
 
     # Message types
-    USER = ""
+    USER      = ""
     ASSISTANT = ""
-    SYSTEM = ""
-    ERROR = ""
-    WARNING = ""
+    SYSTEM    = ""
+    ERROR     = ""
+    WARNING   = ""
 
     # Tool colors
-    TOOL_NAME = ""
-    TOOL_PARAM = ""
+    TOOL_NAME   = ""
+    TOOL_PARAM  = ""
     TOOL_OUTPUT = ""
 
     # Other
     TIMESTAMP = ""
     SEPARATOR = ""
-    METADATA = ""
+    METADATA  = ""
 
+
+################################################################################
 
 class DarkTheme(ColorTheme):
     """Default dark terminal theme."""
@@ -65,22 +69,24 @@ class DarkTheme(ColorTheme):
     name = "dark"
 
     # Message types
-    USER = "\033[36m"  # Cyan
+    USER      = "\033[36m"  # Cyan
     ASSISTANT = "\033[32m"  # Green
-    SYSTEM = "\033[33m"  # Yellow
-    ERROR = "\033[31m"  # Red
-    WARNING = "\033[33m"  # Yellow
+    SYSTEM    = "\033[33m"  # Yellow
+    ERROR     = "\033[31m"  # Red
+    WARNING   = "\033[33m"  # Yellow
 
     # Tool colors
-    TOOL_NAME = "\033[35m"  # Magenta
-    TOOL_PARAM = "\033[95m"  # Light magenta
+    TOOL_NAME   = "\033[35m"  # Magenta
+    TOOL_PARAM  = "\033[95m"  # Light magenta
     TOOL_OUTPUT = "\033[95m"  # Light magenta (same as tool params)
 
     # Other
     TIMESTAMP = "\033[37m"  # Light gray/white
     SEPARATOR = "\033[37m"  # White
-    METADATA = "\033[94m"  # Light blue
+    METADATA  = "\033[94m"  # Light blue
 
+
+################################################################################
 
 class LightTheme(ColorTheme):
     """Theme optimized for light/white terminals."""
@@ -88,15 +94,15 @@ class LightTheme(ColorTheme):
     name = "light"
 
     # Message types
-    USER = "\033[34m"  # Blue
+    USER      = "\033[34m"  # Blue
     ASSISTANT = "\033[32m"  # Green
-    SYSTEM = "\033[33m"  # Yellow/Brown
-    ERROR = "\033[91m"  # Bright red
-    WARNING = "\033[33m"  # Yellow/Brown
+    SYSTEM    = "\033[33m"  # Yellow/Brown
+    ERROR     = "\033[91m"  # Bright red
+    WARNING   = "\033[33m"  # Yellow/Brown
 
     # Tool colors
-    TOOL_NAME = "\033[35m"  # Magenta
-    TOOL_PARAM = "\033[35m"  # Magenta (not light)
+    TOOL_NAME   = "\033[35m"  # Magenta
+    TOOL_PARAM  = "\033[35m"  # Magenta (not light)
     TOOL_OUTPUT = "\033[90m"  # Dark gray
 
     # Other
@@ -105,28 +111,32 @@ class LightTheme(ColorTheme):
     METADATA = "\033[36m"  # Cyan
 
 
+################################################################################
+
 class SolarizedDarkTheme(ColorTheme):
     """Solarized dark color scheme."""
 
     name = "solarized-dark"
 
     # Solarized base colors
-    USER = "\033[36m"  # Cyan
+    USER      = "\033[36m"  # Cyan
     ASSISTANT = "\033[32m"  # Green
-    SYSTEM = "\033[33m"  # Yellow
-    ERROR = "\033[31m"  # Red
-    WARNING = "\033[33m"  # Yellow
+    SYSTEM    = "\033[33m"  # Yellow
+    ERROR     = "\033[31m"  # Red
+    WARNING   = "\033[33m"  # Yellow
 
     # Tool colors
-    TOOL_NAME = "\033[35m"  # Magenta
-    TOOL_PARAM = "\033[34m"  # Blue
+    TOOL_NAME   = "\033[35m"  # Magenta
+    TOOL_PARAM  = "\033[34m"  # Blue
     TOOL_OUTPUT = "\033[90m"  # Base01
 
     # Other
     TIMESTAMP = "\033[37m"  # Base1
     SEPARATOR = "\033[37m"  # Base1
-    METADATA = "\033[36m"  # Cyan
+    METADATA  = "\033[36m"  # Cyan
 
+
+################################################################################
 
 class SolarizedLightTheme(ColorTheme):
     """Solarized light color scheme."""
@@ -134,22 +144,24 @@ class SolarizedLightTheme(ColorTheme):
     name = "solarized-light"
 
     # Solarized light adjustments
-    USER = "\033[36m"  # Cyan
+    USER      = "\033[36m"  # Cyan
     ASSISTANT = "\033[32m"  # Green
-    SYSTEM = "\033[33m"  # Yellow
-    ERROR = "\033[31m"  # Red
-    WARNING = "\033[33m"  # Yellow
+    SYSTEM    = "\033[33m"  # Yellow
+    ERROR     = "\033[31m"  # Red
+    WARNING   = "\033[33m"  # Yellow
 
     # Tool colors
-    TOOL_NAME = "\033[35m"  # Magenta
-    TOOL_PARAM = "\033[34m"  # Blue
+    TOOL_NAME   = "\033[35m"  # Magenta
+    TOOL_PARAM  = "\033[34m"  # Blue
     TOOL_OUTPUT = "\033[90m"  # Base00
 
     # Other
     TIMESTAMP = "\033[90m"  # Base00
     SEPARATOR = "\033[90m"  # Base00
-    METADATA = "\033[36m"  # Cyan
+    METADATA  = "\033[36m"  # Cyan
 
+
+################################################################################
 
 class DraculaTheme(ColorTheme):
     """Dracula color scheme."""
@@ -174,6 +186,8 @@ class DraculaTheme(ColorTheme):
     METADATA = "\033[94m"  # Light blue
 
 
+################################################################################
+
 class NordTheme(ColorTheme):
     """Nord color scheme."""
 
@@ -197,6 +211,8 @@ class NordTheme(ColorTheme):
     METADATA = "\033[96m"  # Nord7
 
 
+################################################################################
+
 class MonoTheme(ColorTheme):
     """Monochrome theme with no colors."""
 
@@ -207,6 +223,8 @@ class MonoTheme(ColorTheme):
     BOLD = ""
     DIM = ""
 
+
+################################################################################
 
 class HighContrastTheme(ColorTheme):
     """High contrast theme for accessibility."""
@@ -271,17 +289,25 @@ def get_color_theme(theme_name="dark"):
 
 # Global Colors instance - will be updated based on theme selection
 # Using a wrapper class to allow runtime theme changes
+################################################################################
+
 class _ColorsWrapper:
     """Wrapper to allow dynamic theme switching."""
 
-    def __init__(self):
+    ################################################################################
+
+    def __init__(self) -> None:
         self._theme = DarkTheme()
 
-    def set_theme(self, theme):
+    ################################################################################
+
+    def set_theme(self, theme: ColorTheme) -> None:
         """Set the current theme."""
         self._theme = theme
 
-    def __getattr__(self, name):
+    ################################################################################
+
+    def __getattr__(self, name: str) -> str:
         """Delegate attribute access to the current theme."""
         return getattr(self._theme, name)
 

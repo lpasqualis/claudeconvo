@@ -1,53 +1,73 @@
-"""Diagnostic and analysis tools for Claude log format."""
+"""
+Diagnostic and analysis tools for Claude log format.
+
+This module provides comprehensive analysis of Claude log files to detect
+format variations, parsing issues, and compatibility problems across
+different versions of the Claude logging system.
+
+Example usage:
+    analyzer = LogAnalyzer(verbose=True)
+    file_stats = analyzer.analyze_file(filepath)
+    report = analyzer.generate_report()
+"""
 
 import json
 from collections import Counter, defaultdict
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 from .constants import MAX_PARSE_ERRORS_DISPLAY, MAX_TYPE_COUNTS_DISPLAY
 from .parsers.adaptive import AdaptiveParser
 from .themes import Colors
 
+################################################################################
 
 class LogAnalyzer:
     """Analyze Claude log files for format variations and issues."""
 
+    ################################################################################
+
     def __init__(self, verbose: bool = False):
-        """Initialize the analyzer.
+        """
+        Initialize the analyzer.
 
         Args:
-            verbose: If True, show detailed output
+            verbose: If True, show detailed output including warnings
+                    and verbose field pattern information
         """
         self.verbose = verbose
-        self.parser = AdaptiveParser()
-        self.stats = {
-            "versions": Counter(),
-            "entry_types": Counter(),
-            "field_patterns": defaultdict(set),
-            "parse_errors": [],
-            "unknown_fields": defaultdict(set),
-            "tool_patterns": defaultdict(set),
-            "content_structures": defaultdict(set),
-            "missing_expected": defaultdict(list),
+        self.parser  = AdaptiveParser()
+        self.stats   = {
+            "versions"           : Counter(),
+            "entry_types"        : Counter(),
+            "field_patterns"     : defaultdict(set),
+            "parse_errors"       : [],
+            "unknown_fields"     : defaultdict(set),
+            "tool_patterns"      : defaultdict(set),
+            "content_structures" : defaultdict(set),
+            "missing_expected"   : defaultdict(list),
         }
 
+    ################################################################################
+
     def analyze_file(self, filepath: Path) -> Dict[str, Any]:
-        """Analyze a single session file.
+        """
+        Analyze a single session file.
 
         Args:
             filepath: Path to the JSONL file
 
         Returns:
-            Analysis results for the file
+            Analysis results for the file including entry counts,
+            versions found, types discovered, and any errors
         """
         file_stats = {
-            "filename": filepath.name,
-            "entries": 0,
-            "versions": set(),
-            "types": set(),
-            "errors": [],
-            "warnings": [],
+            "filename" : filepath.name,
+            "entries"  : 0,
+            "versions" : set(),
+            "types"    : set(),
+            "errors"   : [],
+            "warnings" : [],
         }
 
         try:
@@ -65,31 +85,40 @@ class LogAnalyzer:
                     except json.JSONDecodeError as e:
                         error = f"Line {line_num}: JSON decode error: {e}"
                         file_stats["errors"].append(error)
-                        self.stats["parse_errors"].append(
-                            {"file": filepath.name, "line": line_num, "error": str(e)}
-                        )
+                        self.stats["parse_errors"].append({
+                            "file"  : filepath.name,
+                            "line"  : line_num,
+                            "error" : str(e)
+                        })
 
         except Exception as e:
             file_stats["errors"].append(f"File read error: {e}")
 
         return file_stats
 
-    def _analyze_entry(self, entry: Dict[str, Any], file_stats: Dict, line_num: int):
-        """Analyze a single log entry.
+    ################################################################################
+
+    def _analyze_entry(
+        self,
+        entry      : Dict[str, Any],
+        file_stats : Dict,
+        line_num   : int
+    ) -> None:
+        """
+        Analyze a single log entry.
 
         Args:
-            entry: The log entry
-            file_stats: File statistics to update
-            line_num: Line number in the file
+            entry: The log entry to analyze
+            file_stats: File statistics dictionary to update
+            line_num: Line number in the file for error reporting
         """
         # Track version
-        version = entry.get("version", "no_version")
-        self.stats["versions"][version] += 1
-        file_stats["versions"].add(version)
-
-        # Track entry type
+        version    = entry.get("version", "no_version")
         entry_type = entry.get("type", "unknown")
+
+        self.stats["versions"][version] += 1
         self.stats["entry_types"][entry_type] += 1
+        file_stats["versions"].add(version)
         file_stats["types"].add(entry_type)
 
         # Track field patterns
@@ -98,25 +127,10 @@ class LogAnalyzer:
 
         # Check for unknown fields not in our parser config
         known_fields = {
-            "type",
-            "version",
-            "timestamp",
-            "sessionId",
-            "uuid",
-            "parentUuid",
-            "isSidechain",
-            "isMeta",
-            "userType",
-            "cwd",
-            "gitBranch",
-            "level",
-            "requestId",
-            "message",
-            "toolUseResult",
-            "summary",
-            "leafUuid",
-            "content",
-            "role",
+            "type", "version", "timestamp", "sessionId", "uuid",
+            "parentUuid", "isSidechain", "isMeta", "userType", "cwd",
+            "gitBranch", "level", "requestId", "message", "toolUseResult",
+            "summary", "leafUuid", "content", "role",
         }
 
         for field in entry.keys():
@@ -145,27 +159,32 @@ class LogAnalyzer:
 
         # Check for expected fields based on type
         expected_by_type = {
-            "user": ["message", "timestamp", "sessionId"],
-            "assistant": ["message", "timestamp", "sessionId"],
-            "system": ["content", "timestamp"],
-            "summary": ["summary", "leafUuid"],
+            "user"      : ["message", "timestamp", "sessionId"],
+            "assistant" : ["message", "timestamp", "sessionId"],
+            "system"    : ["content", "timestamp"],
+            "summary"   : ["summary", "leafUuid"],
         }
 
         if entry_type in expected_by_type:
             for expected in expected_by_type[entry_type]:
                 if expected not in entry and "message" not in entry:
-                    self.stats["missing_expected"][version].append(
-                        {"type": entry_type, "field": expected, "line": line_num}
-                    )
+                    self.stats["missing_expected"][version].append({
+                        "type"  : entry_type,
+                        "field" : expected,
+                        "line"  : line_num
+                    })
+
+    ################################################################################
 
     def _get_content_type(self, content: Any) -> str:
-        """Determine the type/structure of content.
+        """
+        Determine the type/structure of content.
 
         Args:
             content: Content to analyze
 
         Returns:
-            String description of content type
+            String description of content type and structure
         """
         if content is None:
             return "none"
@@ -190,11 +209,14 @@ class LogAnalyzer:
         else:
             return type(content).__name__
 
+    ################################################################################
+
     def generate_report(self) -> str:
-        """Generate a detailed analysis report.
+        """
+        Generate a detailed analysis report.
 
         Returns:
-            Formatted report string
+            Formatted report string with color codes and analysis results
         """
         report = []
         report.append(f"\n{Colors.BOLD}=== Claude Log Format Analysis Report ==={Colors.RESET}\n")
@@ -263,13 +285,21 @@ class LogAnalyzer:
 
         return "\n".join(report)
 
+    ################################################################################
+
     def test_parser_compatibility(self) -> Dict[str, Any]:
-        """Test the adaptive parser against collected samples.
+        """
+        Test the adaptive parser against collected samples.
 
         Returns:
-            Test results
+            Test results including success rate and failure details
         """
-        results = {"total_tested": 0, "successful": 0, "failed": [], "warnings": []}
+        results = {
+            "total_tested" : 0,
+            "successful"   : 0,
+            "failed"       : [],
+            "warnings"     : []
+        }
 
         # Try to find test fixtures - these may not exist in production installations
         fixtures_dir = Path("tests/fixtures/versions")
@@ -309,19 +339,27 @@ class LogAnalyzer:
                         results["successful"] += 1
 
                     except Exception as e:
-                        results["failed"].append(
-                            {"version": version, "type": entry_type, "error": str(e)}
-                        )
+                        results["failed"].append({
+                            "version" : version,
+                            "type"    : entry_type,
+                            "error"   : str(e)
+                        })
 
         return results
 
 
-def run_diagnostics(session_file: str = None, verbose: bool = False) -> None:
-    """Run diagnostics on Claude log files.
+################################################################################
+
+def run_diagnostics(
+    session_file : Optional[str] = None,
+    verbose      : bool          = False
+) -> None:
+    """
+    Run diagnostics on Claude log files.
 
     Args:
         session_file: Specific file to analyze (optional)
-        verbose: Show detailed output
+        verbose: Show detailed output including warnings and verbose patterns
     """
     analyzer = LogAnalyzer(verbose=verbose)
 

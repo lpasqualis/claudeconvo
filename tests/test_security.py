@@ -1,4 +1,4 @@
-"""Security tests for claudelog."""
+"""Security tests for claudeconvo."""
 
 import json
 import sys
@@ -8,13 +8,13 @@ from unittest.mock import Mock, patch, MagicMock, mock_open
 import os
 import pytest
 
-# Add src to path to import claudelog
+# Add src to path to import claudeconvo
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from claudelog.session import parse_session_file, find_project_root, BYTES_PER_MB
-from claudelog.diagnostics import run_diagnostics
-from claudelog.parsers.registry import get_parser
-from claudelog.parsers.adaptive import AdaptiveParser
+from claudeconvo.session import parse_session_file, find_project_root, BYTES_PER_MB
+from claudeconvo.diagnostics import run_diagnostics
+from claudeconvo.parsers.registry import get_parser
+from claudeconvo.parsers.adaptive import AdaptiveParser
 
 
 class TestPathSecurity:
@@ -23,7 +23,7 @@ class TestPathSecurity:
     def test_parse_session_file_rejects_path_traversal(self, capsys):
         """Test that parse_session_file rejects files outside Claude sessions directory."""
         # Try to read a file outside the expected directory
-        with patch("claudelog.session.Path.resolve") as mock_resolve:
+        with patch("claudeconvo.session.Path.resolve") as mock_resolve:
             mock_resolve.return_value = Path("/etc/passwd")
 
             result = parse_session_file("/etc/passwd")
@@ -39,9 +39,9 @@ class TestPathSecurity:
         home_sessions = Path.home() / ".claude" / "projects" / "test-project"
         test_file = home_sessions / "session.jsonl"
 
-        with patch("claudelog.session.Path.resolve") as mock_resolve:
+        with patch("claudeconvo.session.Path.resolve") as mock_resolve:
             mock_resolve.return_value = test_file
-            with patch("claudelog.session.Path.is_symlink") as mock_is_symlink:
+            with patch("claudeconvo.session.Path.is_symlink") as mock_is_symlink:
                 mock_is_symlink.return_value = False
 
                 # Create a proper mock file handle
@@ -63,9 +63,9 @@ class TestPathSecurity:
         home_sessions = Path.home() / ".claude" / "projects" / "test-project"
         test_file = home_sessions / "session.jsonl"
 
-        with patch("claudelog.session.Path.resolve") as mock_resolve:
+        with patch("claudeconvo.session.Path.resolve") as mock_resolve:
             mock_resolve.return_value = test_file
-            with patch("claudelog.session.Path.is_symlink") as mock_is_symlink:
+            with patch("claudeconvo.session.Path.is_symlink") as mock_is_symlink:
                 mock_is_symlink.return_value = False
 
                 # Create a proper mock file handle
@@ -88,9 +88,9 @@ class TestPathSecurity:
     def test_diagnostics_path_validation(self, capsys):
         """Test that diagnostics validates session file paths."""
         # Try to analyze a file outside the expected directory
-        with patch("claudelog.diagnostics.Path.resolve") as mock_resolve:
+        with patch("claudeconvo.diagnostics.Path.resolve") as mock_resolve:
             mock_resolve.return_value = Path("/etc/passwd")
-            with patch("claudelog.diagnostics.Path.is_file") as mock_is_file:
+            with patch("claudeconvo.diagnostics.Path.is_file") as mock_is_file:
                 mock_is_file.return_value = True
 
                 run_diagnostics(session_file="/etc/passwd")
@@ -115,7 +115,7 @@ class TestPathSecurity:
             except OSError:
                 pytest.skip("Cannot create symlinks on this system")
 
-            with patch("claudelog.session.Path.resolve") as mock_resolve:
+            with patch("claudeconvo.session.Path.resolve") as mock_resolve:
                 # resolve() should follow symlinks and reveal the true path
                 mock_resolve.return_value = target
 
@@ -132,7 +132,7 @@ class TestExceptionHandling:
         with patch("builtins.open", mock_open(read_data='{"invalid json')):
             with patch("pathlib.Path.exists", return_value=True):
                 # Enable debug mode for this test
-                with patch.dict(os.environ, {"CLAUDELOG_DEBUG": "1"}):
+                with patch.dict(os.environ, {"CLAUDECONVO_DEBUG": "1"}):
                     parser = AdaptiveParser(config_path="test_config.json")
 
                     captured = capsys.readouterr()
@@ -146,11 +146,11 @@ class TestExceptionHandling:
         """Test that parser errors don't expose full error details."""
         test_data = '{"type": "test", "content": "data"}\n'
 
-        with patch("claudelog.session.Path.resolve") as mock_resolve:
+        with patch("claudeconvo.session.Path.resolve") as mock_resolve:
             home_sessions = Path.home() / ".claude" / "projects" / "test"
             mock_resolve.return_value = home_sessions / "session.jsonl"
 
-            with patch("claudelog.session.Path.is_symlink") as mock_is_symlink:
+            with patch("claudeconvo.session.Path.is_symlink") as mock_is_symlink:
                 mock_is_symlink.return_value = False
 
                 # Create a proper mock file handle
@@ -163,7 +163,7 @@ class TestExceptionHandling:
 
                         # Mock the parser to raise an error
                         with patch(
-                            "claudelog.parsers.adaptive.AdaptiveParser.parse_entry"
+                            "claudeconvo.parsers.adaptive.AdaptiveParser.parse_entry"
                         ) as mock_parse:
                             mock_parse.side_effect = ValueError("Sensitive error details")
 

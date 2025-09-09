@@ -297,7 +297,7 @@ def display_session(
             sessions = parse_session_file(filepath)
 
             # Display any new entries
-            for i, entry in enumerate(sessions[displayed_count:], displayed_count):
+            for entry in sessions[displayed_count:]:
                 formatted = format_conversation_entry(
                     entry, show_options, show_timestamp=show_timestamp
                 )

@@ -658,7 +658,7 @@ def list_files_only(session_files: list[Path]) -> None:
 def get_files_to_show(
     args          : argparse.Namespace,
     session_files : list[Path]
-) -> list[Path] | None:
+) -> Optional[list[Path]]:
     """
     Determine which files to show based on arguments.
 

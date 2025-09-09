@@ -31,11 +31,13 @@ Additional template options:
   - wrap_width: Width expression for wrapping (default: see DEFAULT_WRAP_WIDTH)
 """
 
+from __future__ import annotations
+
 import ast
 import operator
 import re
 import textwrap
-from typing import Any, Callable, Dict, Optional, cast
+from typing import Any, Callable, Optional, cast
 
 from .constants import DEFAULT_FALLBACK_WIDTH, ELLIPSIS_LENGTH, MIN_WRAP_WIDTH
 from .themes import Colors
@@ -418,7 +420,7 @@ STYLE_DESCRIPTIONS = {
 
 
 # Custom formatting functions
-STYLE_FUNCTIONS: Dict[str, Callable] = {}
+STYLE_FUNCTIONS: dict[str, Callable] = {}
 
 
 ################################################################################
@@ -601,7 +603,7 @@ def escape_ansi_codes(text: str) -> str:
 
 ################################################################################
 
-def expand_macros(template: str, context: Dict[str, Any]) -> str:
+def expand_macros(template: str, context: dict[str, Any]) -> str:
     """Expand all macros in a template string.
 
     Args:
@@ -712,7 +714,7 @@ class StyleRenderer:
         self,
         msg_type : str,
         content  : str = "",
-        context  : Optional[Dict[str, Any]] = None,
+        context  : Optional[dict[str, Any]] = None,
         **kwargs: Any
     ) -> str:
         """Render content using the style templates.
@@ -730,7 +732,7 @@ class StyleRenderer:
             # Fallback to plain text if template not found
             return content
 
-        template: Dict[str, Any] = cast(Dict[str, Any], self.style.templates[msg_type])
+        template: dict[str, Any] = cast(dict[str, Any], self.style.templates[msg_type])
 
         # Build context
         full_context = context or {}
@@ -850,7 +852,7 @@ class StyleRenderer:
         self,
         msg_type : str,
         content  : str = "",
-        context  : Optional[Dict[str, Any]] = None,
+        context  : Optional[dict[str, Any]] = None,
         **kwargs: Any
     ) -> str:
         """Render content inline (no label or separators).
@@ -869,7 +871,7 @@ class StyleRenderer:
         if msg_type not in self.style.templates:
             return content
 
-        template: Dict[str, Any] = cast(Dict[str, Any], self.style.templates[msg_type])
+        template: dict[str, Any] = cast(dict[str, Any], self.style.templates[msg_type])
 
         # Build context
         full_context = context or {}

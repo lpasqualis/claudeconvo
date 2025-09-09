@@ -56,26 +56,26 @@ class FormatStyle:
     templates = {
         # Conversation messages
         "user": {
-            "label"        : "\n{{color}}{{bold}}User:{{reset}}\n",
+            "label"        : "{{color}}{{bold}}User:{{reset}}\n",
             "pre_content"  : "",
             "content"      : " {{color}}{{content}}{{reset}}\n",
             "post_content" : "",
         },
         "assistant": {
-            "label"        : "\n{{color}}{{bold}}Claude:{{reset}}\n",
+            "label"        : "{{color}}{{bold}}Claude:{{reset}}\n",
             "pre_content"  : "",
             "content"      : " {{color}}{{content}}{{reset}}\n",
             "post_content" : "",
         },
         "system": {
-            "label"        : "\n{{color}}System:{{reset}}\n",
+            "label"        : "{{color}}System:{{reset}}\n",
             "pre_content"  : "",
             "content"      : " {{color}}{{content}}{{reset}}\n",
             "post_content" : "",
         },
         # Tool-related
         "tool_invocation": {
-            "label"        : "\n{{color}}🔧 Tool: {{name}}{{reset}}\n",
+            "label"        : "{{color}}🔧 Tool: {{name}}{{reset}}\n",
             "pre_content"  : "",
             "content"      : "",
             "post_content" : "",
@@ -90,19 +90,22 @@ class FormatStyle:
             "label"        : "   {{name_color}}✓ Result:{{reset}}\n",
             "pre_content"  : "",
             "content"      : "     {{color}}{{content}}{{reset}}\n",
-            "post_content" : "\n",  # Extra newline for spacing after tool results
+            "post_content" : "",
+            "wrap"         : False,  # Don't wrap tool results (preserves file paths, code, etc.)
         },
         "tool_result_success_content": {  # For custom labels, content only
             "label"        : "",
             "pre_content"  : "",
             "content"      : "     {{color}}{{content}}{{reset}}\n",
-            "post_content" : "\n",  # Extra newline for spacing after tool results
+            "post_content" : "",
+            "wrap"         : False,  # Don't wrap tool results
         },
         "tool_result_error": {
             "label"        : "   {{error_color}}❌ Error:{{reset}}\n",
             "pre_content"  : "",
             "content"      : "     {{error_color}}{{content}}{{reset}}\n",
-            "post_content" : "\n",  # Extra newline for spacing after errors
+            "post_content" : "",
+            "wrap"         : False,  # Don't wrap error messages
         },
         "task_result": {
             "label": "{{color}}{{bold}}{{name}} Result:{{reset}}\n",
@@ -112,7 +115,7 @@ class FormatStyle:
         },
         # Other conversation elements
         "summary": {
-            "label": "\n{{color}}📝 Summary: {{content}}{{reset}}\n",
+            "label": "{{color}}📝 Summary: {{content}}{{reset}}\n",
             "pre_content": "",
             "content": "",
             "post_content": "",
@@ -174,21 +177,21 @@ class BoxedStyle(FormatStyle):
     templates = {
         **FormatStyle.templates,  # Inherit defaults
         "user": {
-            "label": "\n{{bold}}USER{{reset}}",
-            "pre_content": "{{repeat:═:terminal}}",
-            "content": "│ {{color}}{{content:pad:terminal-4}}{{reset}} │",
-            "post_content": "{{repeat:─:terminal}}",
+            "label": "\n{{bold}}USER{{reset}}\n",
+            "pre_content": "┌{{repeat:─:terminal-2}}┐\n",
+            "content": "│ {{color}}{{content:pad:terminal-4}}{{reset}} │\n",
+            "post_content": "└{{repeat:─:terminal-2}}┘\n",
             "wrap": True,  # Enable wrapping for boxed content
-            "wrap_width": "terminal-6",  # Account for box borders
+            "wrap_width": "terminal-4",  # Account for box borders (│ and │ with spaces)
             "wrap_indent": "",  # No extra indent, box handles it
         },
         "assistant": {
-            "label": "\n{{bold}}CLAUDE{{reset}}",
-            "pre_content": "{{repeat:═:terminal}}",
-            "content": "│ {{color}}{{content:pad:terminal-4}}{{reset}} │",
-            "post_content": "{{repeat:─:terminal}}",
+            "label": "\n{{bold}}CLAUDE{{reset}}\n",
+            "pre_content": "┌{{repeat:─:terminal-2}}┐\n",
+            "content": "│ {{color}}{{content:pad:terminal-4}}{{reset}} │\n",
+            "post_content": "└{{repeat:─:terminal-2}}┘\n",
             "wrap": True,
-            "wrap_width": "terminal-6",
+            "wrap_width": "terminal-4",
             "wrap_indent": "",
         },
     }
@@ -206,25 +209,43 @@ class MinimalStyle(FormatStyle):
         "user": {
             "label": "",
             "pre_content": "",
-            "content": "{{color}}> {{content}}{{reset}}",
+            "content": "{{color}}> {{content}}{{reset}}\n",
             "post_content": "",
         },
         "assistant": {
             "label": "",
             "pre_content": "",
-            "content": "{{color}}< {{content}}{{reset}}",
+            "content": "{{color}}< {{content}}{{reset}}\n",
             "post_content": "",
         },
         "tool_invocation": {
             "label": "",
             "pre_content": "",
-            "content": "{{color}}[{{name}}]{{reset}}",
+            "content": "{{color}}[{{name}}]{{reset}}\n",
+            "post_content": "",
+        },
+        "tool_parameter": {
+            "label": "",
+            "pre_content": "",
+            "content": "  {{color}}{{key}}: {{value}}{{reset}}\n",  # Simple indented format
             "post_content": "",
         },
         "tool_result_success": {
-            "label": "  {{color}}✓{{reset}}",
+            "label": "",
             "pre_content": "",
-            "content": "  {{color}}{{content}}{{reset}}",
+            "content": "  {{color}}→ {{content}}{{reset}}\n",  # Simple arrow for results
+            "post_content": "",
+        },
+        "tool_result_success_content": {
+            "label": "",
+            "pre_content": "",
+            "content": "  {{color}}→ {{content}}{{reset}}\n",
+            "post_content": "",
+        },
+        "tool_result_error": {
+            "label": "",
+            "pre_content": "",
+            "content": "  {{error_color}}✗ {{content}}{{reset}}\n",  # Simple X for errors
             "post_content": "",
         },
         "separator": {
@@ -278,6 +299,13 @@ STYLES = {
     "boxed": BoxedStyle,
     "minimal": MinimalStyle,
     "compact": CompactStyle,
+}
+
+STYLE_DESCRIPTIONS = {
+    "default": "Standard formatting with clear labels",
+    "boxed": "Messages in boxes with borders",
+    "minimal": "Minimal decorations for clean output",
+    "compact": "Condensed spacing for more content",
 }
 
 
@@ -348,8 +376,24 @@ def expand_repeat_macro(match: Any) -> str:
 ################################################################################
 
 def expand_pad_macro(text: str, width_expr: str) -> str:
-    """Pad or truncate text to specified width."""
+    """Pad or truncate text to specified width.
+    
+    For multi-line text, pads each line individually.
+    """
     width = eval_terminal_expr(width_expr)
+    
+    # Handle multi-line text by padding each line
+    if '\n' in text:
+        lines = text.split('\n')
+        padded_lines = []
+        for line in lines:
+            if len(line) > width:
+                padded_lines.append(line[:width-3] + "...")
+            else:
+                padded_lines.append(line.ljust(width))
+        return '\n'.join(padded_lines)
+    
+    # Single line
     if len(text) > width:
         return text[:width-3] + "..."
     return text.ljust(width)
@@ -599,12 +643,15 @@ class StyleRenderer:
                 # Check if wrapping is enabled
                 if template.get('wrap', DEFAULT_WRAP_ENABLED):
                     # Calculate the fixed prefix length from the content template
-                    # by expanding it with empty content to see what's added
+                    # For templates with padding, we need to calculate the actual
+                    # prefix/suffix characters, not the padded width
+                    # Replace content:pad macros with just the content to get true prefix
+                    import re
+                    test_template = re.sub(r'\{\{content:pad:[^}]+\}\}', '{{content}}', content_template)
                     temp_context = full_context.copy()
                     temp_context['content'] = ''
-                    prefix = expand_macros(content_template, temp_context)
+                    prefix = expand_macros(test_template, temp_context)
                     # Remove ANSI codes to get actual display length
-                    import re
                     clean_prefix = re.sub(r'\x1b\[[0-9;]*m', '', prefix)
                     prefix_len = len(clean_prefix)
 

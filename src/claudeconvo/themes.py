@@ -93,22 +93,22 @@ class LightTheme(ColorTheme):
 
     name = "light"
 
-    # Message types
-    USER      = "\033[34m"  # Blue
-    ASSISTANT = "\033[32m"  # Green
-    SYSTEM    = "\033[33m"  # Yellow/Brown
-    ERROR     = "\033[91m"  # Bright red
-    WARNING   = "\033[33m"  # Yellow/Brown
+    # Message types - using bold for better readability on white
+    USER      = "\033[1;34m"  # Bold blue
+    ASSISTANT = "\033[1;30m"  # Bold black (very readable on white)
+    SYSTEM    = "\033[33m"    # Yellow/Brown
+    ERROR     = "\033[31m"    # Red
+    WARNING   = "\033[33m"    # Yellow/Brown
 
-    # Tool colors
-    TOOL_NAME   = "\033[35m"  # Magenta
-    TOOL_PARAM  = "\033[35m"  # Magenta (not light)
-    TOOL_OUTPUT = "\033[90m"  # Dark gray
+    # Tool colors - high contrast on white background
+    TOOL_NAME   = "\033[1;35m"  # Bold magenta (better contrast)
+    TOOL_PARAM  = "\033[35m"   # Dark purple/magenta (good contrast)
+    TOOL_OUTPUT = "\033[35m"   # Dark purple/magenta (consistent with params)
 
     # Other
     TIMESTAMP = "\033[90m"  # Dark gray
     SEPARATOR = "\033[90m"  # Dark gray
-    METADATA = "\033[36m"  # Cyan
+    METADATA = "\033[30m"   # Black (better than cyan on white)
 
 
 ################################################################################

@@ -47,10 +47,56 @@ def create_argument_parser() -> argparse.ArgumentParser:
     Returns:
         Configured ArgumentParser instance
     """
+    # Load config to get current defaults
+    from .config import load_config
+    config = load_config()
+    
+    # Parse current show options
+    from .options import ShowOptions
+    current_show = config.get("default_show_options", "qwo")
+    show_opts = ShowOptions(current_show)
+    
+    # Build the show options help with current state
+    option_lines = []
+    option_lines.append("Show options (-s) [Current config: {}]:".format(current_show))
+    
+    options_info = [
+        ("q", "user", "Show user messages"),
+        ("w", "assistant", "Show assistant/Claude messages"),
+        ("o", "tools", "Show tool executions"),
+        ("s", "summaries", "Show session summaries"),
+        ("h", "hooks", "Show hook executions"),
+        ("m", "metadata", "Show metadata (uuid, sessionId, version, etc.)"),
+        ("c", "commands", "Show command-related messages"),
+        ("y", "system", "Show all system messages"),
+        ("t", "tool_details", "Show full tool details without truncation"),
+        ("e", "errors", "Show all error details and warnings"),
+        ("r", "request_ids", "Show API request IDs"),
+        ("f", "flow", "Show parent/child relationships"),
+        ("u", "unfiltered", "Show all content without truncation"),
+        ("d", "diagnostics", "Show performance metrics and token counts"),
+        ("p", "paths", "Show working directory (cwd) for each message"),
+        ("l", "levels", "Show message level/priority"),
+        ("k", "sidechains", "Show sidechain/parallel messages"),
+        ("v", "user_types", "Show user type for each message"),
+        ("i", "model", "Show AI model name/version"),
+        ("a", "all", "Enable ALL options"),
+    ]
+    
+    for letter, attr, desc in options_info:
+        if letter == 'a':
+            option_lines.append(f"  {letter} - {desc}")
+        else:
+            is_enabled = getattr(show_opts, attr, False)
+            status = "ON" if is_enabled else "OFF"
+            option_lines.append(f"  {letter} - {desc} (currently: {status})")
+    
+    show_options_help = "\n".join(option_lines)
+    
     parser = argparse.ArgumentParser(
         description="View Claude Code session history as a conversation",
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
+        epilog=f"""
 Examples:
   %(prog)s              # View last session as conversation
   %(prog)s -l           # List all session files
@@ -60,27 +106,7 @@ Examples:
   %(prog)s -p /path     # View sessions for specific project path
   %(prog)s --list-projects  # List all projects with sessions
 
-Show options (-s):
-  q - Show user messages (default: on)
-  w - Show assistant/Claude messages (default: on)
-  o - Show tool executions (default: on)
-  s - Show session summaries
-  h - Show hook executions
-  m - Show metadata (uuid, sessionId, version, etc.)
-  c - Show command-related messages
-  y - Show all system messages
-  t - Show full tool details without truncation
-  e - Show all error details and warnings
-  r - Show API request IDs
-  f - Show parent/child relationships
-  u - Show all content without truncation
-  d - Show performance metrics and token counts
-  p - Show working directory (cwd) for each message
-  l - Show message level/priority
-  k - Show sidechain/parallel messages
-  v - Show user type for each message
-  i - Show AI model name/version
-  a - Enable ALL options
+{show_options_help}
 
   Special combinations:
   a = Enable ALL options
@@ -96,8 +122,9 @@ Examples:
   %(prog)s -sA          # Hide everything
   %(prog)s -sAy         # Show ONLY system messages
   %(prog)s -sAqw        # Show ONLY user and assistant (no tools)
-  %(prog)s -saH?        # Check what 'all except hooks' will show
+  %(prog)s '-saH?'      # Check what 'all except hooks' will show (quote to protect ?)
   %(prog)s -sAh         # Show ONLY hook executions
+  %(prog)s -saMFLKVTR   # Director's cut
         """,
     )
     parser.add_argument(
@@ -133,6 +160,14 @@ Examples:
         choices=list(THEMES.keys()) + ["list"],
         help="Color theme (use --theme without argument to list available themes)",
     )
+    parser.add_argument(
+        "--style",
+        type=str,
+        nargs="?",
+        const="list",
+        choices=["default", "boxed", "minimal", "compact", "list"],
+        help="Formatting style (use --style without argument to list available styles)",
+    )
     parser.add_argument("-p", "--project", type=str, help="Project path to view sessions for")
     parser.add_argument(
         "--list-projects", action="store_true", help="List all projects with session history"
@@ -151,6 +186,18 @@ Examples:
     )
     parser.add_argument(
         "--no-indent", action="store_true", help="Disable indentation alignment for tool results"
+    )
+    parser.add_argument(
+        "--make-default", action="store_true", 
+        help="Save current theme, style, and show options as defaults in ~/.claudeconvorc"
+    )
+    parser.add_argument(
+        "--reset-defaults", action="store_true",
+        help="Reset all settings to original defaults (removes ~/.claudeconvorc)"
+    )
+    parser.add_argument(
+        "--show-config", action="store_true",
+        help="Show complete current configuration (including defaults)"
     )
     return parser
 
@@ -203,6 +250,266 @@ def handle_theme_listing(args: argparse.Namespace) -> bool:
         print("\n" + render_inline("info", "Usage: claudeconvo --theme <theme_name>"))
         print(render_inline("info", "Set default: export CLAUDECONVO_THEME=<theme_name>"))
         print(render_inline("info", "Config file: ~/.claudeconvorc"))
+        return True
+    return False
+
+
+################################################################################
+
+def save_defaults(args: argparse.Namespace, config: dict) -> bool:
+    """
+    Save current settings as defaults in config file.
+    
+    Args:
+        args: Parsed command-line arguments
+        config: Current configuration
+        
+    Returns:
+        True if defaults were saved, False otherwise
+    """
+    if not args.make_default:
+        return False
+        
+    import json
+    from pathlib import Path
+    from .styles import render_inline
+    
+    # Determine what settings to save
+    new_config = config.copy()
+    
+    # Save theme if specified
+    if hasattr(args, 'theme') and args.theme and args.theme != 'list':
+        new_config['default_theme'] = args.theme
+    elif hasattr(args, 'no_color') and args.no_color:
+        new_config['default_theme'] = 'mono'
+    
+    # Save style if specified  
+    if hasattr(args, 'style') and args.style and args.style != 'list':
+        new_config['default_style'] = args.style
+    
+    # Save show options if specified
+    if hasattr(args, 'show') and args.show:
+        new_config['default_show_options'] = args.show
+    
+    # Save watch mode if specified
+    if hasattr(args, 'watch') and args.watch:
+        new_config['default_watch'] = True
+    
+    # Write to config file
+    config_path = Path.home() / ".claudeconvorc"
+    try:
+        with open(config_path, 'w') as f:
+            json.dump(new_config, f, indent=2)
+        
+        print(render_inline("header", "Defaults saved to ~/.claudeconvorc:"))
+        if 'default_theme' in new_config:
+            print(f"  Theme: {new_config['default_theme']}")
+        if 'default_style' in new_config:
+            print(f"  Style: {new_config['default_style']}")
+        if 'default_show_options' in new_config:
+            print(f"  Show options: {new_config['default_show_options']}")
+        if 'default_watch' in new_config:
+            print(f"  Watch mode: {new_config['default_watch']}")
+        return True
+    except Exception as e:
+        print(render_inline("error", f"Failed to save defaults: {e}"))
+        return False
+
+
+################################################################################
+
+def reset_defaults() -> bool:
+    """
+    Reset all settings to original defaults by removing config file.
+    
+    Returns:
+        True if defaults were reset, False otherwise
+    """
+    from pathlib import Path
+    from .styles import render_inline
+    
+    config_path = Path.home() / ".claudeconvorc"
+    
+    if config_path.exists():
+        try:
+            config_path.unlink()
+            print(render_inline("header", "Defaults reset to original:"))
+            print("  Theme: dark")
+            print("  Style: default")
+            print("  Show options: qwo (user, assistant, tools)")
+            print("  Watch mode: off")
+            print(render_inline("info", "Config file ~/.claudeconvorc removed"))
+            return True
+        except Exception as e:
+            print(render_inline("error", f"Failed to reset defaults: {e}"))
+            return False
+    else:
+        print(render_inline("info", "No config file found. Already using original defaults."))
+        print("  Theme: dark")
+        print("  Style: default")
+        print("  Show options: qwo (user, assistant, tools)")
+        print("  Watch mode: off")
+        return True
+
+
+################################################################################
+
+def show_configuration(args: argparse.Namespace, config: dict) -> bool:
+    """
+    Display the complete current configuration.
+    
+    Args:
+        args: Parsed command-line arguments
+        config: Configuration from file
+        
+    Returns:
+        True if config was displayed, False otherwise
+    """
+    if not hasattr(args, 'show_config') or not args.show_config:
+        return False
+        
+    from .styles import render_inline
+    import json
+    import os
+    from pathlib import Path
+    
+    print(render_inline("header", "Current Configuration"))
+    print(render_inline("separator", ""))
+    
+    # Determine effective values (what will actually be used)
+    effective_theme = args.theme if hasattr(args, 'theme') and args.theme and args.theme != 'list' else None
+    if not effective_theme and hasattr(args, 'no_color') and args.no_color:
+        effective_theme = 'mono'
+    if not effective_theme:
+        effective_theme = os.environ.get('CLAUDECONVO_THEME') or config.get('default_theme', 'dark')
+    
+    effective_style = args.style if hasattr(args, 'style') and args.style and args.style != 'list' else None
+    if not effective_style:
+        effective_style = config.get('default_style', 'default')
+    
+    effective_show = args.show if hasattr(args, 'show') and args.show else config.get('default_show_options', 'qwo')
+    
+    # For watch, we need to check if it was explicitly set on command line
+    # If not explicitly set, use config default
+    if hasattr(args, 'watch') and args.watch:
+        effective_watch = True
+    else:
+        effective_watch = config.get('default_watch', False)
+    
+    # Parse show options to display individual flags
+    from .options import ShowOptions
+    show_opts = ShowOptions(effective_show)
+    flags = []
+    flag_map = {
+        'user': 'q', 'assistant': 'w', 'tools': 'o', 'summaries': 's',
+        'hooks': 'h', 'metadata': 'm', 'commands': 'c', 'system': 'y',
+        'tool_details': 't', 'errors': 'e', 'request_ids': 'r', 
+        'flow': 'f', 'unfiltered': 'u', 'diagnostics': 'd',
+        'paths': 'p', 'levels': 'l', 'sidechains': 'k', 'user_types': 'v',
+        'model': 'i'
+    }
+    for attr, letter in flag_map.items():
+        if getattr(show_opts, attr, False):
+            flags.append(letter)
+        else:
+            flags.append(letter.upper())
+    flags_str = ''.join(flags)
+    
+    # Display effective configuration
+    print(render_inline("header", "Effective Settings (what will be used):"))
+    print(f"  Theme: {effective_theme}")
+    print(f"  Style: {effective_style}")
+    print(f"  Show options: {effective_show} ({flags_str})")
+    print(f"  Watch mode: {effective_watch}")
+    print()
+    
+    # Display config file settings
+    config_path = Path.home() / ".claudeconvorc"
+    if config_path.exists():
+        print(render_inline("header", "Config File (~/.claudeconvorc):"))
+        print(f"  Theme: {config.get('default_theme', '(not set)')}")
+        print(f"  Style: {config.get('default_style', '(not set)')}")
+        
+        config_show = config.get('default_show_options', '(not set)')
+        if config_show != '(not set)':
+            config_show_opts = ShowOptions(config_show)
+            config_flags = []
+            for attr, letter in flag_map.items():
+                if getattr(config_show_opts, attr, False):
+                    config_flags.append(letter)
+                else:
+                    config_flags.append(letter.upper())
+            config_flags_str = ''.join(config_flags)
+            print(f"  Show options: {config_show} ({config_flags_str})")
+        else:
+            print(f"  Show options: {config_show}")
+            
+        print(f"  Watch mode: {config.get('default_watch', '(not set)')}")
+        print()
+        print(render_inline("info", "Raw config file:"))
+        print(json.dumps(config, indent=2))
+    else:
+        print(render_inline("info", "No config file found (~/.claudeconvorc)"))
+    print()
+    
+    # Display environment variables
+    print(render_inline("header", "Environment Variables:"))
+    env_theme = os.environ.get('CLAUDECONVO_THEME')
+    print(f"  CLAUDECONVO_THEME: {env_theme if env_theme else '(not set)'}")
+    print()
+    
+    # Display command-line overrides
+    if any([
+        hasattr(args, 'theme') and args.theme and args.theme != 'list',
+        hasattr(args, 'style') and args.style and args.style != 'list',
+        hasattr(args, 'show') and args.show,
+        hasattr(args, 'watch') and args.watch
+    ]):
+        print(render_inline("header", "Command-line Overrides:"))
+        if hasattr(args, 'theme') and args.theme and args.theme != 'list':
+            print(f"  --theme {args.theme}")
+        if hasattr(args, 'style') and args.style and args.style != 'list':
+            print(f"  --style {args.style}")
+        if hasattr(args, 'show') and args.show:
+            print(f"  --show {args.show}")
+        if hasattr(args, 'watch') and args.watch:
+            print(f"  --watch")
+        print()
+    
+    # Display built-in defaults
+    print(render_inline("header", "Built-in Defaults (use --reset-defaults to restore):"))
+    print("  Theme: dark")
+    print("  Style: default")
+    print("  Show options: qwo (user, assistant, tools)")
+    print("  Watch mode: False")
+    
+    print(render_inline("separator", ""))
+    print(render_inline("info", "Priority: CLI args > Environment > Config file > Built-in defaults"))
+    
+    return True
+
+
+################################################################################
+
+def handle_style_listing(args: argparse.Namespace) -> bool:
+    """
+    Handle style listing if requested.
+
+    Args:
+        args: Parsed command-line arguments
+
+    Returns:
+        True if styles were listed, False otherwise
+    """
+    if hasattr(args, "style") and args.style == "list":
+        from .styles import render_inline, STYLE_DESCRIPTIONS
+        print("\n" + render_inline("header", "Available formatting styles:"))
+        print(render_inline("separator", ""))
+        for name, desc in STYLE_DESCRIPTIONS.items():
+            print(f"  {name:12} - {desc}")
+        print(render_inline("separator", ""))
+        print("\n" + render_inline("info", "Usage: claudeconvo --style <style_name>"))
+        print(render_inline("info", "Config file: ~/.claudeconvorc (add default_style setting)"))
         return True
     return False
 
@@ -398,8 +705,25 @@ def main() -> int:
     if handle_theme_listing(args):
         return 0
 
+    if handle_style_listing(args):
+        return 0
+
+    # Handle --reset-defaults first (before loading config)
+    if hasattr(args, 'reset_defaults') and args.reset_defaults:
+        if reset_defaults():
+            return 0
+    
     # Load config
     config = load_config()
+    
+    # Handle --show-config if specified
+    if show_configuration(args, config):
+        return 0
+    
+    # Handle --make-default if specified
+    if hasattr(args, 'make_default') and args.make_default:
+        if save_defaults(args, config):
+            return 0
 
     # Create show options object (use config default if no CLI arg)
     show_str = args.show if args.show else config.get("default_show_options", "")
@@ -407,6 +731,12 @@ def main() -> int:
 
     # Set formatting options based on CLI arguments
     show_options.indent_results = not args.no_indent
+    
+    # Apply watch mode default if not specified on CLI
+    if not hasattr(args, 'watch'):
+        args.watch = False
+    if not args.watch and config.get("default_watch", False):
+        args.watch = True
 
     # Determine theme
     theme_name = determine_theme(args, config)
@@ -415,8 +745,12 @@ def main() -> int:
     from .styles import set_style
 
     Colors.set_theme(get_color_theme(theme_name))
-    # Also set the formatting style (for now, use default)
-    set_style("default")
+    # Set the formatting style (CLI arg > config > default)
+    if hasattr(args, 'style') and args.style:
+        style_name = args.style
+    else:
+        style_name = config.get("default_style", "default")
+    set_style(style_name)
 
     # Handle project listing
     project_list_result = handle_project_listing(args)

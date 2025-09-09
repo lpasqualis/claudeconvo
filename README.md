@@ -8,11 +8,14 @@ View Claude Code session history as a conversation
 
 - Display Claude Code conversations with colored, formatted output
 - Multiple color themes optimized for different terminal backgrounds
+- Multiple formatting styles (default, boxed, minimal, compact)
 - Filter messages by type (user, assistant, tools, system, etc.)
 - Show or hide metadata, tool details, and system messages
 - Support for relative and absolute session references
 - Rich formatting with proper indentation and line wrapping
 - Configuration file support for persistent settings
+- Save current settings as defaults with `--make-default`
+- Reset to original defaults with `--reset-defaults`
 
 ## Installation
 
@@ -49,6 +52,12 @@ claudeconvo -w
 
 # Watch a specific session
 claudeconvo -f session-123 -w
+
+# View with specific theme and style
+claudeconvo --theme light --style boxed
+
+# View last 2 sessions
+claudeconvo -n 2
 ```
 
 ### Filtering Options
@@ -89,7 +98,9 @@ claudeconvo -ot
 - `l` - Show message level/priority
 - `k` - Show sidechain/parallel messages
 - `v` - Show user type for each message
+- `i` - Show AI model name/version
 - `a` - Enable all options
+- `?` - Print what will be shown/hidden and exit
 
 Uppercase letters disable options:
 - `aH` - Enable all except hooks
@@ -106,6 +117,9 @@ claudeconvo --theme light
 # Use high contrast theme for accessibility
 claudeconvo --theme high-contrast
 
+# List all available themes
+claudeconvo --theme
+
 # Disable colors entirely
 claudeconvo --no-color
 ```
@@ -120,24 +134,65 @@ Available themes:
 - `mono` - No colors (monochrome)
 - `high-contrast` - Maximum contrast for accessibility
 
-Set a default theme using:
-- Environment variable: `export CLAUDECONVO_THEME=light`
-- Config file: Create `~/.claudeconvorc` with `{"theme": "light"}`
+### Formatting Styles
+
+Control how messages are displayed with different formatting styles:
+
+```bash
+# Use boxed style with borders around messages
+claudeconvo --style boxed
+
+# Use minimal style for clean, compact output
+claudeconvo --style minimal
+
+# Use compact style for condensed spacing
+claudeconvo --style compact
+
+# List all available styles
+claudeconvo --style
+```
+
+Available styles:
+- `default` - Standard formatting with clear labels
+- `boxed` - Messages in boxes with borders
+- `minimal` - Minimal decorations for clean output
+- `compact` - Condensed spacing for more content
 
 ### Configuration
+
+#### Setting Defaults
+
+Save your current settings as defaults:
+
+```bash
+# Try out settings
+claudeconvo --theme light --style boxed -w
+
+# If you like them, save as defaults
+claudeconvo --theme light --style boxed -w --make-default
+
+# Reset to original defaults
+claudeconvo --reset-defaults
+```
+
+#### Config File
 
 Create a `~/.claudeconvorc` file to set persistent preferences:
 
 ```json
 {
-  "theme": "light",
-  "default_show_options": "qwo"
+  "default_theme": "light",
+  "default_style": "boxed",
+  "default_show_options": "qwo",
+  "default_watch": true
 }
 ```
 
-Configuration priority (highest to lowest):
+#### Configuration Priority
+
+Settings are applied in this order (highest to lowest priority):
 1. Command-line arguments
-2. Environment variables
+2. Environment variables (`CLAUDECONVO_THEME`)
 3. Config file (`~/.claudeconvorc`)
 4. Built-in defaults
 
@@ -150,8 +205,11 @@ claudeconvo --help
 # List available sessions
 claudeconvo --list
 
-# Show what options would display
-claudeconvo -?sm
+# Show current configuration
+claudeconvo --show-config
+
+# Check what options would display (quote to protect ? from shell)
+claudeconvo '-saH?'
 ```
 
 ## Requirements

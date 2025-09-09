@@ -39,13 +39,23 @@ def format_model_name(model_name: str) -> str:
     # Handle Claude models with regex for flexibility
     import re
 
-    # Pattern: claude-[tier]-[version parts...]
-    claude_pattern = r'^claude-([^-]+)(?:-(.+))?$'
-    match = re.match(claude_pattern, model_name)
+    # Handle different Claude model patterns
+    # Pattern 1: claude-3-opus, claude-3.5-sonnet -> Opus 3, Sonnet 3.5
+    pattern1 = r'^claude-(\d+(?:\.\d+)?)-([^-]+)(?:-(.+))?$'
+    match1 = re.match(pattern1, model_name)
 
-    if match:
-        tier = match.group(1).capitalize()
-        version_parts = match.group(2)
+    if match1:
+        version = match1.group(1)
+        tier = match1.group(2).capitalize()
+        return f"{tier} {version}"
+
+    # Pattern 2: claude-opus-4-1-20250805 -> Opus 4.1
+    pattern2 = r'^claude-([^-\d]+)(?:-(.+))?$'
+    match2 = re.match(pattern2, model_name)
+
+    if match2:
+        tier = match2.group(1).capitalize()
+        version_parts = match2.group(2)
 
         if version_parts:
             # Split version parts and extract numeric version
@@ -118,6 +128,205 @@ def extract_message_text(message_content: Any) -> str:
 
 ################################################################################
 
+################################################################################
+
+def _format_tool_result_wrapped(text: str) -> str:
+    """
+    Format tool result text with proper wrapping and indentation.
+
+    Args:
+        text: The tool result text to format
+
+    Returns:
+        Formatted text with proper wrapping and indentation
+    """
+    import re
+    import textwrap
+
+    from .themes import Colors
+    from .utils import get_terminal_width
+
+    # Calculate available width
+    terminal_width = get_terminal_width()
+    result_indent = "     "  # 5 spaces base indent for results
+    available_width = max(40, terminal_width - len(result_indent) - 4)  # Leave margin
+
+    # Split text into lines first (preserve existing line breaks)
+    lines = text.split('\n')
+
+    # Process each line
+    output_lines = []
+    for line in lines:
+        if not line.strip():
+            # Preserve empty lines
+            output_lines.append("")
+            continue
+
+        # Detect and preserve original indentation
+        original_indent_match = re.match(r'^(\s*)', line)
+        original_indent = original_indent_match.group(1) if original_indent_match else ""
+        line_content = line[len(original_indent):]  # Content without original indent
+
+        # Combine our result indent with the original indent
+        full_indent = result_indent + original_indent
+
+        # Check if line needs wrapping (considering the indentation)
+        if len(line_content) > available_width - len(original_indent):
+            # Need to wrap this line
+            # For continuation lines, add extra indent for clarity
+            continuation_indent = full_indent + "  "  # 2 extra spaces for wrapped lines
+
+            # Calculate wrap width, ensuring it's positive
+            wrap_width = max(20, available_width - len(original_indent))  # Minimum 20 chars
+
+            wrapper = textwrap.TextWrapper(
+                width=wrap_width,
+                initial_indent="",
+                subsequent_indent="",
+                break_long_words=True,  # Allow breaking long words if needed
+                break_on_hyphens=True,
+                expand_tabs=False,
+                replace_whitespace=False,
+                drop_whitespace=True,
+            )
+
+            wrapped = wrapper.wrap(line_content)
+            for i, wrapped_line in enumerate(wrapped):
+                if i == 0:
+                    # First line gets normal indent
+                    output_lines.append(f"{full_indent}{Colors.TOOL_OUTPUT}{wrapped_line}{Colors.RESET}")
+                else:
+                    # Continuation lines get extra indent
+                    output_lines.append(f"{continuation_indent}{Colors.TOOL_OUTPUT}{wrapped_line}{Colors.RESET}")
+        else:
+            # Line fits, just add our indent to the original
+            output_lines.append(f"{full_indent}{Colors.TOOL_OUTPUT}{line_content}{Colors.RESET}")
+
+    return '\n'.join(output_lines) + '\n'
+
+################################################################################
+
+def _format_tool_parameter_wrapped(
+    key: str,
+    value: str
+) -> str:
+    """
+    Format a tool parameter with proper indentation and word wrapping.
+
+    Args:
+        key: Parameter name
+        value: Parameter value
+
+    Returns:
+        Formatted parameter string with wrapping
+    """
+    import textwrap
+
+    from .themes import Colors
+    from .utils import get_terminal_width, get_visual_width
+
+    # Calculate available width for text
+    terminal_width = get_terminal_width()
+    # Leave some margin for readability
+    available_width = max(40, terminal_width - 4)
+
+    # Format the parameter line
+    # Using arrow notation for better visual separation with bold parameter names
+    param_prefix_plain = f"→ [{key}]: "  # Plain text for width calculations
+    first_line_indent = "   "  # Initial indent for parameter (3 spaces)
+
+    # For wrapped lines, align them with the value (after the colon and space)
+    # This is: 3 spaces (indent) + len("→ [") + len(key) + len("]: ")
+    value_start_position = len(first_line_indent) + len(param_prefix_plain)
+    continuation_indent = " " * value_start_position  # Align with value start
+
+    # Build the full first line to check its length
+    full_first_line = f"{first_line_indent}{param_prefix_plain}{value}"
+
+    # Check the visual width (accounting for ANSI codes but not the color codes)
+    first_line_visual_width = get_visual_width(full_first_line)
+
+    # If the first line is too long, we need to wrap it
+    if first_line_visual_width > available_width:
+        # Calculate how much space is available for the value on the first line
+        prefix_width = len(first_line_indent) + len(param_prefix_plain)
+        first_line_available = available_width - prefix_width
+
+        if first_line_available > 15:  # Only wrap if there's reasonable space
+            # Calculate width for wrapped lines
+            continuation_width = available_width - value_start_position
+
+            if continuation_width > 15:  # Make sure continuation lines have space
+                # Let textwrap handle all the wrapping logic properly
+                # We'll format the entire "key: value" as one unit
+                full_param_text = f"{param_prefix_plain}{value}"
+
+                # Calculate available width for the first line (after indent)
+                # and for continuation lines (with continuation indent)
+                first_line_width = available_width - len(first_line_indent)
+                continuation_line_width = available_width - len(continuation_indent)
+
+                # Use textwrap to wrap the entire parameter text
+                wrapper = textwrap.TextWrapper(
+                    width=min(first_line_width, continuation_line_width),  # Use the smaller width
+                    initial_indent="",
+                    subsequent_indent="",
+                    break_long_words=False,  # Don't break in middle of words
+                    break_on_hyphens=False,  # Don't break on hyphens
+                    expand_tabs=False,
+                    replace_whitespace=False,  # Don't normalize newlines
+                    drop_whitespace=True,
+                )
+
+                # Wrap the full parameter text, preserving line breaks
+                # Split by newlines first, wrap each line, then rejoin
+                input_lines = full_param_text.split('\n')
+                all_wrapped = []
+
+                for line in input_lines:
+                    if line.strip():  # Non-empty line
+                        wrapped = wrapper.wrap(line)
+                        all_wrapped.extend(wrapped if wrapped else [line])
+                    else:
+                        all_wrapped.append('')  # Preserve empty lines
+
+                wrapped_lines = all_wrapped
+
+                if wrapped_lines:
+                    # Build output with proper indentation for each line
+                    output_lines = []
+                    for i, line in enumerate(wrapped_lines):
+                        if i == 0:
+                            # First line - need to make parameter name bold
+                            # Check if line starts with our prefix to apply bold to param name
+                            if line.startswith(f"→ [{key}]"):
+                                # Format with bold parameter name
+                                bold_key = f"{Colors.BOLD}{key}{Colors.RESET}{Colors.TOOL_PARAM}"
+                                formatted_line = line.replace(f"→ [{key}]", f"→ [{bold_key}]", 1)
+                                output_lines.append(
+                                    f"{first_line_indent}{Colors.TOOL_PARAM}"
+                                    f"{formatted_line}{Colors.RESET}"
+                                )
+                            else:
+                                # Shouldn't happen, but just in case
+                                output_lines.append(
+                                    f"{first_line_indent}{Colors.TOOL_PARAM}{line}{Colors.RESET}"
+                                )
+                        else:
+                            # Continuation lines
+                            output_lines.append(
+                                f"{continuation_indent}{Colors.TOOL_PARAM}{line}{Colors.RESET}"
+                            )
+
+                    return '\n'.join(output_lines) + '\n'
+
+    # If it fits on one line or can't be wrapped reasonably, just return it
+    # Format with bold parameter name
+    formatted_prefix = f"→ [{Colors.BOLD}{key}{Colors.RESET}{Colors.TOOL_PARAM}]: "
+    return f"{first_line_indent}{Colors.TOOL_PARAM}{formatted_prefix}{value}{Colors.RESET}\n"
+
+################################################################################
+
 def format_tool_use(
     entry        : dict[str, Any],
     show_options : Any
@@ -155,9 +364,12 @@ def format_tool_use(
                     # Format parameters only if tool_details is enabled
                     if tool_input and show_options.tool_details:
                         max_len = show_options.get_max_length("tool_param")
+
                         for key, value in tool_input.items():
                             value_str = truncate_text(str(value), max_len)
-                            output.append(render("tool_parameter", key=key, value=value_str))
+                            # Format the parameter with proper indentation and wrapping
+                            param_line = _format_tool_parameter_wrapped(key, value_str)
+                            output.append(param_line)
 
     return ''.join(output) if output else None
 
@@ -283,9 +495,14 @@ def _build_metadata_lines(
 
     # Model information (for assistant messages)
     if show_options.model:
-        message = entry.get("message", {})
-        if isinstance(message, dict) and message.get("model"):
-            model_name = message["model"]
+        # Check for model at entry level first (newer format), then in message
+        model_name = entry.get("model")
+        if not model_name:
+            message = entry.get("message", {})
+            if isinstance(message, dict):
+                model_name = message.get("model")
+
+        if model_name:
             # Format the model name to be more readable using regex for flexibility
             model_display = format_model_name(model_name)
             metadata_lines.append(render("metadata", content=f"Model: {model_display}"))
@@ -316,22 +533,22 @@ def _build_metadata_lines(
     # Working directory
     if show_options.paths and "cwd" in entry:
         metadata_lines.append(render("metadata", content=f"Path: {entry['cwd']}"))
-    
+
     # Performance metrics
     if show_options.diagnostics:
         perf_items = []
-        
+
         # Check for duration
         if "duration_ms" in entry:
             perf_items.append(f"{entry['duration_ms']}ms")
         elif "_performance" in entry and "duration_ms" in entry["_performance"]:
             perf_items.append(f"{entry['_performance']['duration_ms']}ms")
-        
+
         # Check for token counts
         tokens = entry.get("tokens", {})
         if not tokens and "_performance" in entry:
             tokens = entry["_performance"]
-        
+
         if isinstance(tokens, dict):
             if "input" in tokens or "tokens_in" in tokens:
                 in_tokens = tokens.get("input", tokens.get("tokens_in", 0))
@@ -341,10 +558,11 @@ def _build_metadata_lines(
                 perf_items.append(f"tokens-out:{out_tokens}")
             if "total" in tokens:
                 perf_items.append(f"tokens-total:{tokens['total']}")
-        
+
         # Add performance line if we have metrics
         if perf_items:
-            metadata_lines.append(render("metadata", content=f"⚡ Performance: {' | '.join(perf_items)}"))
+            perf_str = f"⚡ Performance: {' | '.join(perf_items)}"
+            metadata_lines.append(render("metadata", content=perf_str))
 
     # User type
     if show_options.user_types and "userType" in entry:
@@ -408,13 +626,13 @@ def format_conversation_entry(
 
     elif entry_type == "system":
         return _format_system_entry(entry, show_options, timestamp_str, metadata_lines)
-    
+
     elif entry_type == "hook" and show_options.hooks:
         return _format_hook_entry(entry, show_options, timestamp_str, metadata_lines)
-    
+
     elif entry_type == "command" and show_options.commands:
         return _format_command_entry(entry, show_options, timestamp_str, metadata_lines)
-    
+
     elif entry_type == "error" and show_options.errors:
         return _format_error_entry(entry, show_options, timestamp_str, metadata_lines)
 
@@ -477,20 +695,20 @@ def _extract_and_format_tool_result(
     # Let the style template handle all formatting
     from .themes import Colors
 
-    # Render the tool result with label using the style template
-    rendered_result = render("tool_result_with_label",
-                           label=label,
-                           content=text,
-                           timestamp=timestamp_str)
-
-    if rendered_result:
-        output.append(rendered_result)
+    # Format the label with bold tool name
+    # The label is something like "Read Result:" - make the tool name bold
+    if " Result:" in label:
+        tool_name_part, rest = label.split(" Result:", 1)
+        bold_tool = f"{Colors.BOLD}{tool_name_part}{Colors.RESET}{Colors.TOOL_NAME}"
+        formatted_label = f"{bold_tool} Result:{rest}"
     else:
-        # Fallback if style doesn't define tool_result_with_label
-        output.append(f"   {Colors.TOOL_NAME}✓ {label}{Colors.RESET}")
-        rendered_content = render("tool_result_success", content=text)
-        if rendered_content:
-            output.append(rendered_content)
+        # Fallback if format is different
+        formatted_label = label
+    output.append(f"   {Colors.TOOL_NAME}✓ {formatted_label}{Colors.RESET}\n")
+
+    # Format the content with proper wrapping
+    wrapped_content = _format_tool_result_wrapped(text)
+    output.append(wrapped_content)
 
     return output
 
@@ -741,25 +959,25 @@ def _format_hook_entry(
 ) -> str | None:
     """Format a hook entry."""
     output = []
-    
+
     hook_name = entry.get("hook_name", "unknown")
     content = entry.get("content", "")
     status = entry.get("status", "")
-    
+
     if metadata_lines:
         output.extend(metadata_lines)
-    
+
     hook_msg = f"🪝 Hook [{hook_name}]: {content}"
     if status:
         hook_msg += f" ({status})"
-    
+
     hook_formatted = render("hook", content=hook_msg)
-    
+
     if timestamp_str:
         output.append(timestamp_str + hook_formatted)
     else:
         output.append(hook_formatted)
-    
+
     return ''.join(output) if output else None
 
 
@@ -773,21 +991,21 @@ def _format_command_entry(
 ) -> str | None:
     """Format a command entry."""
     output = []
-    
+
     command = entry.get("command", "")
     content = entry.get("content", "")
-    
+
     if metadata_lines:
         output.extend(metadata_lines)
-    
+
     cmd_msg = f"⚡ Command {command}: {content}"
     cmd_formatted = render("command", content=cmd_msg)
-    
+
     if timestamp_str:
         output.append(timestamp_str + cmd_formatted)
     else:
         output.append(cmd_formatted)
-    
+
     return ''.join(output) if output else None
 
 
@@ -801,30 +1019,30 @@ def _format_error_entry(
 ) -> str | None:
     """Format an error entry."""
     output = []
-    
+
     content = entry.get("content", "")
     level = entry.get("level", "error")
     details = entry.get("details", "")
-    
+
     if metadata_lines:
         output.extend(metadata_lines)
-    
+
     # Show error with appropriate icon
     icon = "⚠️" if level == "warning" else "❌"
     error_msg = f"{icon} {level.upper()}: {content}"
-    
+
     # Add details if errors flag is enabled for extended info
     if details and show_options.errors:
         max_length = show_options.get_max_length("error")
         if len(details) > max_length:
             details = details[:int(max_length)] + "..."
         error_msg += f"\n   Details: {details}"
-    
+
     error_formatted = render("error", content=error_msg)
-    
+
     if timestamp_str:
         output.append(timestamp_str + error_formatted)
     else:
         output.append(error_formatted)
-    
+
     return ''.join(output) if output else None

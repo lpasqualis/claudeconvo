@@ -4,6 +4,29 @@ View Claude Code session history as a conversation
 
 `claudeconvo` is a command-line utility that loads and displays Claude Code session files stored in `~/.claude/projects/` for the current working directory, formatted as readable conversations with colored output for different speakers and tool executions.
 
+## Quick Start
+
+```bash
+# Install claudeconvo
+pip install claudeconvo
+
+# Navigate to your Claude Code project
+cd /path/to/your/project
+
+# Launch interactive setup to configure your preferences
+claudeconvo --setup
+
+# Or just start viewing your most recent session
+claudeconvo
+```
+
+The interactive setup (`--setup`) helps you:
+- Choose a color theme that works with your terminal
+- Select a formatting style (default, boxed, minimal, compact)
+- Configure what information to display
+- Preview your settings with sample output
+- Save your preferences as defaults
+
 ## What's New
 
 ### Recent Updates

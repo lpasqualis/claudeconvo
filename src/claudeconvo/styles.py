@@ -141,7 +141,7 @@ class FormatStyle:
         },
         # Tool-related
         "tool_invocation": {
-            "label"        : "{{color}}🔧 Tool: {{name}}{{reset}}\n",
+            "label"        : "{{color}}🔧 Tool: {{bold}}{{name}}{{reset}}\n",
             "pre_content"  : "",
             "content"      : "",
             "post_content" : "",
@@ -196,8 +196,9 @@ class FormatStyle:
         "metadata": {
             "label": "",
             "pre_content": "",
-            "content": "   {{color}}-> [{{content}}]{{reset}}\n",
+            "content": "{{color}}{{func:right_align:content}}{{reset}}\n",
             "post_content": "",
+            "wrap": False,  # Disable wrapping for metadata to prevent splitting
         },
         "timestamp": {
             "label": "",
@@ -333,6 +334,13 @@ class MinimalStyle(FormatStyle):
             "content": "  {{error_color}}✗ {{content}}{{reset}}\n",  # Simple X for errors
             "post_content": "",
         },
+        "metadata": {
+            "label": "",
+            "pre_content": "",
+            "content": "  {{color}}{{content}}{{reset}}\n",  # Simple left-aligned
+            "post_content": "",
+            "wrap": False,
+        },
         "separator": {
             "label": "",
             "pre_content": "",
@@ -374,6 +382,13 @@ class CompactStyle(FormatStyle):
             "pre_content": "",
             "content": " {{color}}{{key}}={{value}}{{reset}}",
             "post_content": "",
+        },
+        "metadata": {
+            "label": "",
+            "pre_content": "",
+            "content": " {{color}}{{content}}{{reset}}\n",  # Compact left-aligned
+            "post_content": "",
+            "wrap": False,
         },
     }
 
@@ -609,6 +624,8 @@ def expand_macros(template: str, context: Dict[str, Any]) -> str:
                     elif 'terminal' in arg:
                         resolved_args.append(eval_terminal_expr(arg))
                     else:
+                        # Pass through any other arguments as-is
+                        # This allows template authors to pass literal strings
                         resolved_args.append(arg)
 
                 try:
@@ -921,3 +938,46 @@ def render_inline(msg_type: str, content: str = "", **context: Any) -> str:
         Formatted string
     """
     return get_renderer().render_inline(msg_type, content, None, **context)
+
+
+################################################################################
+
+# Register custom formatting functions
+def _right_align(content: str) -> str:
+    """
+    Right-align content to the terminal edge.
+    
+    Args:
+        content: The content to right-align
+        
+    Returns:
+        Right-aligned string with proper padding
+    """
+    from .utils import get_terminal_width
+    
+    # Calculate terminal width
+    terminal_width = get_terminal_width()
+    
+    # Remove any existing ANSI codes from content for accurate length calculation
+    import re
+    clean_content = re.sub(r'\x1b\[[0-9;]*m', '', content)
+    content_length = len(clean_content)
+    
+    # Calculate padding for right alignment
+    # Leave 1 space at the end for visual margin
+    padding_needed = max(0, terminal_width - content_length - 1)
+    
+    # Build the right-aligned string
+    result = " " * padding_needed + content
+    
+    return result
+
+
+def _init_style_functions() -> None:
+    """Initialize built-in style functions."""
+    # Register the right-align function
+    register_function("right_align", _right_align)
+
+
+# Initialize functions when module is imported
+_init_style_functions()

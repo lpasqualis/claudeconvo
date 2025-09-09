@@ -23,18 +23,18 @@ from .utils import load_json_config
 def _normalize_config_keys(config: dict) -> dict:
     """
     Normalize config keys for backwards compatibility.
-    
+
     Handles both old format (theme, style, show_options, watch) and
     new format (default_theme, default_style, default_show_options, default_watch).
-    
+
     Args:
         config: Raw configuration dict
-        
+
     Returns:
         dict: Normalized configuration with default_ prefixed keys
     """
     normalized = {}
-    
+
     # Map old keys to new keys
     key_mapping = {
         "theme": "default_theme",
@@ -42,19 +42,19 @@ def _normalize_config_keys(config: dict) -> dict:
         "show_options": "default_show_options",
         "watch": "default_watch"
     }
-    
+
     for old_key, new_key in key_mapping.items():
         # Check for both old and new format
         if old_key in config:
             normalized[new_key] = config[old_key]
         elif new_key in config:
             normalized[new_key] = config[new_key]
-    
+
     # Preserve any other keys that might exist
     for key, value in config.items():
         if key not in key_mapping and key not in normalized:
             normalized[key] = value
-    
+
     return normalized
 
 

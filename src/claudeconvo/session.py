@@ -192,7 +192,7 @@ def parse_session_file(filepath: Path) -> list[dict[str, Any]]:
                     err_msg = f"Warning: Line {line_num} exceeds size limit ({len(line)} > {MAX_LINE_SIZE}), skipping"
                     print(render_inline("warning", err_msg), file=sys.stderr)
                     continue
-                    
+
                 line = line.strip()
                 if line:
                     try:

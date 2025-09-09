@@ -169,27 +169,27 @@ def format_bold(text: str, colors: Any) -> str:
 
 def get_visual_width(text: str) -> int:
     """Calculate the visual display width of a string.
-    
+
     Accounts for:
     - Zero-width characters (combining marks, etc.)
     - Wide characters (CJK, emojis)
     - ANSI escape sequences (ignored in width calculation)
-    
+
     Args:
         text: Text to measure
-        
+
     Returns:
         Visual width of the text when displayed
     """
     # Remove ANSI escape sequences for width calculation
     ansi_escape = re.compile(r'\x1b\[[0-9;]*m')
     text = ansi_escape.sub('', text)
-    
+
     width = 0
     for char in text:
         # Get the East Asian Width property
         ea_width = unicodedata.east_asian_width(char)
-        
+
         # Wide and Fullwidth characters take 2 columns
         if ea_width in ('W', 'F'):
             width += 2
@@ -203,7 +203,7 @@ def get_visual_width(text: str) -> int:
         # Regular characters
         else:
             width += 1
-            
+
     return width
 
 
@@ -301,15 +301,15 @@ def log_debug(message: str) -> None:
         # Remove absolute paths and replace with relative paths
         import re
         from pathlib import Path
-        
+
         # Replace home directory with ~
         home = str(Path.home())
         sanitized_message = message.replace(home, "~")
-        
+
         # Remove any remaining absolute paths
         sanitized_message = re.sub(r'/Users/[^/]+/', '~/', sanitized_message)
         sanitized_message = re.sub(r'/home/[^/]+/', '~/', sanitized_message)
-        
+
         print(f"[DEBUG] {sanitized_message}", file=sys.stderr)
 
     # Also use standard logging in case it's configured

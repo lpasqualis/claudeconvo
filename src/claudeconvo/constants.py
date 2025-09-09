@@ -69,20 +69,20 @@ _env_projects_dir = os.environ.get("CLAUDE_PROJECTS_DIR", ".claude/projects")
 # Validate the path for safety
 def _validate_projects_dir(path_str: str) -> str:
     """Validate and normalize the projects directory path.
-    
+
     Returns the path if valid, otherwise returns the default.
     """
     from pathlib import Path
-    
+
     default_path = ".claude/projects"
-    
+
     if not path_str:
         return default_path
-    
+
     try:
         # Normalize the path to resolve any relative components
         path = Path(path_str).expanduser()
-        
+
         # If it's an absolute path, ensure it's under the user's home directory
         if path.is_absolute():
             home = Path.home()
@@ -92,14 +92,14 @@ def _validate_projects_dir(path_str: str) -> str:
             except ValueError:
                 # Path is not under home directory - use default
                 return default_path
-        
+
         # Check for any remaining dangerous patterns after normalization
         path_str_normalized = str(path)
         if ".." in path_str_normalized:
             return default_path
-            
+
         return path_str
-        
+
     except (ValueError, OSError):
         # Invalid path - use default
         return default_path

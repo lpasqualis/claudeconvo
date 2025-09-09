@@ -10,49 +10,48 @@ import re
 from datetime import datetime
 from typing import Any
 
+# Import formatting constants from constants module
+from .constants import DEFAULT_MAX_LENGTH
 from .parsers.adaptive import AdaptiveParser
 from .styles import render, render_inline
 from .utils import format_uuid, sanitize_terminal_output
 
-# Import formatting constants from constants module
-from .constants import DEFAULT_MAX_LENGTH
-
 
 def format_model_name(model_name: str) -> str:
     """Format a model name to be more readable.
-    
+
     Handles various Claude model naming patterns flexibly using regex.
     Examples:
         claude-opus-4-1-20250805 -> Opus 4.1
         claude-3-sonnet -> Sonnet 3
         claude-instant -> Instant
         gpt-4 -> gpt-4 (unchanged)
-    
+
     Args:
         model_name: Raw model name string
-        
+
     Returns:
         Formatted model name for display
     """
     if not model_name:
         return "Unknown"
-    
+
     # Handle Claude models with regex for flexibility
     import re
-    
+
     # Pattern: claude-[tier]-[version parts...]
     claude_pattern = r'^claude-([^-]+)(?:-(.+))?$'
     match = re.match(claude_pattern, model_name)
-    
+
     if match:
         tier = match.group(1).capitalize()
         version_parts = match.group(2)
-        
+
         if version_parts:
             # Split version parts and extract numeric version
             parts = version_parts.split('-')
             version_nums = []
-            
+
             for part in parts:
                 # Only include numeric parts (ignore dates like 20250805)
                 if part.isdigit():
@@ -60,13 +59,13 @@ def format_model_name(model_name: str) -> str:
                         version_nums.append(part)
                 elif '.' in part:  # Already formatted version
                     version_nums.append(part)
-            
+
             if version_nums:
                 version = '.'.join(version_nums)
                 return f"{tier} {version}"
-        
+
         return tier
-    
+
     # Return original name if not a Claude model
     return model_name
 
@@ -151,7 +150,7 @@ def format_tool_use(
 
                     # Show tool ID if requested
                     if show_options.tool_details and tool_id:
-                        output.append(render("metadata", content=f"   ID: {tool_id}"))
+                        output.append(render("metadata", content=f"ID: {tool_id}"))
 
                     # Format parameters only if tool_details is enabled
                     if tool_input and show_options.tool_details:
@@ -225,7 +224,8 @@ def _format_summary_entry(
         return None
 
     output  = []
-    summary = entry.get("summary", "N/A")
+    # Summary content can be in 'content' or 'summary' field
+    summary = entry.get("content") or entry.get("summary", "N/A")
     output.append(render("summary", content=summary))
 
     if show_options.metadata and "leafUuid" in entry:
@@ -316,6 +316,35 @@ def _build_metadata_lines(
     # Working directory
     if show_options.paths and "cwd" in entry:
         metadata_lines.append(render("metadata", content=f"Path: {entry['cwd']}"))
+    
+    # Performance metrics
+    if show_options.diagnostics:
+        perf_items = []
+        
+        # Check for duration
+        if "duration_ms" in entry:
+            perf_items.append(f"{entry['duration_ms']}ms")
+        elif "_performance" in entry and "duration_ms" in entry["_performance"]:
+            perf_items.append(f"{entry['_performance']['duration_ms']}ms")
+        
+        # Check for token counts
+        tokens = entry.get("tokens", {})
+        if not tokens and "_performance" in entry:
+            tokens = entry["_performance"]
+        
+        if isinstance(tokens, dict):
+            if "input" in tokens or "tokens_in" in tokens:
+                in_tokens = tokens.get("input", tokens.get("tokens_in", 0))
+                perf_items.append(f"tokens-in:{in_tokens}")
+            if "output" in tokens or "tokens_out" in tokens:
+                out_tokens = tokens.get("output", tokens.get("tokens_out", 0))
+                perf_items.append(f"tokens-out:{out_tokens}")
+            if "total" in tokens:
+                perf_items.append(f"tokens-total:{tokens['total']}")
+        
+        # Add performance line if we have metrics
+        if perf_items:
+            metadata_lines.append(render("metadata", content=f"⚡ Performance: {' | '.join(perf_items)}"))
 
     # User type
     if show_options.user_types and "userType" in entry:
@@ -379,6 +408,15 @@ def format_conversation_entry(
 
     elif entry_type == "system":
         return _format_system_entry(entry, show_options, timestamp_str, metadata_lines)
+    
+    elif entry_type == "hook" and show_options.hooks:
+        return _format_hook_entry(entry, show_options, timestamp_str, metadata_lines)
+    
+    elif entry_type == "command" and show_options.commands:
+        return _format_command_entry(entry, show_options, timestamp_str, metadata_lines)
+    
+    elif entry_type == "error" and show_options.errors:
+        return _format_error_entry(entry, show_options, timestamp_str, metadata_lines)
 
     return ''.join(output) if output else None
 
@@ -438,13 +476,13 @@ def _extract_and_format_tool_result(
 
     # Let the style template handle all formatting
     from .themes import Colors
-    
+
     # Render the tool result with label using the style template
-    rendered_result = render("tool_result_with_label", 
+    rendered_result = render("tool_result_with_label",
                            label=label,
                            content=text,
                            timestamp=timestamp_str)
-    
+
     if rendered_result:
         output.append(rendered_result)
     else:
@@ -690,4 +728,103 @@ def _format_system_entry(
         else:
             output.append(system_msg)
 
+    return ''.join(output) if output else None
+
+
+################################################################################
+
+def _format_hook_entry(
+    entry          : dict[str, Any],
+    show_options   : Any,
+    timestamp_str  : str,
+    metadata_lines : list[str] | None
+) -> str | None:
+    """Format a hook entry."""
+    output = []
+    
+    hook_name = entry.get("hook_name", "unknown")
+    content = entry.get("content", "")
+    status = entry.get("status", "")
+    
+    if metadata_lines:
+        output.extend(metadata_lines)
+    
+    hook_msg = f"🪝 Hook [{hook_name}]: {content}"
+    if status:
+        hook_msg += f" ({status})"
+    
+    hook_formatted = render("hook", content=hook_msg)
+    
+    if timestamp_str:
+        output.append(timestamp_str + hook_formatted)
+    else:
+        output.append(hook_formatted)
+    
+    return ''.join(output) if output else None
+
+
+################################################################################
+
+def _format_command_entry(
+    entry          : dict[str, Any],
+    show_options   : Any,
+    timestamp_str  : str,
+    metadata_lines : list[str] | None
+) -> str | None:
+    """Format a command entry."""
+    output = []
+    
+    command = entry.get("command", "")
+    content = entry.get("content", "")
+    
+    if metadata_lines:
+        output.extend(metadata_lines)
+    
+    cmd_msg = f"⚡ Command {command}: {content}"
+    cmd_formatted = render("command", content=cmd_msg)
+    
+    if timestamp_str:
+        output.append(timestamp_str + cmd_formatted)
+    else:
+        output.append(cmd_formatted)
+    
+    return ''.join(output) if output else None
+
+
+################################################################################
+
+def _format_error_entry(
+    entry          : dict[str, Any],
+    show_options   : Any,
+    timestamp_str  : str,
+    metadata_lines : list[str] | None
+) -> str | None:
+    """Format an error entry."""
+    output = []
+    
+    content = entry.get("content", "")
+    level = entry.get("level", "error")
+    details = entry.get("details", "")
+    
+    if metadata_lines:
+        output.extend(metadata_lines)
+    
+    # Show error with appropriate icon
+    icon = "⚠️" if level == "warning" else "❌"
+    error_msg = f"{icon} {level.upper()}: {content}"
+    
+    # Add details if errors flag is enabled for extended info
+    if details and show_options.errors:
+        max_length = show_options.get_max_length("error")
+        if len(details) > max_length:
+            details = details[:int(max_length)] + "..."
+        error_msg += f"\n   Details: {details}"
+    
+    error_formatted = render("error", content=error_msg)
+    
+    if timestamp_str:
+        output.append(timestamp_str + error_formatted)
+    else:
+        output.append(error_formatted)
+    
     return ''.join(output) if output else None

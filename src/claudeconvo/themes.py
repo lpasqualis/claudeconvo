@@ -96,9 +96,9 @@ class LightTheme(ColorTheme):
     # Message types - using bold for better readability on white
     USER      = "\033[1;34m"  # Bold blue
     ASSISTANT = "\033[1;30m"  # Bold black (very readable on white)
-    SYSTEM    = "\033[33m"    # Yellow/Brown
+    SYSTEM    = "\033[35m"    # Magenta (readable on white)
     ERROR     = "\033[31m"    # Red
-    WARNING   = "\033[33m"    # Yellow/Brown
+    WARNING   = "\033[33m"    # Yellow/Brown (kept for visibility)
 
     # Tool colors - high contrast on white background
     TOOL_NAME   = "\033[1;35m"  # Bold magenta (better contrast)
@@ -107,7 +107,7 @@ class LightTheme(ColorTheme):
 
     # Other
     TIMESTAMP = "\033[90m"  # Dark gray
-    SEPARATOR = "\033[90m"  # Dark gray
+    SEPARATOR = "\033[94m"  # Blue (better than gray for summaries on white)
     METADATA = "\033[30m"   # Black (better than cyan on white)
 
 
@@ -146,9 +146,9 @@ class SolarizedLightTheme(ColorTheme):
     # Solarized light adjustments
     USER      = "\033[36m"  # Cyan
     ASSISTANT = "\033[32m"  # Green
-    SYSTEM    = "\033[33m"  # Yellow
+    SYSTEM    = "\033[35m"  # Magenta (better on light background)
     ERROR     = "\033[31m"  # Red
-    WARNING   = "\033[33m"  # Yellow
+    WARNING   = "\033[33m"  # Yellow (kept for visibility)
 
     # Tool colors
     TOOL_NAME   = "\033[35m"  # Magenta
@@ -157,7 +157,7 @@ class SolarizedLightTheme(ColorTheme):
 
     # Other
     TIMESTAMP = "\033[90m"  # Base00
-    SEPARATOR = "\033[90m"  # Base00
+    SEPARATOR = "\033[34m"  # Blue (better for summaries on light)
     METADATA  = "\033[36m"  # Cyan
 
 

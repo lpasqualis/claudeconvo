@@ -48,16 +48,16 @@ DEFAULT_WRAP_WIDTH   = "terminal"  # Can be: "terminal", "terminal-N", or a spec
 
 def safe_eval_arithmetic(expr: str) -> float:
     """Safely evaluate arithmetic expressions without using eval().
-    
+
     Only supports basic arithmetic operations: +, -, *, /, //, %, **
     and parentheses for grouping.
-    
+
     Args:
         expr: String containing the arithmetic expression
-        
+
     Returns:
         The evaluated result as a float
-        
+
     Raises:
         ValueError: If the expression contains invalid operations
         SyntaxError: If the expression is malformed
@@ -74,7 +74,7 @@ def safe_eval_arithmetic(expr: str) -> float:
         ast.USub: operator.neg,
         ast.UAdd: operator.pos,
     }
-    
+
     def evaluate(node: ast.AST) -> float:
         # Handle numeric constants - works across Python versions
         # In Python 3.8+, numbers are ast.Constant nodes
@@ -97,7 +97,7 @@ def safe_eval_arithmetic(expr: str) -> float:
             return ops[type(node.op)](operand)
         else:
             raise ValueError(f"Invalid node type: {type(node).__name__}")
-    
+
     try:
         tree = ast.parse(expr, mode='eval')
         if not isinstance(tree, ast.Expression):
@@ -222,6 +222,18 @@ class FormatStyle:
             "label": "",
             "pre_content": "",
             "content": "{{dim}}{{content}}{{reset}}",
+            "post_content": "",
+        },
+        "hook": {
+            "label": "",
+            "pre_content": "",
+            "content": "{{system_color}}{{content}}{{reset}}\n",
+            "post_content": "",
+        },
+        "command": {
+            "label": "",
+            "pre_content": "",
+            "content": "{{tool_color}}{{content}}{{reset}}\n", 
             "post_content": "",
         },
         "header": {
@@ -451,12 +463,12 @@ def expand_repeat_macro(match: Any) -> str:
 
 def expand_pad_macro(text: str, width_expr: str) -> str:
     """Pad or truncate text to specified width.
-    
+
     For multi-line text, pads each line individually.
     Uses visual width to properly handle emojis and wide characters.
     """
     width = eval_terminal_expr(width_expr)
-    
+
     # Handle multi-line text by padding each line
     if '\n' in text:
         lines = text.split('\n')
@@ -479,7 +491,7 @@ def expand_pad_macro(text: str, width_expr: str) -> str:
                 padding_needed = width - visual_len
                 padded_lines.append(line + ' ' * padding_needed)
         return '\n'.join(padded_lines)
-    
+
     # Single line
     visual_len = get_visual_width(text)
     if visual_len > width:
@@ -493,7 +505,7 @@ def expand_pad_macro(text: str, width_expr: str) -> str:
             truncated += char
             current_width += char_width
         return truncated + "..."
-    
+
     # Pad with spaces to reach the target width
     padding_needed = width - visual_len
     return text + ' ' * padding_needed
@@ -630,6 +642,8 @@ def expand_macros(template: str, context: Dict[str, Any]) -> str:
     template = template.replace('{{name_color}}', str(Colors.TOOL_NAME))
     template = template.replace('{{error_color}}', str(Colors.ERROR))
     template = template.replace('{{warning_color}}', str(Colors.WARNING))
+    template = template.replace('{{system_color}}', str(Colors.SYSTEM))
+    template = template.replace('{{tool_color}}', str(Colors.TOOL_NAME))
 
     # Handle content substitutions
     for key, value in context.items():

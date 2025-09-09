@@ -4,7 +4,7 @@ import json
 import os
 import sys
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from .constants import CONFIG_FILE_PATH
 from .formatters import format_conversation_entry
@@ -14,7 +14,24 @@ from .themes import THEME_DESCRIPTIONS, Colors, get_color_theme
 
 
 def get_demo_messages() -> List[Dict[str, Any]]:
-    """Get simple demo messages for setup."""
+    """Get comprehensive demo messages from sample JSONL file."""
+    # Use the real sample conversation file that already exists
+    sample_file = Path(__file__).parent.parent.parent / "tests" / "fixtures" / "sample_conversation.jsonl"
+    
+    if sample_file.exists():
+        # Load messages from the JSONL file
+        messages = []
+        try:
+            with open(sample_file, 'r', encoding='utf-8') as f:
+                for line in f:
+                    if line.strip():
+                        messages.append(json.loads(line))
+            return messages
+        except (json.JSONDecodeError, IOError):
+            # Fall through to use fallback messages
+            pass
+    
+    # Fallback to simple messages if sample file not found or can't be read
     return [
         {
             "type": "user",
@@ -22,7 +39,7 @@ def get_demo_messages() -> List[Dict[str, Any]]:
             "timestamp": "2024-01-15T10:30:00Z"
         },
         {
-            "type": "assistant",
+            "type": "assistant", 
             "message": {"content": "Of course! I'd be happy to help you with your Python question. What would you like to know?"},
             "timestamp": "2024-01-15T10:30:05Z"
         }
@@ -31,115 +48,180 @@ def get_demo_messages() -> List[Dict[str, Any]]:
 
 class SimpleSetup:
     """Simple interactive setup that works everywhere."""
-    
+
     def __init__(self, automated_commands=None):
         """Initialize simple setup.
-        
+
         Args:
             automated_commands: Optional list of commands to execute automatically
         """
         from .config import load_config
-        
+
         self.themes = ["dark", "light", "solarized-dark", "solarized-light",
                       "dracula", "nord", "mono", "high-contrast"]
         self.styles = ["default", "boxed", "minimal", "compact"]
-        
+
         # Load current configuration
         config = load_config()
         self.current_theme = config.get("default_theme", "dark")
         self.current_style = config.get("default_style", "default")
-        
-        # For show options, if we have a saved value, use 'A' prefix to clear defaults first
+
+        # Initialize show options from saved config or defaults
         saved_options = config.get("default_show_options", "")
-        if saved_options:
-            # Use 'A' to clear defaults, then add the saved options
-            self.show_options = ShowOptions("A" + saved_options)
-        else:
-            # No saved options, use defaults
-            self.show_options = ShowOptions("")
-        
+        self.show_options = ShowOptions(saved_options)
+
         self.sample_messages = get_demo_messages()
         self.automated_commands = automated_commands or []
         self.command_index = 0
-        
+
     def clear_screen(self) -> None:
         """Clear screen in a cross-platform way."""
         # Use ANSI escape codes for safer cross-platform screen clearing
         # \033[2J clears the screen, \033[H moves cursor to home position
         print('\033[2J\033[H', end='', flush=True)
-        
+
     def display_sample(self) -> None:
         """Display sample output with current settings."""
         print("\n" + "="*60)
         print("SAMPLE OUTPUT WITH CURRENT SETTINGS")
         print("="*60 + "\n")
-        
+
         Colors.set_theme(get_color_theme(self.current_theme))
         set_style(self.current_style)
-        
+
         for msg in self.sample_messages:
             output = format_conversation_entry(msg, self.show_options)
             if output:
                 print(output)
-                
+
     def display_current_settings(self) -> None:
-        """Display current configuration."""
-        print("\n" + "="*60)
-        print("CURRENT CONFIGURATION")
-        print("="*60)
-        print(f"Theme: {self.current_theme} - {THEME_DESCRIPTIONS.get(self.current_theme, '')}")
-        print(f"Style: {self.current_style} - {STYLE_DESCRIPTIONS.get(self.current_style, '')}")
+        """Display current configuration as command line."""
+        # Build the equivalent command line
+        cmd_parts = ["claudeconvo"]
         
-        # Show enabled options
-        enabled = []
-        for flag_char, attr, desc in ShowOptions.OPTIONS:
+        # Add show options if any are enabled
+        flags = []
+        for flag_char, attr, _ in ShowOptions.OPTIONS:
             if attr != "all" and getattr(self.show_options, attr, False):
-                enabled.append(f"{flag_char}={desc}")
-                
-        if enabled:
-            print("\nEnabled options:")
-            for opt in enabled:
-                print(f"  {opt}")
-        else:
-            print("\nNo options enabled (minimal output)")
-            
+                flags.append(flag_char)
+        
+        if flags:
+            cmd_parts.append(f"-s{''.join(flags)}")
+        
+        # Add theme if not default
+        if self.current_theme != "dark":
+            cmd_parts.append(f"--theme {self.current_theme}")
+        
+        # Add style if not default
+        if self.current_style != "default":
+            cmd_parts.append(f"--style {self.current_style}")
+        
+        # Display as a command line
+        print("\n" + "="*60)
+        print("CURRENT SETTINGS")
+        print("="*60)
+        print(" ".join(cmd_parts))
+
     def display_menu(self) -> None:
         """Display the menu options."""
         print("\n" + "="*60)
         print("CONFIGURATION MENU")
         print("="*60)
-        print("\nTHEMES:")
-        for i, theme in enumerate(self.themes, 1):
-            marker = " *" if theme == self.current_theme else ""
-            print(f"  {i}. {theme}{marker}")
+        
+        # Display themes and styles side by side
+        print("\nTHEMES:                          STYLES:")
+        for i in range(max(len(self.themes), len(self.styles))):
+            # Theme column
+            if i < len(self.themes):
+                theme = self.themes[i]
+                marker = " *" if theme == self.current_theme else ""
+                theme_str = f"  {i+1}. {theme}{marker}"
+            else:
+                theme_str = ""
             
-        print("\nSTYLES:")
-        for i, style in enumerate(self.styles, 1):
-            marker = " *" if style == self.current_style else ""
-            print(f"  s{i}. {style}{marker}")
+            # Style column
+            if i < len(self.styles):
+                style = self.styles[i]
+                marker = " *" if style == self.current_style else ""
+                style_str = f"s{i+1}. {style}{marker}"
+            else:
+                style_str = ""
             
+            # Print both columns aligned
+            print(f"{theme_str:<32} {style_str}")
+
         print("\nOPTIONS (toggle on/off):")
-        options = [
+        
+        # Define all options
+        all_options = [
             ("q", "user", "User messages"),
             ("w", "assistant", "Assistant messages"),
             ("o", "tools", "Tool executions"),
             ("t", "tool_details", "Tool details"),
             ("s", "summaries", "Summaries"),
+            ("h", "hooks", "Hook calls"),
             ("m", "metadata", "Metadata"),
+            ("c", "commands", "Slash commands"),
+            ("y", "system", "System messages"),
             ("e", "errors", "Error details"),
-            ("a", "all", "Enable ALL options"),
+            ("r", "request_ids", "Request IDs"),
+            ("f", "flow", "Parent/child relationships"),
+            ("u", "unfiltered", "Untruncated content"),
+            ("d", "diagnostics", "Performance metrics"),
+            ("p", "paths", "Working directories"),
+            ("l", "levels", "Message levels"),
+            ("k", "sidechains", "Sidechain messages"),
+            ("v", "user_types", "User types"),
+            ("i", "model", "AI model names"),
         ]
         
-        for flag, attr, desc in options:
-            status = "ON" if getattr(self.show_options, attr, False) else "OFF"
-            print(f"  {flag}. {desc} [{status}]")
-            
-        print("\nCOMMANDS:")
-        print("  v      View sample with current settings")
-        print("  /save  Save configuration and exit")
-        print("  /exit  Exit without saving")
-        print("\n" + "="*60)
+        # Split into enabled and disabled (excluding 'all' option)
+        enabled_options = []
+        disabled_options = []
         
+        for flag, attr, desc in all_options:
+            is_enabled = getattr(self.show_options, attr, False)
+            if is_enabled:
+                enabled_options.append((flag, desc))
+            else:
+                disabled_options.append((flag, desc))
+        
+        # Display in two columns: enabled on left, disabled on right
+        print("  ENABLED:                       DISABLED:")
+        max_rows = max(len(enabled_options), len(disabled_options))
+        
+        for i in range(max_rows):
+            # Enabled column
+            if i < len(enabled_options):
+                flag, desc = enabled_options[i]
+                left_str = f"  {flag}. {desc}"
+            else:
+                left_str = ""
+            
+            # Disabled column
+            if i < len(disabled_options):
+                flag, desc = disabled_options[i]
+                right_str = f"{flag}. {desc}"
+            else:
+                right_str = ""
+            
+            print(f"{left_str:<32} {right_str}")
+        
+        # Special option for 'all'
+        all_enabled = all(
+            getattr(self.show_options, attr, False)
+            for _, attr, _ in all_options
+        )
+        print(f"\n  a. Enable ALL options [{('ON' if all_enabled else 'OFF')}]")
+
+        print("\nCOMMANDS:")
+        print("  V or [ENTER]  View sample with current settings")
+        print("  X             Exit without saving (quick exit)")
+        print("  /set          Set as defaults (equivalent to --set-defaults)")
+        print("  /reset        Reset to defaults")
+        print("  /exit         Exit without saving")
+        print("\n" + "="*60)
+
     def toggle_option(self, flag: str) -> None:
         """Toggle a show option."""
         if flag == 'a':
@@ -158,22 +240,31 @@ class SimpleSetup:
                     current = getattr(self.show_options, attr, False)
                     setattr(self.show_options, attr, not current)
                     break
-                    
+
+    def reset_to_defaults(self) -> None:
+        """Reset all settings to defaults."""
+        # Reset theme and style
+        self.current_theme = "dark"
+        self.current_style = "default"
+        
+        # Reset show options to defaults
+        self.show_options = ShowOptions('')  # This will use DEFAULT_ENABLED
+    
     def save_config(self) -> str:
         """Save configuration to file."""
         from .config import load_config
-        
+
         config_path = Path(CONFIG_FILE_PATH)
-        
+
         # Load existing config to preserve other settings
         existing_config = load_config()
-        
+
         # Build options string
         flags = []
         for flag_char, attr, _ in ShowOptions.OPTIONS:
             if attr != "all" and getattr(self.show_options, attr, False):
                 flags.append(flag_char)
-                
+
         # Update config with new values (using correct keys)
         config = {
             "default_theme": self.current_theme,
@@ -181,22 +272,22 @@ class SimpleSetup:
             "default_show_options": ''.join(flags) if flags else "",
             "default_watch": existing_config.get("default_watch", False)
         }
-        
+
         with open(config_path, 'w', encoding='utf-8') as f:
             json.dump(config, f, indent=2)
-        
+
         # Set secure permissions (user read/write only)
         import stat
         os.chmod(config_path, stat.S_IRUSR | stat.S_IWUSR)  # 0o600
-            
+
         return str(config_path)
-        
+
     def get_next_command(self, prompt: str = "\nEnter your choice: ") -> str:
         """Get next command from automated list or user input.
-        
+
         Args:
             prompt: Prompt to show for user input
-            
+
         Returns:
             Next command string
         """
@@ -212,40 +303,50 @@ class SimpleSetup:
                 print(f"{prompt}/exit [automated - end of commands]")
                 return '/exit'
         else:
-            # For manual input, only lowercase option letters, not slash commands
+            # For manual input, return as-is (case sensitive)
             result = input(prompt).strip()
-            # Only lowercase if it's a single character option (not slash commands)
-            if len(result) == 1 and not result.startswith('/'):
-                return result.lower()
             return result
-        
+
     def run(self) -> None:
         """Run the simple interactive setup."""
         self.clear_screen()
         print("\nWELCOME TO CLAUDECONVO INTERACTIVE SETUP")
         print("This will help you configure your preferred settings.\n")
-        
+
         while True:
             self.display_current_settings()
             self.display_menu()
-            
+
             choice = self.get_next_command("\nEnter your choice: ").strip()
             
+            # Handle empty input - view sample (same as 'V')
+            if not choice:
+                choice = 'V'
+            
+            # Handle exit shortcuts
+            # ESC key representations or 'x' for quick exit
+            if choice in ('\x1b', 'ESC', 'Esc', 'esc', '^[', 'x', 'X'):
+                choice = '/exit'
+
             if choice == '/exit':
                 print("\nExiting without saving.")
                 break
-            elif choice == '/save':
+            elif choice == '/set':
                 config_path = self.save_config()
-                print(f"\nConfiguration saved to {config_path}")
-                print("\nYou can now use claudeconvo with your saved settings!")
+                print(f"\nDefaults set in {config_path}")
+                print("\nYour settings are now the default for claudeconvo!")
                 break
-            elif choice == 'v':
+            elif choice == '/reset':
+                self.reset_to_defaults()
+                print("\nReset to default settings.")
+                self.clear_screen()
+            elif choice == 'V':
                 self.clear_screen()
                 self.display_sample()
                 if not self.automated_commands:
                     input("\nPress Enter to continue...")
                 self.clear_screen()
-            elif choice in '12345678':
+            elif len(choice) == 1 and choice in '12345678':
                 # Theme selection
                 idx = int(choice) - 1
                 if 0 <= idx < len(self.themes):
@@ -257,9 +358,9 @@ class SimpleSetup:
                 if 0 <= idx < len(self.styles):
                     self.current_style = self.styles[idx]
                     self.clear_screen()
-            elif choice in 'qwothsmecyrefduplkvia':
-                # Toggle option
-                self.toggle_option(choice)
+            elif len(choice) == 1 and choice.lower() in 'qwothsmecyrefduplkvia':
+                # Toggle option (accept both upper and lowercase)
+                self.toggle_option(choice.lower())
                 self.clear_screen()
             else:
                 print("\nInvalid choice. Please try again.")
@@ -270,7 +371,7 @@ class SimpleSetup:
 
 def run_simple_setup(automated_commands=None) -> None:
     """Entry point for simple setup.
-    
+
     Args:
         automated_commands: Optional list of commands to execute automatically
     """

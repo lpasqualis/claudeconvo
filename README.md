@@ -4,18 +4,34 @@ View Claude Code session history as a conversation
 
 `claudeconvo` is a command-line utility that loads and displays Claude Code session files stored in `~/.claude/projects/` for the current working directory, formatted as readable conversations with colored output for different speakers and tool executions.
 
+## What's New
+
+### Recent Updates
+- **Interactive Setup Mode** - Visual configuration with live preview (`--setup`)
+- **Improved Light Theme Support** - Fixed visibility issues for white terminals
+- **Complete Message Type Support** - Now displays hooks, commands, errors, and performance metrics
+- **Enhanced Menu Layout** - Two-column display options, side-by-side themes and styles
+- **Keyboard Shortcuts** - Quick exit with `X`, view with `Enter`, reset with `/reset`
+- **Performance Metrics** - Show request duration and token counts with `-d` flag
+- **Better Truncation** - Smart truncation of tool outputs with `-u` flag for full content
+
 ## Features
 
 - Display Claude Code conversations with colored, formatted output
-- Multiple color themes optimized for different terminal backgrounds
+- Multiple color themes optimized for different terminal backgrounds (fixed for white terminals)
 - Multiple formatting styles (default, boxed, minimal, compact)
-- Filter messages by type (user, assistant, tools, system, etc.)
-- Show or hide metadata, tool details, and system messages
+- Filter messages by type (user, assistant, tools, system, hooks, commands, errors, etc.)
+- Show or hide metadata, tool details, performance metrics, and system messages
 - Support for relative and absolute session references
-- Rich formatting with proper indentation and line wrapping
+- Rich formatting with proper indentation and automatic line wrapping
+- Interactive setup mode for visual configuration (`--setup`)
 - Configuration file support for persistent settings
-- Save current settings as defaults with `--make-default`
+- Save current settings as defaults with `--set-defaults`
 - Reset to original defaults with `--reset-defaults`
+- Watch mode for live session monitoring (`-w`)
+- Display performance metrics including duration and token counts
+- Show hook executions, slash commands, and error details
+- Adaptive parser system for handling different Claude log format versions
 
 ## Installation
 
@@ -60,22 +76,42 @@ claudeconvo --theme light --style boxed
 claudeconvo -n 2
 ```
 
+### Message Types
+
+`claudeconvo` can display various types of messages from Claude Code sessions:
+
+- **User Messages** - Your input and questions
+- **Assistant Messages** - Claude's responses
+- **Tool Executions** - File reads, edits, searches, and other tool uses
+- **System Messages** - Session auto-saves, checkpoints
+- **Summaries** - Conversation summaries and context
+- **Hook Executions** - Pre-commit, post-save, and other hooks
+- **Slash Commands** - Commands like `/docs`, `/test`, etc.
+- **Errors and Warnings** - Error messages with detailed information
+- **Performance Metrics** - Request duration and token usage
+
 ### Filtering Options
 
 Use single-letter flags to control what content is displayed:
 
 ```bash
-# Show only user and assistant messages (default)
+# Show default content (user, assistant, and tool executions)
 claudeconvo
 
-# Show all content
+# Show all content including metadata, performance, errors
 claudeconvo -a
 
 # Show summaries and metadata
 claudeconvo -sm
 
-# Show tool executions with full details
+# Show tool executions with full details (no truncation)
 claudeconvo -ot
+
+# Show performance metrics and token counts
+claudeconvo -d
+
+# Show hooks, commands, and errors
+claudeconvo -hce
 ```
 
 #### Available Options
@@ -83,17 +119,17 @@ claudeconvo -ot
 - `q` - Show user messages
 - `w` - Show assistant (Claude) messages
 - `s` - Show session summaries
-- `h` - Show hook executions
+- `h` - Show hook executions (pre-commit, post-save, etc.)
 - `m` - Show metadata (uuid, sessionId, version, etc.)
-- `c` - Show command-related messages
-- `y` - Show all system messages
+- `c` - Show slash command executions (/docs, /test, etc.)
+- `y` - Show all system messages (auto-save, checkpoints, etc.)
 - `t` - Show full tool details without truncation
 - `o` - Show tool executions
 - `e` - Show all error details and warnings
 - `r` - Show API request IDs
 - `f` - Show parent/child relationships
 - `u` - Show all content without truncation
-- `d` - Show performance metrics and token counts
+- `d` - Show performance metrics (duration, tokens-in, tokens-out)
 - `p` - Show working directory (cwd) for each message
 - `l` - Show message level/priority
 - `k` - Show sidechain/parallel messages
@@ -126,9 +162,9 @@ claudeconvo --no-color
 
 Available themes:
 - `dark` (default) - Optimized for dark terminal backgrounds
-- `light` - Optimized for light/white terminal backgrounds  
+- `light` - Optimized for light/white terminal backgrounds (improved visibility)
 - `solarized-dark` - Solarized dark color scheme
-- `solarized-light` - Solarized light color scheme
+- `solarized-light` - Solarized light color scheme (improved for white backgrounds)
 - `dracula` - Dracula color scheme
 - `nord` - Nord color scheme
 - `mono` - No colors (monochrome)
@@ -169,10 +205,17 @@ Use the interactive setup to visually configure your preferences:
 claudeconvo --setup
 
 # Automated setup for testing (non-interactive)
-claudeconvo --setup --ai 2 s2 t v S  # Light theme, boxed style, tool details, view, save
+claudeconvo --setup --ai "2 s2 t V /set"  # Light theme, boxed style, tool details, view, save
 ```
 
-This will show you sample output with different themes, styles, and display options, allowing you to preview changes in real-time before saving. The --ai option allows automated testing by providing a sequence of commands.
+The interactive setup provides:
+- Side-by-side theme and style selection
+- Two-column layout for display options (enabled/disabled)
+- Live preview of your configuration with sample messages
+- Quick commands: `V` or `Enter` to view sample, `X` to quick exit
+- `/set` to save as defaults, `/reset` to restore original defaults
+- All 19 display options accessible with single-letter toggles
+- Compact command-line format display of current settings
 
 #### Setting Defaults
 
@@ -183,7 +226,7 @@ Save your current settings as defaults:
 claudeconvo --theme light --style boxed -w
 
 # If you like them, save as defaults
-claudeconvo --theme light --style boxed -w --make-default
+claudeconvo --theme light --style boxed -w --set-defaults
 
 # Reset to original defaults
 claudeconvo --reset-defaults

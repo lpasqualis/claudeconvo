@@ -4,7 +4,7 @@ import json
 import os
 import sys
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Tuple
 
 # Only import termios/tty on Unix-like systems
 try:
@@ -23,7 +23,7 @@ from .themes import THEME_DESCRIPTIONS, Colors, get_color_theme
 
 class MockData:
     """Provides mock conversation data for interactive setup."""
-    
+
     @staticmethod
     def get_mock_messages() -> List[Dict[str, Any]]:
         """Generate mock messages demonstrating all message types."""
@@ -39,7 +39,7 @@ class MockData:
                 "userType": "human"
             },
             {
-                "type": "assistant", 
+                "type": "assistant",
                 "content": "I'll analyze your Python code for performance issues. Let me examine the file structure first.",
                 "timestamp": "2024-01-15T10:30:05Z",
                 "model": "claude-3-opus",
@@ -101,32 +101,32 @@ class MockData:
 
 class TerminalController:
     """Handles terminal control and input."""
-    
+
     def __init__(self):
         """Initialize terminal controller."""
         self.original_settings = None
-        
+
     def setup(self) -> None:
         """Set up terminal for raw input mode."""
         if HAS_TERMIOS and sys.stdin.isatty():
             self.original_settings = termios.tcgetattr(sys.stdin)
             tty.setraw(sys.stdin.fileno())
-            
+
     def restore(self) -> None:
         """Restore original terminal settings."""
         if HAS_TERMIOS and self.original_settings:
             termios.tcsetattr(sys.stdin, termios.TCSADRAIN, self.original_settings)
-            
+
     def clear_screen(self) -> None:
         """Clear the terminal screen."""
         sys.stdout.write('\033[2J\033[H')
         sys.stdout.flush()
-        
+
     def move_cursor(self, row: int, col: int) -> None:
         """Move cursor to specified position."""
         sys.stdout.write(f'\033[{row};{col}H')
         sys.stdout.flush()
-        
+
     def get_terminal_size(self) -> Tuple[int, int]:
         """Get terminal dimensions (rows, cols)."""
         try:
@@ -135,7 +135,7 @@ class TerminalController:
             return rows, cols
         except:
             return 24, 80
-            
+
     def read_key(self) -> str:
         """Read a single key press."""
         char = sys.stdin.read(1)
@@ -154,18 +154,18 @@ class TerminalController:
 
 class SetupState:
     """Manages the state of the interactive setup."""
-    
+
     def __init__(self):
         """Initialize setup state."""
         self.show_options = ShowOptions("")  # Start with defaults
         self.theme_index = 0
         self.style_index = 0
-        self.themes = ["dark", "light", "solarized-dark", "solarized-light", 
+        self.themes = ["dark", "light", "solarized-dark", "solarized-light",
                       "dracula", "nord", "mono", "high-contrast"]
         self.styles = ["default", "boxed", "minimal", "compact"]
         self.show_help = False
         self.messages = get_interactive_demo_messages()
-        
+
     def toggle_option(self, flag: str) -> None:
         """Toggle a show option flag."""
         for flag_char, attr, _ in ShowOptions.OPTIONS:
@@ -173,33 +173,33 @@ class SetupState:
                 current = getattr(self.show_options, attr, False)
                 setattr(self.show_options, attr, not current)
                 break
-                
+
     def next_theme(self) -> None:
         """Cycle to next theme."""
         self.theme_index = (self.theme_index + 1) % len(self.themes)
-        
+
     def prev_theme(self) -> None:
         """Cycle to previous theme."""
         self.theme_index = (self.theme_index - 1) % len(self.themes)
-        
+
     def next_style(self) -> None:
         """Cycle to next style."""
         self.style_index = (self.style_index + 1) % len(self.styles)
-        
+
     def prev_style(self) -> None:
         """Cycle to previous style."""
         self.style_index = (self.style_index - 1) % len(self.styles)
-        
+
     @property
     def current_theme(self) -> str:
         """Get current theme name."""
         return self.themes[self.theme_index]
-        
+
     @property
     def current_style(self) -> str:
         """Get current style name."""
         return self.styles[self.style_index]
-        
+
     def get_options_string(self) -> str:
         """Get current options as flag string."""
         flags = []
@@ -207,7 +207,7 @@ class SetupState:
             if attr != "all" and getattr(self.show_options, attr, False):
                 flags.append(flag_char)
         return ''.join(flags) if flags else "(none)"
-        
+
     def save_config(self) -> str:
         """Save current configuration to file."""
         config_path = Path(CONFIG_FILE_PATH)
@@ -217,36 +217,36 @@ class SetupState:
             "show_options": self.get_options_string() if self.get_options_string() != "(none)" else "",
             "watch": False  # Default for setup
         }
-        
+
         with open(config_path, 'w', encoding='utf-8') as f:
             json.dump(config, f, indent=2)
-        
+
         # Set secure permissions (user read/write only)
         import stat
         os.chmod(config_path, stat.S_IRUSR | stat.S_IWUSR)  # 0o600
-            
+
         return str(config_path)
 
 
 class InteractiveSetup:
     """Main interactive setup interface."""
-    
+
     def __init__(self):
         """Initialize interactive setup."""
         self.controller = TerminalController()
         self.state = SetupState()
         self.running = True
-        
+
     def render_header(self) -> List[str]:
         """Render the header with current settings."""
         lines = []
         lines.append("╔" + "═" * 78 + "╗")
         lines.append("║ CLAUDECONVO INTERACTIVE SETUP" + " " * 47 + "║")
         lines.append("╟" + "─" * 78 + "╢")
-        
+
         theme_desc = THEME_DESCRIPTIONS.get(self.state.current_theme, "")[:20]
         style_desc = STYLE_DESCRIPTIONS.get(self.state.current_style, "")[:20]
-        
+
         lines.append(f"║ Theme: {self.state.current_theme:<12} ({theme_desc:<20}) "
                     f"   [←/→] to change     ║")
         lines.append(f"║ Style: {self.state.current_style:<12} ({style_desc:<20}) "
@@ -254,13 +254,13 @@ class InteractiveSetup:
         lines.append(f"║ Options: {self.state.get_options_string():<60}     ║")
         lines.append("╟" + "─" * 78 + "╢")
         return lines
-        
+
     def render_messages(self, max_lines: int) -> List[str]:
         """Render mock messages with current settings."""
         lines = []
         Colors.set_theme(get_color_theme(self.state.current_theme))
         style = get_renderer(self.state.current_style)
-        
+
         for msg in self.state.messages:
             formatted = format_conversation_entry(msg, self.state.show_options, style)
             if formatted:
@@ -269,15 +269,15 @@ class InteractiveSetup:
                     if len(lines) >= max_lines:
                         break
                     lines.append(line)
-                    
+
         return lines[:max_lines]
-        
+
     def render_footer(self) -> List[str]:
         """Render the footer with keyboard shortcuts."""
         lines = []
         lines.append("╟" + "─" * 78 + "╢")
         lines.append("║ TOGGLE OPTIONS:                                                            ║")
-        
+
         # Show options in groups
         options = [
             ("q=User", "w=Assistant", "o=Tools", "s=Summary"),
@@ -286,18 +286,18 @@ class InteractiveSetup:
             ("u=Unfiltered", "d=Diagnostics", "p=Paths", "l=Levels"),
             ("k=Sidechains", "v=User types", "i=Model", "a=All")
         ]
-        
+
         for group in options:
             line = "║ " + "  ".join(f"{opt:<15}" for opt in group)
             line = line[:78] + " ║"
             lines.append(line)
-            
+
         lines.append("╟" + "─" * 78 + "╢")
         lines.append("║ [←/→] Change theme  [SPACE] Change style  [?] Help                        ║")
         lines.append("║ [S] Save & exit     [Q] Quit without saving                               ║")
         lines.append("╚" + "═" * 78 + "╝")
         return lines
-        
+
     def render_help(self) -> List[str]:
         """Render help overlay."""
         lines = []
@@ -314,50 +314,50 @@ class InteractiveSetup:
         lines.append("║ Press '?' again to close this help                       ║")
         lines.append("╚" + "═" * 60 + "╝")
         return lines
-        
+
     def render(self) -> None:
         """Render the entire interface."""
         self.controller.clear_screen()
         rows, cols = self.controller.get_terminal_size()
-        
+
         # Render sections
         header = self.render_header()
         footer = self.render_footer()
-        
+
         # Calculate space for messages
         header_size = len(header)
         footer_size = len(footer)
         message_space = rows - header_size - footer_size - 1
-        
+
         messages = self.render_messages(message_space)
-        
+
         # Output everything
         output = []
         output.extend(header)
         output.extend(messages)
-        
+
         # Pad if needed
         while len(output) < rows - footer_size - 1:
             output.append("")
-            
+
         output.extend(footer)
-        
+
         # Draw
         for line in output:
             print(line[:cols])
-            
+
         # Draw help overlay if active
         if self.state.show_help:
             help_lines = self.render_help()
             start_row = (rows - len(help_lines)) // 2
             start_col = (cols - 62) // 2
-            
+
             for i, line in enumerate(help_lines):
                 self.controller.move_cursor(start_row + i, start_col)
                 sys.stdout.write(line)
-                
+
         sys.stdout.flush()
-        
+
     def handle_input(self, key: str) -> None:
         """Handle keyboard input."""
         if key == 'Q':  # Quit without saving
@@ -389,21 +389,21 @@ class InteractiveSetup:
                     setattr(self.state.show_options, attr, True)
         elif key.lower() in 'qwshmcytoefrfudplkvi':  # Toggle options
             self.state.toggle_option(key.lower())
-            
+
     def run(self) -> None:
         """Run the interactive setup."""
         try:
             self.controller.setup()
-            
+
             while self.running:
                 self.render()
                 key = self.controller.read_key()
-                
+
                 if key == '\x03':  # Ctrl+C
                     self.running = False
                 else:
                     self.handle_input(key)
-                    
+
         except KeyboardInterrupt:
             pass
         finally:
@@ -424,6 +424,6 @@ def run_interactive_setup() -> None:
             "watch": False
         }, indent=2))
         return
-        
+
     setup = InteractiveSetup()
     setup.run()

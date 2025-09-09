@@ -1,8 +1,8 @@
 # claudeconvo
 
-View Claude Code session history as a conversation
+Reveal the complete conversation history with Claude Code - including everything hidden from normal output
 
-`claudeconvo` is a command-line utility that loads and displays Claude Code session files stored in `~/.claude/projects/` for the current working directory, formatted as readable conversations with colored output for different speakers and tool executions.
+`claudeconvo` is a command-line utility that exposes the full Claude Code session data stored in `~/.claude/projects/`, revealing critical information that Claude Code doesn't display in its normal output. This includes subagent operations, hook executions, system reminders, performance metrics, background process monitoring, complete tool parameters and responses, error stack traces, session metadata, and API request IDs - essential for debugging, understanding Claude's internal decision-making, and troubleshooting issues that would otherwise be completely opaque.
 
 ## Quick Start
 
@@ -27,34 +27,40 @@ The interactive setup (`--setup`) helps you:
 - Preview your settings with sample output
 - Save your preferences as defaults
 
-## What's New
+## Why claudeconvo?
 
-### Recent Updates
-- **Interactive Setup Mode** - Visual configuration with live preview (`--setup`)
-- **Improved Light Theme Support** - Fixed visibility issues for white terminals
-- **Complete Message Type Support** - Now displays hooks, commands, errors, and performance metrics
-- **Enhanced Menu Layout** - Two-column display options, side-by-side themes and styles
-- **Keyboard Shortcuts** - Quick exit with `X`, view with `Enter`, reset with `/reset`
-- **Performance Metrics** - Show request duration and token counts with `-d` flag
-- **Better Truncation** - Smart truncation of tool outputs with `-u` flag for full content
+Claude Code intentionally hides most operational details during normal use. While it shows only user messages, assistant responses, and basic tool results, the session logs contain extensive data essential for debugging and optimization:
+
+### Hidden Information Revealed by claudeconvo
+
+- **Subagent/Task Operations** - See when Claude delegates work to specialized subagents and what internal analysis they perform
+- **Hook Executions** - Monitor pre-commit, post-save, and user-prompt-submit hooks that modify your code or messages behind the scenes
+- **System Reminders** - Internal context updates and state changes Claude receives but doesn't show you
+- **Performance Metrics** - Track token usage (tokens-in/out) and request duration to optimize costs and identify bottlenecks
+- **Background Process Monitoring** - BashOutput and KillBash operations for long-running commands
+- **Complete Tool Details** - Full parameters and responses (normally truncated or hidden)
+- **Error Stack Traces** - Complete error messages and warnings Claude handles silently
+- **API Request IDs** - Unique identifiers for tracking issues with Anthropic support
+- **Session Metadata** - UUIDs, parent/child relationships, and version information for understanding context flow
+- **Slash Command Internals** - What `/docs`, `/test`, and other commands actually execute
+- **Working Directory Context** - Path changes and file resolution details
+- **Message Classification** - Internal priority levels and categorization
+
+Without `claudeconvo`, these details remain completely opaque, making it impossible to understand Claude's decision-making, debug failures, or optimize your workflow.
 
 ## Features
 
-- Display Claude Code conversations with colored, formatted output
-- Multiple color themes optimized for different terminal backgrounds (fixed for white terminals)
-- Multiple formatting styles (default, boxed, minimal, compact)
-- Filter messages by type (user, assistant, tools, system, hooks, commands, errors, etc.)
-- Show or hide metadata, tool details, performance metrics, and system messages
-- Support for relative and absolute session references
-- Rich formatting with proper indentation and automatic line wrapping
-- Interactive setup mode for visual configuration (`--setup`)
-- Configuration file support for persistent settings
-- Save current settings as defaults with `--set-defaults`
-- Reset to original defaults with `--reset-defaults`
-- Watch mode for live session monitoring (`-w`)
-- Display performance metrics including duration and token counts
-- Show hook executions, slash commands, and error details
-- Adaptive parser system for handling different Claude log format versions
+- **Complete Conversation Display** - See the full dialogue including hidden system interactions
+- **Hidden Information Exposure** - Reveal hooks, errors, metrics, and tool internals
+- **Multiple Display Themes** - 8 color themes optimized for different terminals
+- **Flexible Formatting** - Choose from default, boxed, minimal, or compact styles
+- **Granular Filtering** - 19 display options to show/hide specific message types
+- **Live Session Monitoring** - Watch mode (`-w`) for real-time session tracking
+- **Performance Analytics** - Token usage and request duration metrics
+- **Interactive Setup** - Visual configuration with live preview (`--setup`)
+- **Configuration Persistence** - Save preferences as defaults
+- **Adaptive Parser** - Handles different Claude log format versions automatically
+- **No Dependencies** - Pure Python stdlib for maximum compatibility
 
 ## Installation
 

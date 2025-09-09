@@ -7,7 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.1.1] - 2025-09-08
+## [0.2.0] - 2025-09-09
+
+### Added
+- Interactive configuration setup with automated testing support
+- Diagnose-and-fix command for comprehensive issue detection and resolution
+- Quick Start section in documentation
+- Improved tool output formatting with better text wrapping
+- Enhanced security with proper encoding and validation
+- Better error handling and robustness improvements
+
+### Changed  
+- Renamed `--make-default` flag to `--set-default` for consistency
+- Improved documentation with comprehensive feature overview
+- Enhanced diagnostic tool with proper field mapping from JSON
+
+## [0.1.1] - 2025-01-08
 
 ### Added
 - Watch mode (`-w`/`--watch`) for tailing session logs in real-time
@@ -26,7 +41,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Tool truncation with `-st` option now correctly shows full tool output without truncation
 
-## [0.1.0] - 2025-01-XX
+## [0.1.0] - 2025-01-07
 
 ### Added
 - Initial release of claudelog
@@ -46,20 +61,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Session listing and selection
 - Configurable display options via command-line flags
 
-[Unreleased]: https://github.com/lpasqualis/claudeconvo/compare/v0.1.1...HEAD
+[Unreleased]: https://github.com/lpasqualis/claudeconvo/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/lpasqualis/claudeconvo/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/lpasqualis/claudeconvo/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/lpasqualis/claudeconvo/releases/tag/v0.1.0
-## [0.2.0] - 2025-09-08
-
-### Changed
-- **BREAKING**: Renamed project from `claudelog` to `claudeconvo`
-  - Command changed from `claudelog` to `claudeconvo`
-  - Package name changed from `claudelog` to `claudeconvo`
-  - All imports must be updated to use `claudeconvo`
-  - Environment variables changed from `CLAUDELOG_*` to `CLAUDECONVO_*`
-- Updated all documentation to reflect new name
-- GitHub repository will be renamed to match
-
-### Migration
-- Users should uninstall `claudelog` and install `claudeconvo` instead
-- See docs/MIGRATION.md for detailed migration instructions

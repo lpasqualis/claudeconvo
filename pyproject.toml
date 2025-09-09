@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "claudeconvo"
-version = "0.1.1"
+version = "0.2.0"
 description = "View Claude Code session history as a conversation"
 readme = "README.md"
 license = {text = "MIT"}

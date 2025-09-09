@@ -4,6 +4,8 @@ Reveal the complete conversation history with Claude Code - including everything
 
 `claudeconvo` is a command-line utility that exposes the full Claude Code session data stored in `~/.claude/projects/`, revealing critical information that Claude Code doesn't display in its normal output. This includes subagent operations, hook executions, system reminders, performance metrics, background process monitoring, complete tool parameters and responses, error stack traces, session metadata, and API request IDs - essential for debugging, understanding Claude's internal decision-making, and troubleshooting issues that would otherwise be completely opaque.
 
+**Version 0.2.1** - Now requires Python 3.10+, adds `-W` flag to disable watch mode, `-v` for version info, improved metadata visibility in dark theme, and modernized type annotations throughout.
+
 ## Quick Start
 
 ```bash
@@ -86,6 +88,9 @@ pip install -e .
 # View the most recent session
 claudeconvo
 
+# Show version information and copyright
+claudeconvo -v
+
 # View a specific session by number
 claudeconvo 3
 
@@ -95,6 +100,9 @@ claudeconvo -1
 # Watch a session for new entries (tail mode)
 claudeconvo -w
 
+# Disable watch mode (useful when it's set as default)
+claudeconvo -W
+
 # Watch a specific session
 claudeconvo -f session-123 -w
 
@@ -103,6 +111,9 @@ claudeconvo --theme light --style boxed
 
 # View last 2 sessions
 claudeconvo -n 2
+
+# Include timestamps in the conversation
+claudeconvo -t
 ```
 
 ### Message Types
@@ -255,7 +266,10 @@ Save your current settings as defaults:
 claudeconvo --theme light --style boxed -w
 
 # If you like them, save as defaults
-claudeconvo --theme light --style boxed -w --set-defaults
+claudeconvo --theme light --style boxed -w --set-default
+
+# Remove watch mode from defaults
+claudeconvo -W --set-default
 
 # Reset to original defaults
 claudeconvo --reset-defaults
@@ -282,14 +296,56 @@ Settings are applied in this order (highest to lowest priority):
 3. Config file (`~/.claudeconvorc`)
 4. Built-in defaults
 
+### Command-Line Options
+
+#### Core Options
+- `-v, --version` - Show version information and license
+- `-h, --help` - Show help message
+- `-n, --number NUMBER` - Number of recent sessions to show (default: 1, use 0 for all)
+- `-l, --list` - List all session files without showing content
+- `-f, --file FILE` - Show specific session file by name or index
+- `-t, --timestamp` - Include timestamps in conversation
+- `-p, --project PROJECT` - View sessions for specific project path
+
+#### Watch Mode
+- `-w, --watch` - Watch session for new entries (press ESC or Ctrl+C to exit)
+- `-W, --no-watch` - Disable watch mode (overrides default setting)
+
+#### Display Options
+- `-s, --show SHOW` - Control what content to display (see Filtering Options above)
+- `--theme THEME` - Set color theme (dark, light, solarized-dark, etc.)
+- `--style STYLE` - Set formatting style (default, boxed, minimal, compact)
+- `--no-color` - Disable colored output (same as --theme mono)
+
+#### Configuration
+- `--setup` - Launch interactive configuration setup
+- `--set-default` - Save current settings as defaults
+- `--reset-defaults` - Reset all settings to original defaults
+- `--show-config` - Show current configuration including defaults
+
+#### Advanced
+- `--list-projects` - List all projects with Claude sessions
+- `--diagnose` - Run diagnostic checks on log format compatibility
+- `--diagnose-file FILE` - Analyze specific session file for format issues
+
 ### Help and Available Sessions
 
 ```bash
 # Show help
 claudeconvo --help
 
+# Show version and license information
+claudeconvo --version
+
 # List available sessions
+claudeconvo -l
 claudeconvo --list
+
+# List all projects with Claude sessions
+claudeconvo --list-projects
+
+# View sessions for a specific project
+claudeconvo -p /path/to/project
 
 # Show current configuration
 claudeconvo --show-config
@@ -329,7 +385,9 @@ mypy src/
 
 ## License
 
-MIT License - see [LICENSE](LICENSE) file for details.
+ISC License - see [LICENSE](LICENSE) file for details.
+
+Copyright © 2025 Lorenzo Pasqualis
 
 ## Author
 

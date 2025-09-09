@@ -101,6 +101,9 @@ Examples:
   %(prog)s -l           # List all session files
   %(prog)s -n 2         # Show last 2 sessions
   %(prog)s -t           # Include timestamps
+  %(prog)s -w           # Watch session for new entries
+  %(prog)s -W           # Disable watch mode
+  %(prog)s -v           # Show version information
   %(prog)s --no-color   # Disable colored output
   %(prog)s -p /path     # View sessions for specific project path
   %(prog)s --list-projects  # List all projects with sessions
@@ -126,6 +129,19 @@ Examples:
   %(prog)s -saMFLKVTR   # Director's cut
         """,
     )
+    # Import version and copyright at module level to avoid repeated imports
+    from . import __version__, __copyright__
+    
+    parser.add_argument(
+        "-v",
+        "--version",
+        action="version",
+        version="claudeconvo {version}\n\n{copyright}".format(
+            version=__version__,
+            copyright=__copyright__
+        ),
+        help="Show version information",
+    )
     parser.add_argument(
         "-n",
         "--number",
@@ -147,6 +163,12 @@ Examples:
         "--watch",
         action="store_true",
         help="Watch session for new entries (press ESC or Ctrl+C to exit)",
+    )
+    parser.add_argument(
+        "-W",
+        "--no-watch",
+        action="store_true",
+        help="Disable watch mode",
     )
     parser.add_argument(
         "--no-color", action="store_true", help="Disable colored output (same as --theme mono)"
@@ -297,7 +319,11 @@ def save_defaults(args: argparse.Namespace, config: dict) -> bool:
         new_config['default_show_options'] = args.show
 
     # Save watch mode if specified
-    if hasattr(args, 'watch') and args.watch:
+    # Note: -W/--no-watch explicitly removes the default
+    if hasattr(args, 'no_watch') and args.no_watch:
+        # Remove watch default if it exists
+        new_config.pop('default_watch', None)
+    elif hasattr(args, 'watch') and args.watch:
         new_config['default_watch'] = True
 
     # Write to config file
@@ -759,9 +785,25 @@ def main() -> int:
 
 
     # Apply watch mode default if not specified on CLI
+    # Handle -W/--no-watch flag to explicitly disable watch mode
     if not hasattr(args, 'watch'):
         args.watch = False
-    if not args.watch and config.get("default_watch", False):
+    if not hasattr(args, 'no_watch'):
+        args.no_watch = False
+    
+    # Check for conflicting watch arguments
+    if args.watch and args.no_watch:
+        from .styles import render_inline
+        print(render_inline("error", "Error: Cannot use both -w/--watch and -W/--no-watch"))
+        return 1
+    
+    # Determine effective watch mode:
+    # 1. If --no-watch is specified, always disable (highest priority)
+    # 2. If --watch is specified, enable
+    # 3. Otherwise use default from config
+    if args.no_watch:
+        args.watch = False
+    elif not args.watch and config.get("default_watch", False):
         args.watch = True
 
     # Determine theme

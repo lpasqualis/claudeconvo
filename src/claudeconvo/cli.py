@@ -185,7 +185,7 @@ Examples:
         "--verbose", action="store_true", help="Show verbose output in diagnostic mode"
     )
     parser.add_argument(
-        "--make-default", action="store_true", 
+        "--set-default", action="store_true", 
         help="Save current theme, style, and show options as defaults in ~/.claudeconvorc"
     )
     parser.add_argument(
@@ -272,7 +272,7 @@ def save_defaults(args: argparse.Namespace, config: dict) -> bool:
     Returns:
         True if defaults were saved, False otherwise
     """
-    if not args.make_default:
+    if not args.set_default:
         return False
         
     import json
@@ -732,8 +732,8 @@ def main() -> int:
         run_simple_setup(automated_commands)
         return 0
     
-    # Handle --make-default if specified
-    if hasattr(args, 'make_default') and args.make_default:
+    # Handle --set-default if specified
+    if hasattr(args, 'set_default') and args.set_default:
         if save_defaults(args, config):
             return 0
 

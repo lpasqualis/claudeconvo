@@ -83,7 +83,7 @@ class DarkTheme(ColorTheme):
     # Other
     TIMESTAMP = "\033[37m"  # Light gray/white
     SEPARATOR = "\033[37m"  # White
-    METADATA  = "\033[94m"  # Light blue
+    METADATA  = "\033[96m"  # Bright cyan (much more visible)
 
 
 ################################################################################

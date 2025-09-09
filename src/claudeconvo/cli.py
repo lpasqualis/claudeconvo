@@ -130,16 +130,13 @@ Examples:
         """,
     )
     # Import version and copyright at module level to avoid repeated imports
-    from . import __version__, __copyright__
-    
+    from . import __copyright__, __version__
+
     parser.add_argument(
         "-v",
         "--version",
         action="version",
-        version="claudeconvo {version}\n\n{copyright}".format(
-            version=__version__,
-            copyright=__copyright__
-        ),
+        version=f"claudeconvo {__version__}\n\n{__copyright__}",
         help="Show version information",
     )
     parser.add_argument(
@@ -790,13 +787,13 @@ def main() -> int:
         args.watch = False
     if not hasattr(args, 'no_watch'):
         args.no_watch = False
-    
+
     # Check for conflicting watch arguments
     if args.watch and args.no_watch:
         from .styles import render_inline
         print(render_inline("error", "Error: Cannot use both -w/--watch and -W/--no-watch"))
         return 1
-    
+
     # Determine effective watch mode:
     # 1. If --no-watch is specified, always disable (highest priority)
     # 2. If --watch is specified, enable

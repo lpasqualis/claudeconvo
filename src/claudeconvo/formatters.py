@@ -14,8 +14,61 @@ from .parsers.adaptive import AdaptiveParser
 from .styles import render, render_inline
 from .utils import format_uuid, sanitize_terminal_output
 
-# Formatting constants
-DEFAULT_MAX_LENGTH = 500
+# Import formatting constants from constants module
+from .constants import DEFAULT_MAX_LENGTH
+
+
+def format_model_name(model_name: str) -> str:
+    """Format a model name to be more readable.
+    
+    Handles various Claude model naming patterns flexibly using regex.
+    Examples:
+        claude-opus-4-1-20250805 -> Opus 4.1
+        claude-3-sonnet -> Sonnet 3
+        claude-instant -> Instant
+        gpt-4 -> gpt-4 (unchanged)
+    
+    Args:
+        model_name: Raw model name string
+        
+    Returns:
+        Formatted model name for display
+    """
+    if not model_name:
+        return "Unknown"
+    
+    # Handle Claude models with regex for flexibility
+    import re
+    
+    # Pattern: claude-[tier]-[version parts...]
+    claude_pattern = r'^claude-([^-]+)(?:-(.+))?$'
+    match = re.match(claude_pattern, model_name)
+    
+    if match:
+        tier = match.group(1).capitalize()
+        version_parts = match.group(2)
+        
+        if version_parts:
+            # Split version parts and extract numeric version
+            parts = version_parts.split('-')
+            version_nums = []
+            
+            for part in parts:
+                # Only include numeric parts (ignore dates like 20250805)
+                if part.isdigit():
+                    if len(part) <= 2:  # Likely a version number
+                        version_nums.append(part)
+                elif '.' in part:  # Already formatted version
+                    version_nums.append(part)
+            
+            if version_nums:
+                version = '.'.join(version_nums)
+                return f"{tier} {version}"
+        
+        return tier
+    
+    # Return original name if not a Claude model
+    return model_name
 
 ################################################################################
 
@@ -233,20 +286,8 @@ def _build_metadata_lines(
         message = entry.get("message", {})
         if isinstance(message, dict) and message.get("model"):
             model_name = message["model"]
-            # Format the model name to be more readable
-            if "claude-" in model_name:
-                # Extract the meaningful parts: e.g., "claude-opus-4-1-20250805" -> "Opus 4.1"
-                parts = model_name.split("-")
-                if len(parts) >= 3:
-                    tier = parts[1].capitalize()  # opus -> Opus
-                    version = parts[2] if len(parts) > 2 else ""
-                    if len(parts) > 3 and parts[3]:
-                        version += f".{parts[3]}"
-                    model_display = f"{tier} {version}"
-                else:
-                    model_display = model_name
-            else:
-                model_display = model_name
+            # Format the model name to be more readable using regex for flexibility
+            model_display = format_model_name(model_name)
             metadata_lines.append(render("metadata", content=f"Model: {model_display}"))
 
     # Basic metadata
@@ -517,7 +558,9 @@ def _format_user_entry(
                 if text:
                     if metadata_lines:
                         output.extend(metadata_lines)
-                    user_msg = render("user", content=text)
+                    # Sanitize user content to prevent terminal injection
+                    sanitized_text = sanitize_terminal_output(text)
+                    user_msg = render("user", content=sanitized_text)
                     # Prepend timestamp if present
                     if timestamp_str:
                         output.append(timestamp_str + user_msg)
@@ -572,7 +615,9 @@ def _format_assistant_entry(
                 output.extend(metadata_lines)
             max_len       = show_options.get_max_length("default")
             text          = truncate_text(text, max_len)
-            assistant_msg = render("assistant", content=text)
+            # Sanitize assistant content to prevent terminal injection
+            sanitized_text = sanitize_terminal_output(text)
+            assistant_msg = render("assistant", content=sanitized_text)
             # Prepend timestamp if present
             if timestamp_str:
                 output.append(timestamp_str + assistant_msg)

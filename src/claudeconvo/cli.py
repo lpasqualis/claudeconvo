@@ -15,6 +15,7 @@ from pathlib import Path
 from .config import determine_theme, load_config
 from .constants import (
     CLAUDE_PROJECTS_DIR,
+    CONFIG_FILE_PATH,
     LIST_ITEM_NUMBER_WIDTH,
     MAX_FILE_INDEX_DIGITS,
     THEME_NAME_DISPLAY_WIDTH,
@@ -301,10 +302,14 @@ def save_defaults(args: argparse.Namespace, config: dict) -> bool:
         new_config['default_watch'] = True
     
     # Write to config file
-    config_path = Path.home() / ".claudeconvorc"
+    config_path = Path(CONFIG_FILE_PATH)
     try:
-        with open(config_path, 'w') as f:
+        with open(config_path, 'w', encoding='utf-8') as f:
             json.dump(new_config, f, indent=2)
+        
+        # Set secure permissions (user read/write only)
+        import stat
+        os.chmod(config_path, stat.S_IRUSR | stat.S_IWUSR)  # 0o600
         
         print(render_inline("header", "Defaults saved to ~/.claudeconvorc:"))
         if 'default_theme' in new_config:
@@ -333,7 +338,7 @@ def reset_defaults() -> bool:
     from pathlib import Path
     from .styles import render_inline
     
-    config_path = Path.home() / ".claudeconvorc"
+    config_path = Path(CONFIG_FILE_PATH)
     
     if config_path.exists():
         try:
@@ -429,7 +434,7 @@ def show_configuration(args: argparse.Namespace, config: dict) -> bool:
     print()
     
     # Display config file settings
-    config_path = Path.home() / ".claudeconvorc"
+    config_path = Path(CONFIG_FILE_PATH)
     if config_path.exists():
         print(render_inline("header", "Config File (~/.claudeconvorc):"))
         print(f"  Theme: {config.get('default_theme', '(not set)')}")

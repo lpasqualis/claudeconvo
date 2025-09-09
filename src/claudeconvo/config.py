@@ -14,6 +14,7 @@ import os
 from pathlib import Path
 from typing import Any, Optional
 
+from .constants import CONFIG_FILE_PATH
 from .utils import load_json_config
 
 ################################################################################
@@ -96,7 +97,7 @@ def load_config() -> dict:
         return _normalize_config_keys(config)
 
     # Check legacy location
-    config_path = Path.home() / ".claudeconvorc"
+    config_path = Path(CONFIG_FILE_PATH)
     config = load_json_config(config_path, default={})
     return _normalize_config_keys(config)
 

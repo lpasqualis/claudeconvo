@@ -59,7 +59,7 @@ class LogAnalyzer:
         mappings_file = Path(__file__).parent / "field_mappings.json"
         if mappings_file.exists():
             try:
-                with open(mappings_file) as f:
+                with open(mappings_file, encoding='utf-8') as f:
                     mappings = json.load(f)
 
                 # Add all field aliases from the mappings
@@ -109,7 +109,7 @@ class LogAnalyzer:
         }
 
         try:
-            with open(filepath) as f:
+            with open(filepath, encoding='utf-8') as f:
                 for line_num, line in enumerate(f, 1):
                     line = line.strip()
                     if not line:
@@ -343,7 +343,7 @@ class LogAnalyzer:
             if version_file.name == "summary.json":
                 continue
 
-            with open(version_file) as f:
+            with open(version_file, encoding='utf-8') as f:
                 data = json.load(f)
 
             version = data["version"]
@@ -439,7 +439,7 @@ def run_diagnostics(
                 if version_file.name == "summary.json":
                     continue
 
-                with open(version_file) as f:
+                with open(version_file, encoding='utf-8') as f:
                     data = json.load(f)
 
                 for entry_type, entries in data["entry_types"].items():

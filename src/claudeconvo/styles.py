@@ -31,16 +31,82 @@ Additional template options:
   - wrap_width: Width expression for wrapping (default: see DEFAULT_WRAP_WIDTH)
 """
 
+import ast
+import operator
 import re
 import textwrap
 from typing import Any, Callable, Dict, Optional, cast
 
+from .constants import DEFAULT_FALLBACK_WIDTH, ELLIPSIS_LENGTH, MIN_WRAP_WIDTH
 from .themes import Colors
-from .utils import get_terminal_width
+from .utils import get_terminal_width, get_visual_width
 
 # Text wrapping configuration constants
 DEFAULT_WRAP_ENABLED = True     # Set to False to disable wrapping by default for all templates
 DEFAULT_WRAP_WIDTH   = "terminal"  # Can be: "terminal", "terminal-N", or a specific number
+
+
+def safe_eval_arithmetic(expr: str) -> float:
+    """Safely evaluate arithmetic expressions without using eval().
+    
+    Only supports basic arithmetic operations: +, -, *, /, //, %, **
+    and parentheses for grouping.
+    
+    Args:
+        expr: String containing the arithmetic expression
+        
+    Returns:
+        The evaluated result as a float
+        
+    Raises:
+        ValueError: If the expression contains invalid operations
+        SyntaxError: If the expression is malformed
+    """
+    # Define allowed operations
+    ops = {
+        ast.Add: operator.add,
+        ast.Sub: operator.sub,
+        ast.Mult: operator.mul,
+        ast.Div: operator.truediv,
+        ast.FloorDiv: operator.floordiv,
+        ast.Mod: operator.mod,
+        ast.Pow: operator.pow,
+        ast.USub: operator.neg,
+        ast.UAdd: operator.pos,
+    }
+    
+    def evaluate(node: ast.AST) -> float:
+        # Handle numeric constants - works across Python versions
+        # In Python 3.8+, numbers are ast.Constant nodes
+        # In Python < 3.8, numbers are ast.Num nodes
+        if hasattr(ast, 'Constant') and isinstance(node, ast.Constant):
+            # Python 3.8+ path
+            if isinstance(node.value, (int, float)):
+                return float(node.value)
+            raise ValueError(f"Invalid constant: {node.value}")
+        elif hasattr(node, 'n'):
+            # Handles ast.Num for Python < 3.8 without triggering deprecation warning
+            # by checking for the 'n' attribute directly
+            return float(node.n)
+        elif isinstance(node, ast.BinOp):
+            left = evaluate(node.left)
+            right = evaluate(node.right)
+            return ops[type(node.op)](left, right)
+        elif isinstance(node, ast.UnaryOp):
+            operand = evaluate(node.operand)
+            return ops[type(node.op)](operand)
+        else:
+            raise ValueError(f"Invalid node type: {type(node).__name__}")
+    
+    try:
+        tree = ast.parse(expr, mode='eval')
+        if not isinstance(tree, ast.Expression):
+            raise ValueError("Not a valid expression")
+        return evaluate(tree.body)
+    except (KeyError, TypeError) as e:
+        raise ValueError(f"Invalid operation in expression: {e}")
+    except RecursionError:
+        raise ValueError("Expression too complex")
 
 
 ################################################################################
@@ -356,7 +422,8 @@ def eval_terminal_expr(expr: str) -> int:
         # Only allow numbers and basic operators
         if re.match(r'^[\d\s\+\-\*/\(\)]+$', expr_eval):
             try:
-                result = eval(expr_eval)
+                # Use a safe expression evaluator instead of eval()
+                result = safe_eval_arithmetic(expr_eval)
                 return int(result)
             except (ValueError, SyntaxError):
                 return width
@@ -365,7 +432,7 @@ def eval_terminal_expr(expr: str) -> int:
     try:
         return int(expr)
     except ValueError:
-        return 80  # Default fallback
+        return DEFAULT_FALLBACK_WIDTH  # Default fallback
 
 
 ################################################################################
@@ -386,6 +453,7 @@ def expand_pad_macro(text: str, width_expr: str) -> str:
     """Pad or truncate text to specified width.
     
     For multi-line text, pads each line individually.
+    Uses visual width to properly handle emojis and wide characters.
     """
     width = eval_terminal_expr(width_expr)
     
@@ -394,16 +462,41 @@ def expand_pad_macro(text: str, width_expr: str) -> str:
         lines = text.split('\n')
         padded_lines = []
         for line in lines:
-            if len(line) > width:
-                padded_lines.append(line[:width-3] + "...")
+            visual_len = get_visual_width(line)
+            if visual_len > width:
+                # Truncate while accounting for visual width
+                truncated = ""
+                current_width = 0
+                for char in line:
+                    char_width = get_visual_width(char)
+                    if current_width + char_width > width - ELLIPSIS_LENGTH:
+                        break
+                    truncated += char
+                    current_width += char_width
+                padded_lines.append(truncated + "...")
             else:
-                padded_lines.append(line.ljust(width))
+                # Pad with spaces to reach the target width
+                padding_needed = width - visual_len
+                padded_lines.append(line + ' ' * padding_needed)
         return '\n'.join(padded_lines)
     
     # Single line
-    if len(text) > width:
-        return text[:width-3] + "..."
-    return text.ljust(width)
+    visual_len = get_visual_width(text)
+    if visual_len > width:
+        # Truncate while accounting for visual width
+        truncated = ""
+        current_width = 0
+        for char in text:
+            char_width = get_visual_width(char)
+            if current_width + char_width > width - ELLIPSIS_LENGTH:
+                break
+            truncated += char
+            current_width += char_width
+        return truncated + "..."
+    
+    # Pad with spaces to reach the target width
+    padding_needed = width - visual_len
+    return text + ' ' * padding_needed
 
 
 ################################################################################
@@ -669,8 +762,8 @@ class StyleRenderer:
 
                     # Auto-adjust width for the prefix
                     actual_wrap_width = base_width - prefix_len
-                    if actual_wrap_width < 20:  # Minimum reasonable width
-                        actual_wrap_width = 20
+                    if actual_wrap_width < MIN_WRAP_WIDTH:  # Minimum reasonable width
+                        actual_wrap_width = MIN_WRAP_WIDTH
 
                     # Escape ANSI codes BEFORE wrapping so the wrapper
                     # accounts for actual display width

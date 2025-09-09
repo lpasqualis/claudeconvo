@@ -6,48 +6,27 @@ import sys
 from pathlib import Path
 from typing import Any, Dict, List
 
+from .constants import CONFIG_FILE_PATH
 from .formatters import format_conversation_entry
 from .options import ShowOptions
 from .styles import STYLE_DESCRIPTIONS, set_style
 from .themes import THEME_DESCRIPTIONS, Colors, get_color_theme
 
 
-class SimpleMockData:
-    """Provides mock conversation data for setup demo."""
-    
-    @staticmethod
-    def get_sample_messages() -> List[Dict[str, Any]]:
-        """Get sample messages demonstrating ALL message types."""
-        # Try to load from JSONL file first
-        sample_file = Path(__file__).parent / "sample_conversation.jsonl"
-        
-        if sample_file.exists():
-            messages = []
-            try:
-                with open(sample_file, 'r') as f:
-                    for line in f:
-                        line = line.strip()
-                        if line:
-                            messages.append(json.loads(line))
-                if messages:
-                    return messages
-            except (json.JSONDecodeError, IOError):
-                # Fall back to hardcoded data if file is corrupted
-                pass
-        
-        # Fallback: Return minimal hardcoded sample if file not found or corrupted
-        return [
-            {
-                "type": "user",
-                "message": {"content": "Hello, can you help me with a Python question?"},
-                "timestamp": "2024-01-15T10:30:00Z"
-            },
-            {
-                "type": "assistant",
-                "message": {"content": "Of course! I'd be happy to help you with your Python question. What would you like to know?"},
-                "timestamp": "2024-01-15T10:30:05Z"
-            }
-        ]
+def get_demo_messages() -> List[Dict[str, Any]]:
+    """Get simple demo messages for setup."""
+    return [
+        {
+            "type": "user",
+            "message": {"content": "Hello, can you help me with a Python question?"},
+            "timestamp": "2024-01-15T10:30:00Z"
+        },
+        {
+            "type": "assistant",
+            "message": {"content": "Of course! I'd be happy to help you with your Python question. What would you like to know?"},
+            "timestamp": "2024-01-15T10:30:05Z"
+        }
+    ]
 
 
 class SimpleSetup:
@@ -79,13 +58,15 @@ class SimpleSetup:
             # No saved options, use defaults
             self.show_options = ShowOptions("")
         
-        self.sample_messages = SimpleMockData.get_sample_messages()
+        self.sample_messages = get_demo_messages()
         self.automated_commands = automated_commands or []
         self.command_index = 0
         
     def clear_screen(self) -> None:
         """Clear screen in a cross-platform way."""
-        os.system('cls' if os.name == 'nt' else 'clear')
+        # Use ANSI escape codes for safer cross-platform screen clearing
+        # \033[2J clears the screen, \033[H moves cursor to home position
+        print('\033[2J\033[H', end='', flush=True)
         
     def display_sample(self) -> None:
         """Display sample output with current settings."""
@@ -182,7 +163,7 @@ class SimpleSetup:
         """Save configuration to file."""
         from .config import load_config
         
-        config_path = Path.home() / ".claudeconvorc"
+        config_path = Path(CONFIG_FILE_PATH)
         
         # Load existing config to preserve other settings
         existing_config = load_config()
@@ -201,8 +182,12 @@ class SimpleSetup:
             "default_watch": existing_config.get("default_watch", False)
         }
         
-        with open(config_path, 'w') as f:
+        with open(config_path, 'w', encoding='utf-8') as f:
             json.dump(config, f, indent=2)
+        
+        # Set secure permissions (user read/write only)
+        import stat
+        os.chmod(config_path, stat.S_IRUSR | stat.S_IWUSR)  # 0o600
             
         return str(config_path)
         

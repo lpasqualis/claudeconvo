@@ -6,6 +6,7 @@ import os
 import re
 import shutil
 import sys
+import unicodedata
 from pathlib import Path
 from typing import Any, Dict, Optional
 
@@ -166,6 +167,48 @@ def format_bold(text: str, colors: Any) -> str:
 
 ################################################################################
 
+def get_visual_width(text: str) -> int:
+    """Calculate the visual display width of a string.
+    
+    Accounts for:
+    - Zero-width characters (combining marks, etc.)
+    - Wide characters (CJK, emojis)
+    - ANSI escape sequences (ignored in width calculation)
+    
+    Args:
+        text: Text to measure
+        
+    Returns:
+        Visual width of the text when displayed
+    """
+    # Remove ANSI escape sequences for width calculation
+    ansi_escape = re.compile(r'\x1b\[[0-9;]*m')
+    text = ansi_escape.sub('', text)
+    
+    width = 0
+    for char in text:
+        # Get the East Asian Width property
+        ea_width = unicodedata.east_asian_width(char)
+        
+        # Wide and Fullwidth characters take 2 columns
+        if ea_width in ('W', 'F'):
+            width += 2
+        # Zero-width characters (combining marks, etc.)
+        elif unicodedata.category(char) in ('Mn', 'Me', 'Cf'):
+            width += 0
+        # Emoji and other special characters
+        elif ord(char) >= 0x1F300:  # Emoji range starts around here
+            # Most emojis are displayed as 2 columns
+            width += 2
+        # Regular characters
+        else:
+            width += 1
+            
+    return width
+
+
+################################################################################
+
 def sanitize_terminal_output(text: str, strip_all_escapes: bool = False) -> str:
     """
     Sanitize text for safe terminal output.
@@ -233,7 +276,7 @@ def load_json_config(
         return default
 
     try:
-        with open(config_path) as f:
+        with open(config_path, encoding='utf-8') as f:
             data = json.load(f)
             return data  # type: ignore[no-any-return]
     except (OSError, json.JSONDecodeError) as e:
@@ -254,7 +297,20 @@ def log_debug(message: str) -> None:
     """
     # Check if debug mode is enabled via environment variable
     if os.environ.get("CLAUDECONVO_DEBUG"):
-        print(f"[DEBUG] {message}", file=sys.stderr)
+        # Sanitize debug message to prevent information disclosure
+        # Remove absolute paths and replace with relative paths
+        import re
+        from pathlib import Path
+        
+        # Replace home directory with ~
+        home = str(Path.home())
+        sanitized_message = message.replace(home, "~")
+        
+        # Remove any remaining absolute paths
+        sanitized_message = re.sub(r'/Users/[^/]+/', '~/', sanitized_message)
+        sanitized_message = re.sub(r'/home/[^/]+/', '~/', sanitized_message)
+        
+        print(f"[DEBUG] {sanitized_message}", file=sys.stderr)
 
     # Also use standard logging in case it's configured
     logging.debug(message)

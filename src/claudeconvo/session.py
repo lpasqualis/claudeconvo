@@ -19,6 +19,7 @@ from .constants import (
     ESC_KEY_CODE,
     MAX_FILE_SIZE,
     MAX_FILE_SIZE_MB,
+    MAX_LINE_SIZE,
     WATCH_POLL_INTERVAL,
 )
 from .parsers.adaptive import AdaptiveParser
@@ -167,7 +168,7 @@ def parse_session_file(filepath: Path) -> list[dict[str, Any]]:
         return sessions
 
     try:
-        with open(filepath) as f:
+        with open(filepath, encoding='utf-8') as f:
             # Check file size using fstat on open file handle to prevent TOCTOU
             try:
                 import os
@@ -186,6 +187,12 @@ def parse_session_file(filepath: Path) -> list[dict[str, Any]]:
                 log_debug(f"Could not check file size for {filepath}: {e}")
 
             for line_num, line in enumerate(f, 1):
+                # Check line size before processing to prevent memory exhaustion
+                if len(line) > MAX_LINE_SIZE:
+                    err_msg = f"Warning: Line {line_num} exceeds size limit ({len(line)} > {MAX_LINE_SIZE}), skipping"
+                    print(render_inline("warning", err_msg), file=sys.stderr)
+                    continue
+                    
                 line = line.strip()
                 if line:
                     try:
@@ -215,9 +222,14 @@ def parse_session_file(filepath: Path) -> list[dict[str, Any]]:
                         err_type = type(e).__name__
                         err_msg = f"Warning: Parse error on line {line_num}: {err_type}"
                         print(render_inline("warning", err_msg), file=sys.stderr)
-                        # Add raw data with sanitized error flag
-                        raw_data["_parse_error"] = type(e).__name__
-                        sessions.append(raw_data)
+                        # Don't include raw conversation data to prevent PII exposure
+                        # Only include minimal error information
+                        error_entry = {
+                            "_parse_error": err_type,
+                            "_line_number": line_num,
+                            "type": "parse_error"
+                        }
+                        sessions.append(error_entry)
     except (OSError, PermissionError) as e:
         # Sanitize error message to avoid exposing sensitive paths
         err_msg = f"Error reading session file: {type(e).__name__}"

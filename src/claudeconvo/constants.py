@@ -29,6 +29,7 @@ THEME_NAME_DISPLAY_WIDTH   = 16
 
 # Parser limits
 MAX_RECURSION_DEPTH = 20
+MAX_LINE_SIZE = 10 * BYTES_PER_MB  # 10MB per line to prevent memory exhaustion
 
 # Terminal and input constants
 ESC_KEY_CODE          = 27
@@ -49,6 +50,12 @@ DEFAULT_TRUNCATION_LIMITS = {
     "error"        : 1000,
     "error_short"  : 500,
 }
+DEFAULT_MAX_LENGTH = 500  # Default text truncation length
+
+# Terminal display constants
+DEFAULT_FALLBACK_WIDTH = 80  # Fallback when terminal width can't be detected
+MIN_WRAP_WIDTH = 20  # Minimum width for text wrapping
+ELLIPSIS_LENGTH = 3  # Length of "..." for truncation
 
 # Display limits for diagnostics
 MAX_PARSE_ERRORS_DISPLAY   = 10
@@ -58,9 +65,46 @@ MAX_TYPE_COUNTS_DISPLAY    = 20
 # Default paths
 # Allow overriding the Claude projects directory via environment variable
 _env_projects_dir = os.environ.get("CLAUDE_PROJECTS_DIR", ".claude/projects")
-# Validate the path doesn't contain dangerous patterns
-if _env_projects_dir and (".." in _env_projects_dir or _env_projects_dir.startswith("/")):
-    # Ignore potentially dangerous paths and use default
-    CLAUDE_PROJECTS_DIR = ".claude/projects"
-else:
-    CLAUDE_PROJECTS_DIR = _env_projects_dir or ".claude/projects"
+
+# Validate the path for safety
+def _validate_projects_dir(path_str: str) -> str:
+    """Validate and normalize the projects directory path.
+    
+    Returns the path if valid, otherwise returns the default.
+    """
+    from pathlib import Path
+    
+    default_path = ".claude/projects"
+    
+    if not path_str:
+        return default_path
+    
+    try:
+        # Normalize the path to resolve any relative components
+        path = Path(path_str).expanduser()
+        
+        # If it's an absolute path, ensure it's under the user's home directory
+        if path.is_absolute():
+            home = Path.home()
+            try:
+                # Check if the path is under the home directory
+                path.relative_to(home)
+            except ValueError:
+                # Path is not under home directory - use default
+                return default_path
+        
+        # Check for any remaining dangerous patterns after normalization
+        path_str_normalized = str(path)
+        if ".." in path_str_normalized:
+            return default_path
+            
+        return path_str
+        
+    except (ValueError, OSError):
+        # Invalid path - use default
+        return default_path
+
+CLAUDE_PROJECTS_DIR = _validate_projects_dir(_env_projects_dir)
+
+# Configuration file path
+CONFIG_FILE_PATH = os.path.expanduser("~/.claudeconvorc")

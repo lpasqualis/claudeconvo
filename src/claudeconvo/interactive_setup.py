@@ -14,6 +14,7 @@ try:
 except ImportError:
     HAS_TERMIOS = False
 
+from .constants import CONFIG_FILE_PATH
 from .formatters import format_conversation_entry
 from .options import ShowOptions
 from .styles import STYLE_DESCRIPTIONS, get_renderer
@@ -163,7 +164,7 @@ class SetupState:
                       "dracula", "nord", "mono", "high-contrast"]
         self.styles = ["default", "boxed", "minimal", "compact"]
         self.show_help = False
-        self.messages = MockData.get_mock_messages()
+        self.messages = get_interactive_demo_messages()
         
     def toggle_option(self, flag: str) -> None:
         """Toggle a show option flag."""
@@ -209,7 +210,7 @@ class SetupState:
         
     def save_config(self) -> str:
         """Save current configuration to file."""
-        config_path = Path.home() / ".claudeconvorc"
+        config_path = Path(CONFIG_FILE_PATH)
         config = {
             "theme": self.current_theme,
             "style": self.current_style,
@@ -217,8 +218,12 @@ class SetupState:
             "watch": False  # Default for setup
         }
         
-        with open(config_path, 'w') as f:
+        with open(config_path, 'w', encoding='utf-8') as f:
             json.dump(config, f, indent=2)
+        
+        # Set secure permissions (user read/write only)
+        import stat
+        os.chmod(config_path, stat.S_IRUSR | stat.S_IWUSR)  # 0o600
             
         return str(config_path)
 

@@ -14,9 +14,8 @@ from .themes import Colors, get_color_theme
 
 def get_demo_messages() -> List[Dict[str, Any]]:
     """Get comprehensive demo messages from sample JSONL file."""
-    # Use the real sample conversation file that already exists
-    sample_file = (Path(__file__).parent.parent.parent /
-                   "tests" / "fixtures" / "sample_conversation.jsonl")
+    # Use the sample conversation file included in the package
+    sample_file = Path(__file__).parent / "sample_conversation.jsonl"
 
     if sample_file.exists():
         # Load messages from the JSONL file

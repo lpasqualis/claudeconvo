@@ -56,7 +56,7 @@ Issues = "https://github.com/lpasqualis/claudeconvo/issues"
 where = ["src"]
 
 [tool.setuptools.package-data]
-claudeconvo = ["py.typed"]
+claudeconvo = ["py.typed", "*.json", "*.jsonl"]
 
 [tool.ruff]
 line-length = 100

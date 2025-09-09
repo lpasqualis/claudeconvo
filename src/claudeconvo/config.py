@@ -12,7 +12,7 @@ Example usage:
 
 import os
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 from .constants import CONFIG_FILE_PATH
 from .utils import load_json_config
@@ -106,7 +106,7 @@ def load_config() -> dict:
 
 def determine_theme(
     args   : Any,
-    config : Optional[dict] = None
+    config : dict | None = None
 ) -> str:
     """
     Determine which theme to use based on priority order.

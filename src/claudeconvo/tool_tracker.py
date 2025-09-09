@@ -10,7 +10,7 @@ Example usage:
     tool_info = tracker.get_tool_info(tool_use_id)
 """
 
-from typing import Any, Dict, Optional
+from typing import Any
 
 ################################################################################
 
@@ -27,11 +27,11 @@ class ToolInvocationTracker:
         by their unique tool_use_id.
         """
         # Map tool_use_id to tool invocation details
-        self.tool_invocations: Dict[str, Dict[str, Any]] = {}
+        self.tool_invocations: dict[str, dict[str, Any]] = {}
 
     ################################################################################
 
-    def track_tool_use(self, entry: Dict[str, Any]) -> None:
+    def track_tool_use(self, entry: dict[str, Any]) -> None:
         """
         Track a tool invocation from an assistant message.
 
@@ -80,7 +80,7 @@ class ToolInvocationTracker:
 
     ################################################################################
 
-    def get_tool_info(self, tool_use_id: str) -> Optional[Dict[str, Any]]:
+    def get_tool_info(self, tool_use_id: str) -> dict[str, Any] | None:
         """
         Get tool invocation info for a given tool_use_id.
 
@@ -94,7 +94,7 @@ class ToolInvocationTracker:
 
     ################################################################################
 
-    def is_tool_result(self, entry: Dict[str, Any]) -> bool:
+    def is_tool_result(self, entry: dict[str, Any]) -> bool:
         """
         Check if an entry is any kind of tool result.
 
@@ -125,7 +125,7 @@ class ToolInvocationTracker:
 
     ################################################################################
 
-    def is_task_result(self, entry: Dict[str, Any]) -> bool:
+    def is_task_result(self, entry: dict[str, Any]) -> bool:
         """
         Check if an entry is specifically a Task/subagent result.
 
@@ -160,7 +160,7 @@ class ToolInvocationTracker:
 
     ################################################################################
 
-    def get_tool_info_for_entry(self, entry: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    def get_tool_info_for_entry(self, entry: dict[str, Any]) -> dict[str, Any] | None:
         """
         Get tool info for any tool_result entry.
 
@@ -196,7 +196,7 @@ class ToolInvocationTracker:
 
     ################################################################################
 
-    def get_task_info_for_entry(self, entry: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    def get_task_info_for_entry(self, entry: dict[str, Any]) -> dict[str, Any] | None:
         """
         Get Task info for a tool_result entry.
 

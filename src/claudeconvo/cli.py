@@ -4,14 +4,11 @@ Provides the main entry point and command-line argument parsing for the
 claudeconvo utility, handling session display, theme selection, and file operations.
 """
 
-from __future__ import annotations
-
 import argparse
 import os
 import sys
 from datetime import datetime
 from pathlib import Path
-from typing import List, Optional
 
 from .config import determine_theme, load_config
 from .constants import (
@@ -540,7 +537,7 @@ def handle_style_listing(args: argparse.Namespace) -> bool:
 
 ################################################################################
 
-def handle_project_listing(args: argparse.Namespace) -> Optional[int]:
+def handle_project_listing(args: argparse.Namespace) -> int | None:
     """
     Handle project listing if requested.
 
@@ -626,7 +623,7 @@ def handle_no_session_directory(project_path: str) -> None:
 
 ################################################################################
 
-def list_files_only(session_files: List[Path]) -> None:
+def list_files_only(session_files: list[Path]) -> None:
     """
     Display list of session files.
 
@@ -657,8 +654,8 @@ def list_files_only(session_files: List[Path]) -> None:
 
 def get_files_to_show(
     args          : argparse.Namespace,
-    session_files : List[Path]
-) -> Optional[List[Path]]:
+    session_files : list[Path]
+) -> list[Path] | None:
     """
     Determine which files to show based on arguments.
 

@@ -10,15 +10,15 @@ Example usage:
     parsed = parser.parse_entry(entry)
 """
 
-from typing import Any, Dict, Optional
+from typing import Any
 
 from .adaptive import AdaptiveParser
 
 ################################################################################
 
 def get_parser(
-    version : Optional[str]           = None,
-    entry   : Optional[Dict[str, Any]] = None
+    version : str | None           = None,
+    entry   : dict[str, Any] | None = None
 ) -> AdaptiveParser:
     """
     Get a parser instance.

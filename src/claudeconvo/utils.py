@@ -8,7 +8,7 @@ import shutil
 import sys
 import unicodedata
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any
 
 from .constants import (
     FILENAME_DISPLAY_WIDTH,
@@ -257,8 +257,8 @@ def sanitize_terminal_output(text: str, strip_all_escapes: bool = False) -> str:
 
 def load_json_config(
     config_path : Path,
-    default     : Optional[Dict[str, Any]] = None
-) -> Dict[str, Any]:
+    default     : dict[str, Any] | None = None
+) -> dict[str, Any]:
     """
     Load a JSON configuration file with error handling.
 

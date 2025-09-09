@@ -4,7 +4,7 @@ import json
 import os
 import sys
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 # Only import termios/tty on Unix-like systems
 try:
@@ -25,7 +25,7 @@ class MockData:
     """Provides mock conversation data for interactive setup."""
 
     @staticmethod
-    def get_mock_messages() -> List[Dict[str, Any]]:
+    def get_mock_messages() -> list[dict[str, Any]]:
         """Generate mock messages demonstrating all message types."""
         return [
             {
@@ -115,7 +115,7 @@ class TerminalController:
 
     def __init__(self) -> None:
         """Initialize terminal controller."""
-        self.original_settings: Optional[List[Any]] = None
+        self.original_settings: list[Any] | None = None
 
     def setup(self) -> None:
         """Set up terminal for raw input mode."""
@@ -138,7 +138,7 @@ class TerminalController:
         sys.stdout.write(f'\033[{row};{col}H')
         sys.stdout.flush()
 
-    def get_terminal_size(self) -> Tuple[int, int]:
+    def get_terminal_size(self) -> tuple[int, int]:
         """Get terminal dimensions (rows, cols)."""
         try:
             import shutil
@@ -250,7 +250,7 @@ class InteractiveSetup:
         self.state = SetupState()
         self.running = True
 
-    def render_header(self) -> List[str]:
+    def render_header(self) -> list[str]:
         """Render the header with current settings."""
         lines = []
         lines.append("╔" + "═" * 78 + "╗")
@@ -268,9 +268,9 @@ class InteractiveSetup:
         lines.append("╟" + "─" * 78 + "╢")
         return lines
 
-    def render_messages(self, max_lines: int) -> List[str]:
+    def render_messages(self, max_lines: int) -> list[str]:
         """Render mock messages with current settings."""
-        lines: List[str] = []
+        lines: list[str] = []
         Colors.set_theme(get_color_theme(self.state.current_theme))
         # Style is set globally via set_style in render()
         from .styles import set_style
@@ -287,7 +287,7 @@ class InteractiveSetup:
 
         return lines[:max_lines]
 
-    def render_footer(self) -> List[str]:
+    def render_footer(self) -> list[str]:
         """Render the footer with keyboard shortcuts."""
         lines = []
         lines.append("╟" + "─" * 78 + "╢")
@@ -313,7 +313,7 @@ class InteractiveSetup:
         lines.append("╚" + "═" * 78 + "╝")
         return lines
 
-    def render_help(self) -> List[str]:
+    def render_help(self) -> list[str]:
         """Render help overlay."""
         lines = []
         lines.append("╔" + "═" * 60 + "╗")

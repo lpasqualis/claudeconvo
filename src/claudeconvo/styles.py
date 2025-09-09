@@ -31,13 +31,12 @@ Additional template options:
   - wrap_width: Width expression for wrapping (default: see DEFAULT_WRAP_WIDTH)
 """
 
-from __future__ import annotations
-
 import ast
 import operator
 import re
 import textwrap
-from typing import Any, Callable, List, Optional, cast
+from collections.abc import Callable
+from typing import Any, cast
 
 from .constants import DEFAULT_FALLBACK_WIDTH, ELLIPSIS_LENGTH, MIN_WRAP_WIDTH
 from .themes import Colors
@@ -83,7 +82,7 @@ def safe_eval_arithmetic(expr: str) -> float:
         # In Python < 3.8, numbers are ast.Num nodes
         if hasattr(ast, 'Constant') and isinstance(node, ast.Constant):
             # Python 3.8+ path
-            if isinstance(node.value, (int, float)):
+            if isinstance(node.value, int | float):
                 return float(node.value)
             raise ValueError(f"Invalid constant: {node.value!r}")
         elif hasattr(node, 'n'):
@@ -714,7 +713,7 @@ class StyleRenderer:
         self,
         msg_type : str,
         content  : str = "",
-        context  : Optional[dict[str, Any]] = None,
+        context  : dict[str, Any] | None = None,
         **kwargs: Any
     ) -> str:
         """Render content using the style templates.
@@ -764,7 +763,7 @@ class StyleRenderer:
             full_context['color'] = color_map.get(msg_type, '')
 
         # Build output
-        output: List[str] = []
+        output: list[str] = []
 
         # Add label if present
         if template.get('label'):
@@ -852,7 +851,7 @@ class StyleRenderer:
         self,
         msg_type : str,
         content  : str = "",
-        context  : Optional[dict[str, Any]] = None,
+        context  : dict[str, Any] | None = None,
         **kwargs: Any
     ) -> str:
         """Render content inline (no label or separators).
@@ -887,12 +886,12 @@ class StyleRenderer:
 
 
 # Global renderer instance
-_global_renderer: Optional[StyleRenderer] = None
+_global_renderer: StyleRenderer | None = None
 
 
 ################################################################################
 
-def get_renderer(style_name: Optional[str] = None) -> StyleRenderer:
+def get_renderer(style_name: str | None = None) -> StyleRenderer:
     """Get the global renderer instance.
 
     Args:

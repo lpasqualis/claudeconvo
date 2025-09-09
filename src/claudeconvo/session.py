@@ -4,13 +4,11 @@ Provides functionality for discovering, parsing, and displaying Claude session f
 with support for security validation, format adaptation, and watch mode.
 """
 
-from __future__ import annotations
-
 import json
 import os
 import sys
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from .constants import (
     BYTES_PER_KB,
@@ -66,7 +64,7 @@ def path_to_session_dir(path: str) -> Path:
 
 ################################################################################
 
-def find_project_root(start_path: Optional[str] = None) -> str:
+def find_project_root(start_path: str | None = None) -> str:
     """
     Find the project root by looking for markers like .git, .claude, etc.
 
@@ -140,7 +138,7 @@ def parse_session_file(filepath: Path) -> list[dict[str, Any]]:
     Returns:
         List of parsed session entries
     """
-    sessions: List[Dict[str, Any]] = []
+    sessions: list[dict[str, Any]] = []
     parser   = AdaptiveParser()  # Will auto-load config if available
     tracker  = ToolInvocationTracker()  # Track tool invocations
 

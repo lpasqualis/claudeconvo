@@ -4,11 +4,9 @@ This module provides comprehensive formatting capabilities for Claude session da
 handling message display, tool execution results, and conversation presentation.
 """
 
-from __future__ import annotations
-
 import re
 from datetime import datetime
-from typing import Any, List, Optional, Union
+from typing import Any
 
 # Import formatting constants from constants module
 from .constants import DEFAULT_MAX_LENGTH
@@ -82,10 +80,10 @@ def format_model_name(model_name: str) -> str:
 ################################################################################
 
 def truncate_text(
-    text         : Union[str, Any],
-    max_length   : Union[int, float] = DEFAULT_MAX_LENGTH,
+    text         : str | Any,
+    max_length   : int | float = DEFAULT_MAX_LENGTH,
     force_truncate: bool = False
-) -> Union[str, Any]:
+) -> str | Any:
     """
     Truncate text to max length with ellipsis if needed.
 
@@ -330,7 +328,7 @@ def _format_tool_parameter_wrapped(
 def format_tool_use(
     entry        : dict[str, Any],
     show_options : Any
-) -> Optional[str]:
+) -> str | None:
     """
     Format tool use information from an entry.
 
@@ -379,7 +377,7 @@ def format_tool_use(
 def format_tool_result(
     entry        : dict[str, Any],
     show_options : Any
-) -> Optional[str]:
+) -> str | None:
     """
     Format tool result from an entry.
 
@@ -421,7 +419,7 @@ def format_tool_result(
 def _format_summary_entry(
     entry        : dict[str, Any],
     show_options : Any
-) -> Optional[str]:
+) -> str | None:
     """
     Format a summary entry.
 
@@ -480,7 +478,7 @@ def _format_timestamp(
 def _build_metadata_lines(
     entry        : dict[str, Any],
     show_options : Any
-) -> Optional[List[str]]:
+) -> list[str] | None:
     """
     Build metadata lines for an entry.
 
@@ -587,7 +585,7 @@ def format_conversation_entry(
     entry          : dict[str, Any],
     show_options   : Any,
     show_timestamp : bool = False
-) -> Optional[str]:
+) -> str | None:
     """
     Format a single entry as part of a conversation.
 
@@ -599,7 +597,7 @@ def format_conversation_entry(
     Returns:
         Formatted conversation entry or None if entry should be skipped
     """
-    output: List[str] = []
+    output: list[str] = []
     entry_type = entry.get("type", "unknown")
 
     # Handle summaries
@@ -646,7 +644,7 @@ def _extract_and_format_tool_result(
     label         : str,
     show_options  : Any,
     timestamp_str : str = ""
-) -> Optional[List[str]]:
+) -> list[str] | None:
     """
     Extract and format tool result content from a message.
 
@@ -719,8 +717,8 @@ def _format_user_entry(
     entry          : dict[str, Any],
     show_options   : Any,
     timestamp_str  : str,
-    metadata_lines : Optional[List[str]]
-) -> Optional[str]:
+    metadata_lines : list[str] | None
+) -> str | None:
     """
     Format a user entry.
 
@@ -844,8 +842,8 @@ def _format_assistant_entry(
     entry          : dict[str, Any],
     show_options   : Any,
     timestamp_str  : str,
-    metadata_lines : Optional[List[str]]
-) -> Optional[str]:
+    metadata_lines : list[str] | None
+) -> str | None:
     """
     Format an assistant entry.
 
@@ -900,8 +898,8 @@ def _format_system_entry(
     entry          : dict[str, Any],
     show_options   : Any,
     timestamp_str  : str,
-    metadata_lines : Optional[List[str]]
-) -> Optional[str]:
+    metadata_lines : list[str] | None
+) -> str | None:
     """
     Format a system entry.
 
@@ -955,8 +953,8 @@ def _format_hook_entry(
     entry          : dict[str, Any],
     show_options   : Any,
     timestamp_str  : str,
-    metadata_lines : Optional[List[str]]
-) -> Optional[str]:
+    metadata_lines : list[str] | None
+) -> str | None:
     """Format a hook entry."""
     output = []
 
@@ -987,8 +985,8 @@ def _format_command_entry(
     entry          : dict[str, Any],
     show_options   : Any,
     timestamp_str  : str,
-    metadata_lines : Optional[List[str]]
-) -> Optional[str]:
+    metadata_lines : list[str] | None
+) -> str | None:
     """Format a command entry."""
     output = []
 
@@ -1015,8 +1013,8 @@ def _format_error_entry(
     entry          : dict[str, Any],
     show_options   : Any,
     timestamp_str  : str,
-    metadata_lines : Optional[List[str]]
-) -> Optional[str]:
+    metadata_lines : list[str] | None
+) -> str | None:
     """Format an error entry."""
     output = []
 

@@ -3,7 +3,7 @@
 import json
 import os
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from .constants import CONFIG_FILE_PATH
 from .formatters import format_conversation_entry
@@ -12,7 +12,7 @@ from .styles import set_style
 from .themes import Colors, get_color_theme
 
 
-def get_demo_messages() -> List[Dict[str, Any]]:
+def get_demo_messages() -> list[dict[str, Any]]:
     """Get comprehensive demo messages from sample JSONL file."""
     # Use the sample conversation file included in the package
     sample_file = Path(__file__).parent / "sample_conversation.jsonl"
@@ -49,7 +49,7 @@ def get_demo_messages() -> List[Dict[str, Any]]:
 class SimpleSetup:
     """Simple interactive setup that works everywhere."""
 
-    def __init__(self, automated_commands: Optional[List[str]] = None) -> None:
+    def __init__(self, automated_commands: list[str] | None = None) -> None:
         """Initialize simple setup.
 
         Args:
@@ -369,7 +369,7 @@ class SimpleSetup:
                 self.clear_screen()
 
 
-def run_simple_setup(automated_commands: Optional[List[str]] = None) -> None:
+def run_simple_setup(automated_commands: list[str] | None = None) -> None:
     """Entry point for simple setup.
 
     Args:

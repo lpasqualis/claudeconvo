@@ -13,7 +13,7 @@ Example usage:
 
 import json
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from ..constants import MAX_RECURSION_DEPTH
 from ..utils import load_json_config, log_debug, sanitize_terminal_output
@@ -25,7 +25,7 @@ class AdaptiveParser:
 
     ################################################################################
 
-    def __init__(self, config_path: Optional[str] = None):
+    def __init__(self, config_path: str | None = None):
         """
         Initialize the adaptive parser.
 
@@ -37,7 +37,7 @@ class AdaptiveParser:
 
     ################################################################################
 
-    def _load_config(self, config_path: Optional[str] = None) -> None:
+    def _load_config(self, config_path: str | None = None) -> None:
         """
         Load field mapping configuration.
 
@@ -78,7 +78,7 @@ class AdaptiveParser:
 
     ################################################################################
 
-    def parse_entry(self, entry: Dict[str, Any]) -> Dict[str, Any]:
+    def parse_entry(self, entry: dict[str, Any]) -> dict[str, Any]:
         """
         Parse any log entry by discovering its structure.
 
@@ -156,7 +156,7 @@ class AdaptiveParser:
 
     ################################################################################
 
-    def _find_field(self, obj: Dict[str, Any], candidates: List[str]) -> Any:
+    def _find_field(self, obj: dict[str, Any], candidates: list[str]) -> Any:
         """Find the first matching field from a list of candidates.
 
         This allows us to handle field renames across versions.
@@ -168,7 +168,7 @@ class AdaptiveParser:
 
     ################################################################################
 
-    def _extract_message(self, entry: Dict[str, Any]) -> Any:
+    def _extract_message(self, entry: dict[str, Any]) -> Any:
         """Extract and normalize message content from various formats."""
         # Look for message in common locations
         message = self._find_field(entry, ["message", "msg", "data", "payload"])
@@ -194,7 +194,7 @@ class AdaptiveParser:
 
     ################################################################################
 
-    def _normalize_message_dict(self, message: Dict[str, Any]) -> Dict[str, Any]:
+    def _normalize_message_dict(self, message: dict[str, Any]) -> dict[str, Any]:
         """Normalize a message dictionary."""
         normalized = {}
 
@@ -215,7 +215,7 @@ class AdaptiveParser:
 
     ################################################################################
 
-    def _guess_role(self, entry: Dict[str, Any]) -> str:
+    def _guess_role(self, entry: dict[str, Any]) -> str:
         """Guess the role from entry type or other fields."""
         entry_type = self._find_field(entry, ["type", "entryType"])
         if entry_type in ["user", "human", "input"]:
@@ -228,7 +228,7 @@ class AdaptiveParser:
 
     ################################################################################
 
-    def extract_content_text(self, entry: Dict[str, Any]) -> Optional[str]:
+    def extract_content_text(self, entry: dict[str, Any]) -> str | None:
         """Extract readable text from any entry format."""
         message = entry.get("message")
         if not message:
@@ -246,7 +246,7 @@ class AdaptiveParser:
         self,
         content : Any,
         depth   : int = 0
-    ) -> Optional[str]:
+    ) -> str | None:
         """Extract text from various content formats.
 
         Args:
@@ -264,7 +264,7 @@ class AdaptiveParser:
             # Sanitize at the leaf level for security
             return sanitize_terminal_output(content)
 
-        if isinstance(content, (int, float, bool)):
+        if isinstance(content, int | float | bool):
             return str(content)
 
         if isinstance(content, list):
@@ -311,7 +311,7 @@ class AdaptiveParser:
 
         # Last resort - convert to string and sanitize
         try:
-            result = json.dumps(content) if isinstance(content, (dict, list)) else str(content)
+            result = json.dumps(content) if isinstance(content, dict | list) else str(content)
             return sanitize_terminal_output(result) if result else None
         except (TypeError, ValueError, RecursionError, OverflowError) as e:
             # Only catch specific exceptions that could occur during serialization
@@ -320,9 +320,9 @@ class AdaptiveParser:
 
     ################################################################################
 
-    def extract_tool_info(self, entry: Dict[str, Any]) -> Dict[str, Any]:
+    def extract_tool_info(self, entry: dict[str, Any]) -> dict[str, Any]:
         """Extract tool-related information from any format."""
-        result: Dict[str, Any] = {"tool_uses": [], "tool_result": None}
+        result: dict[str, Any] = {"tool_uses": [], "tool_result": None}
 
         message = entry.get("message")
         if isinstance(message, dict):

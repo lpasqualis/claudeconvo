@@ -160,6 +160,20 @@ Available styles:
 
 ### Configuration
 
+#### Interactive Setup
+
+Use the interactive setup to visually configure your preferences:
+
+```bash
+# Launch interactive configuration
+claudeconvo --setup
+
+# Automated setup for testing (non-interactive)
+claudeconvo --setup --ai 2 s2 t v S  # Light theme, boxed style, tool details, view, save
+```
+
+This will show you sample output with different themes, styles, and display options, allowing you to preview changes in real-time before saving. The --ai option allows automated testing by providing a sequence of commands.
+
 #### Setting Defaults
 
 Save your current settings as defaults:

@@ -19,6 +19,47 @@ from .utils import load_json_config
 ################################################################################
 
 
+def _normalize_config_keys(config: dict) -> dict:
+    """
+    Normalize config keys for backwards compatibility.
+    
+    Handles both old format (theme, style, show_options, watch) and
+    new format (default_theme, default_style, default_show_options, default_watch).
+    
+    Args:
+        config: Raw configuration dict
+        
+    Returns:
+        dict: Normalized configuration with default_ prefixed keys
+    """
+    normalized = {}
+    
+    # Map old keys to new keys
+    key_mapping = {
+        "theme": "default_theme",
+        "style": "default_style",
+        "show_options": "default_show_options",
+        "watch": "default_watch"
+    }
+    
+    for old_key, new_key in key_mapping.items():
+        # Check for both old and new format
+        if old_key in config:
+            normalized[new_key] = config[old_key]
+        elif new_key in config:
+            normalized[new_key] = config[new_key]
+    
+    # Preserve any other keys that might exist
+    for key, value in config.items():
+        if key not in key_mapping and key not in normalized:
+            normalized[key] = value
+    
+    return normalized
+
+
+################################################################################
+
+
 def load_config() -> dict:
     """
     Load configuration from config file.
@@ -37,23 +78,27 @@ def load_config() -> dict:
     if env_config:
         config_path = Path(env_config)
         if config_path.exists():
-            return load_json_config(config_path, default={})
+            config = load_json_config(config_path, default={})
+            return _normalize_config_keys(config)
 
     # Check XDG config directory
     xdg_config = os.environ.get("XDG_CONFIG_HOME")
     if xdg_config:
         config_path = Path(xdg_config) / "claudeconvo" / "config.json"
         if config_path.exists():
-            return load_json_config(config_path, default={})
+            config = load_json_config(config_path, default={})
+            return _normalize_config_keys(config)
 
     # Check ~/.config/claudeconvo/config.json
     config_path = Path.home() / ".config" / "claudeconvo" / "config.json"
     if config_path.exists():
-        return load_json_config(config_path, default={})
+        config = load_json_config(config_path, default={})
+        return _normalize_config_keys(config)
 
     # Check legacy location
     config_path = Path.home() / ".claudeconvorc"
-    return load_json_config(config_path, default={})
+    config = load_json_config(config_path, default={})
+    return _normalize_config_keys(config)
 
 
 ################################################################################
@@ -89,9 +134,9 @@ def determine_theme(
     if env_theme:
         return str(env_theme)
 
-    # 3. Config file
-    if config and "theme" in config:
-        return str(config["theme"])
+    # 3. Config file (now uses normalized key)
+    if config and "default_theme" in config:
+        return str(config["default_theme"])
 
     # 4. Default
     return "dark"

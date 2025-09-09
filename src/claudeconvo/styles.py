@@ -93,6 +93,13 @@ class FormatStyle:
             "post_content" : "",
             "wrap"         : False,  # Don't wrap tool results (preserves file paths, code, etc.)
         },
+        "tool_result_with_label": {
+            "label"        : "   {{name_color}}✓ {{label}}{{reset}}\n",
+            "pre_content"  : "",
+            "content"      : "     {{color}}{{content}}{{reset}}\n",
+            "post_content" : "",
+            "wrap"         : False,
+        },
         "tool_result_success_content": {  # For custom labels, content only
             "label"        : "",
             "pre_content"  : "",
@@ -609,6 +616,7 @@ class StyleRenderer:
                 'tool_parameter': Colors.TOOL_PARAM,
                 'tool_result_success': Colors.TOOL_OUTPUT,
                 'tool_result_success_content': Colors.TOOL_OUTPUT,
+                'tool_result_with_label': Colors.TOOL_OUTPUT,
                 'tool_result_error': Colors.ERROR,
                 'task_result': Colors.TOOL_NAME,
                 'summary': Colors.SEPARATOR,
@@ -672,7 +680,7 @@ class StyleRenderer:
                     wrapped_lines = wrap_text(escaped_content, str(actual_wrap_width))
 
                     # Render each wrapped line
-                    for i, line in enumerate(wrapped_lines):
+                    for line in wrapped_lines:
                         # Content is already escaped, use it directly
                         full_context['content'] = line
                         # Use the same template for all lines

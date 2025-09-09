@@ -185,9 +185,6 @@ Examples:
         "--verbose", action="store_true", help="Show verbose output in diagnostic mode"
     )
     parser.add_argument(
-        "--no-indent", action="store_true", help="Disable indentation alignment for tool results"
-    )
-    parser.add_argument(
         "--make-default", action="store_true", 
         help="Save current theme, style, and show options as defaults in ~/.claudeconvorc"
     )
@@ -198,6 +195,14 @@ Examples:
     parser.add_argument(
         "--show-config", action="store_true",
         help="Show complete current configuration (including defaults)"
+    )
+    parser.add_argument(
+        "--setup", action="store_true",
+        help="Launch interactive configuration setup"
+    )
+    parser.add_argument(
+        "--ai", nargs="+", metavar="CMD",
+        help="Automated input for --setup (for testing). Example: --setup --ai 2 s2 t v S"
     )
     return parser
 
@@ -720,6 +725,13 @@ def main() -> int:
     if show_configuration(args, config):
         return 0
     
+    # Handle --setup for interactive configuration
+    if args.setup:
+        from .simple_setup import run_simple_setup
+        automated_commands = getattr(args, 'ai', None)
+        run_simple_setup(automated_commands)
+        return 0
+    
     # Handle --make-default if specified
     if hasattr(args, 'make_default') and args.make_default:
         if save_defaults(args, config):
@@ -729,8 +741,6 @@ def main() -> int:
     show_str = args.show if args.show else config.get("default_show_options", "")
     show_options = ShowOptions(show_str)
 
-    # Set formatting options based on CLI arguments
-    show_options.indent_results = not args.no_indent
     
     # Apply watch mode default if not specified on CLI
     if not hasattr(args, 'watch'):

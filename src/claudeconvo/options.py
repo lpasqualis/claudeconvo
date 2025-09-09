@@ -67,9 +67,6 @@ class ShowOptions:
         # Debug mode for internal error reporting (not user-facing)
         self.debug = False
 
-        # Formatting options (not part of the flag system)
-        self.indent_results = True  # Default to enabled
-
         # Enable defaults if no options specified
         if not options_string:
             for attr in self.DEFAULT_ENABLED:

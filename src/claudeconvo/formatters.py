@@ -100,8 +100,8 @@ def format_tool_use(
                     if show_options.tool_details and tool_id:
                         output.append(render("metadata", content=f"   ID: {tool_id}"))
 
-                    # Format parameters
-                    if tool_input:
+                    # Format parameters only if tool_details is enabled
+                    if tool_input and show_options.tool_details:
                         max_len = show_options.get_max_length("tool_param")
                         for key, value in tool_input.items():
                             value_str = truncate_text(str(value), max_len)
@@ -395,34 +395,23 @@ def _extract_and_format_tool_result(
     max_len = show_options.get_max_length("tool_result")
     text    = truncate_text(text, max_len)
 
-    if show_options.indent_results:
-        # Add blank line, then put label indented to align with tool parameters
-        output.append("\n")  # Blank line for spacing
-        # Format the label directly with color - use TOOL_NAME for the label
-        from .themes import Colors
+    # Let the style template handle all formatting
+    from .themes import Colors
+    
+    # Render the tool result with label using the style template
+    rendered_result = render("tool_result_with_label", 
+                           label=label,
+                           content=text,
+                           timestamp=timestamp_str)
+    
+    if rendered_result:
+        output.append(rendered_result)
+    else:
+        # Fallback if style doesn't define tool_result_with_label
         output.append(f"   {Colors.TOOL_NAME}✓ {label}{Colors.RESET}")
-
-        # Use the content-only template to get proper wrapping without duplicate label
-        rendered_content = render("tool_result_success_content", content=text)
+        rendered_content = render("tool_result_success", content=text)
         if rendered_content:
             output.append(rendered_content)
-    else:
-        # Original format: label and result on same line - also use render for wrapping
-        from .themes import Colors
-        # For non-indented, combine label and first part of content
-        label_line = f"\n{timestamp_str}   {Colors.TOOL_NAME}✓ {label}{Colors.RESET} "
-        # Render the content with wrapping
-        rendered_content = render("tool_result_success", content=text)
-        # Combine label with first line of content
-        lines = rendered_content.split('\n')
-        if lines and lines[0].strip():
-            # Remove leading spaces from first line since we have the label
-            first_line = lines[0].lstrip()
-            output.append(label_line + first_line)
-            # Add remaining lines if any
-            output.extend(lines[1:])
-        else:
-            output.append(label_line)
 
     return output
 

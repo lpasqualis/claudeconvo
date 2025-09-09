@@ -4,7 +4,7 @@ import json
 import os
 import sys
 from pathlib import Path
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 # Only import termios/tty on Unix-like systems
 try:
@@ -17,7 +17,7 @@ except ImportError:
 from .constants import CONFIG_FILE_PATH
 from .formatters import format_conversation_entry
 from .options import ShowOptions
-from .styles import STYLE_DESCRIPTIONS, get_renderer
+from .styles import STYLE_DESCRIPTIONS
 from .themes import THEME_DESCRIPTIONS, Colors, get_color_theme
 
 
@@ -40,7 +40,8 @@ class MockData:
             },
             {
                 "type": "assistant",
-                "content": "I'll analyze your Python code for performance issues. Let me examine the file structure first.",
+                "content": ("I'll analyze your Python code for performance issues. "
+                           "Let me examine the file structure first."),
                 "timestamp": "2024-01-15T10:30:05Z",
                 "model": "claude-3-opus",
                 "requestId": "req_abc123"
@@ -49,13 +50,21 @@ class MockData:
                 "type": "tool",
                 "toolName": "Read",
                 "params": {"file_path": "/Users/demo/project/main.py", "limit": 100},
-                "result": "def process_data(items):\n    result = []\n    for item in items:\n        # Inefficient nested loop\n        for other in items:\n            if item != other:\n                result.append((item, other))\n    return result",
+                "result": ("def process_data(items):\n"
+                          "    result = []\n"
+                          "    for item in items:\n"
+                          "        # Inefficient nested loop\n"
+                          "        for other in items:\n"
+                          "            if item != other:\n"
+                          "                result.append((item, other))\n"
+                          "    return result"),
                 "id": "toolu_01Abc123",
                 "timestamp": "2024-01-15T10:30:10Z"
             },
             {
                 "type": "assistant",
-                "content": "I found a performance issue: The nested loop creates O(n²) complexity. Here's an optimized version:",
+                "content": ("I found a performance issue: The nested loop creates O(n²) "
+                           "complexity. Here's an optimized version:"),
                 "timestamp": "2024-01-15T10:30:15Z"
             },
             {
@@ -77,7 +86,9 @@ class MockData:
             },
             {
                 "type": "summary",
-                "content": "Previous conversation: User asked for help with Python performance optimization. Assistant identified O(n²) complexity issue and provided optimized solution.",
+                "content": ("Previous conversation: User asked for help with Python "
+                           "performance optimization. Assistant identified O(n²) complexity "
+                           "issue and provided optimized solution."),
                 "timestamp": "2024-01-15T10:30:30Z"
             },
             {
@@ -102,9 +113,9 @@ class MockData:
 class TerminalController:
     """Handles terminal control and input."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize terminal controller."""
-        self.original_settings = None
+        self.original_settings: Optional[List[Any]] = None
 
     def setup(self) -> None:
         """Set up terminal for raw input mode."""
@@ -133,7 +144,7 @@ class TerminalController:
             import shutil
             cols, rows = shutil.get_terminal_size((80, 24))
             return rows, cols
-        except:
+        except Exception:
             return 24, 80
 
     def read_key(self) -> str:
@@ -155,7 +166,7 @@ class TerminalController:
 class SetupState:
     """Manages the state of the interactive setup."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize setup state."""
         self.show_options = ShowOptions("")  # Start with defaults
         self.theme_index = 0
@@ -164,7 +175,7 @@ class SetupState:
                       "dracula", "nord", "mono", "high-contrast"]
         self.styles = ["default", "boxed", "minimal", "compact"]
         self.show_help = False
-        self.messages = get_interactive_demo_messages()
+        self.messages = MockData.get_mock_messages()
 
     def toggle_option(self, flag: str) -> None:
         """Toggle a show option flag."""
@@ -214,7 +225,9 @@ class SetupState:
         config = {
             "theme": self.current_theme,
             "style": self.current_style,
-            "show_options": self.get_options_string() if self.get_options_string() != "(none)" else "",
+            "show_options": (
+                self.get_options_string() if self.get_options_string() != "(none)" else ""
+            ),
             "watch": False  # Default for setup
         }
 
@@ -231,7 +244,7 @@ class SetupState:
 class InteractiveSetup:
     """Main interactive setup interface."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize interactive setup."""
         self.controller = TerminalController()
         self.state = SetupState()
@@ -257,12 +270,14 @@ class InteractiveSetup:
 
     def render_messages(self, max_lines: int) -> List[str]:
         """Render mock messages with current settings."""
-        lines = []
+        lines: List[str] = []
         Colors.set_theme(get_color_theme(self.state.current_theme))
-        style = get_renderer(self.state.current_style)
+        # Style is set globally via set_style in render()
+        from .styles import set_style
+        set_style(self.state.current_style)
 
         for msg in self.state.messages:
-            formatted = format_conversation_entry(msg, self.state.show_options, style)
+            formatted = format_conversation_entry(msg, self.state.show_options, False)
             if formatted:
                 # Split into lines and add
                 for line in formatted.split('\n'):
@@ -276,7 +291,7 @@ class InteractiveSetup:
         """Render the footer with keyboard shortcuts."""
         lines = []
         lines.append("╟" + "─" * 78 + "╢")
-        lines.append("║ TOGGLE OPTIONS:                                                            ║")
+        lines.append("║ TOGGLE OPTIONS:" + " " * 61 + "║")
 
         # Show options in groups
         options = [
@@ -293,8 +308,8 @@ class InteractiveSetup:
             lines.append(line)
 
         lines.append("╟" + "─" * 78 + "╢")
-        lines.append("║ [←/→] Change theme  [SPACE] Change style  [?] Help                        ║")
-        lines.append("║ [S] Save & exit     [Q] Quit without saving                               ║")
+        lines.append("║ [←/→] Change theme  [SPACE] Change style  [?] Help" + " " * 24 + "║")
+        lines.append("║ [S] Save & exit     [Q] Quit without saving" + " " * 31 + "║")
         lines.append("╚" + "═" * 78 + "╝")
         return lines
 

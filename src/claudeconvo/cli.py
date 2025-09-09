@@ -390,17 +390,26 @@ def show_configuration(args: argparse.Namespace, config: dict) -> bool:
     print(render_inline("separator", ""))
 
     # Determine effective values (what will actually be used)
-    effective_theme = args.theme if hasattr(args, 'theme') and args.theme and args.theme != 'list' else None
+    effective_theme = (
+        args.theme if hasattr(args, 'theme') and args.theme and args.theme != 'list'
+        else None
+    )
     if not effective_theme and hasattr(args, 'no_color') and args.no_color:
         effective_theme = 'mono'
     if not effective_theme:
         effective_theme = os.environ.get('CLAUDECONVO_THEME') or config.get('default_theme', 'dark')
 
-    effective_style = args.style if hasattr(args, 'style') and args.style and args.style != 'list' else None
+    effective_style = (
+        args.style if hasattr(args, 'style') and args.style and args.style != 'list'
+        else None
+    )
     if not effective_style:
         effective_style = config.get('default_style', 'default')
 
-    effective_show = args.show if hasattr(args, 'show') and args.show else config.get('default_show_options', 'qwo')
+    effective_show = (
+        args.show if hasattr(args, 'show') and args.show
+        else config.get('default_show_options', 'qwo')
+    )
 
     # For watch, we need to check if it was explicitly set on command line
     # If not explicitly set, use config default
@@ -497,7 +506,8 @@ def show_configuration(args: argparse.Namespace, config: dict) -> bool:
     print("  Watch mode: False")
 
     print(render_inline("separator", ""))
-    print(render_inline("info", "Priority: CLI args > Environment > Config file > Built-in defaults"))
+    priority_msg = "Priority: CLI args > Environment > Config file > Built-in defaults"
+    print(render_inline("info", priority_msg))
 
     return True
 

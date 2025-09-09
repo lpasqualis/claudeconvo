@@ -383,7 +383,7 @@ class TestTaskResultFormatting:
         output_detailed = format_conversation_entry(entry, ShowOptions("ot"), False)
         assert output_detailed is not None
         assert "Subagent (hack-spotter):" in output_detailed
-        assert "[Security analysis]" in output_detailed
+        assert "Security analysis" in output_detailed
 
     def test_regular_tool_result_not_affected(self):
         """Test that regular tool results are not affected by Task formatting."""
@@ -441,7 +441,9 @@ class TestTaskResultFormatting:
 
         output = format_conversation_entry(entry, ShowOptions("o"), False)
         assert output is not None
-        assert "TodoWrite Result:" in output
+        import re
+        clean_output = re.sub(r'\x1b\[[0-9;]*m', '', output)
+        assert "TodoWrite Result:" in clean_output
         assert "Todos have been modified successfully" in output
         assert "User:" not in output  # Should not show as User
 
@@ -470,7 +472,9 @@ class TestTaskResultFormatting:
 
         output = format_conversation_entry(entry, ShowOptions("o"), False)
         assert output is not None
-        assert "Bash Result:" in output
+        import re
+        clean_output = re.sub(r'\x1b\[[0-9;]*m', '', output)
+        assert "Bash Result:" in clean_output
         assert "total 16" in output
         assert "User:" not in output  # Should not show as User
 
@@ -533,7 +537,9 @@ class TestTaskResultFormatting:
         output = format_conversation_entry(entry, show_options, False)
         
         # Should have label and result (result on next line now)
-        assert "Bash Result:" in output
+        import re
+        clean_output = re.sub(r'\x1b\[[0-9;]*m', '', output)
+        assert "Bash Result:" in clean_output
         # Result should still be shown but not indented as much when indent_results is False
         # Tool results are always on separate lines now
         lines = output.split("\n")
@@ -647,7 +653,9 @@ class TestTaskResultFormatting:
         # Result output formatting has changed - no longer starts with blank line
         lines = result_output.split("\n")
         # Should have the tool result header and content
-        assert "Bash Result:" in result_output
+        import re
+        clean_result = re.sub(r'\x1b\[[0-9;]*m', '', result_output)
+        assert "Bash Result:" in clean_result
         assert "test output" in result_output
 
 

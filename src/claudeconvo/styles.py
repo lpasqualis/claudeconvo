@@ -83,7 +83,7 @@ def safe_eval_arithmetic(expr: str) -> float:
             # Python 3.8+ path
             if isinstance(node.value, (int, float)):
                 return float(node.value)
-            raise ValueError(f"Invalid constant: {node.value}")
+            raise ValueError(f"Invalid constant: {node.value!r}")
         elif hasattr(node, 'n'):
             # Handles ast.Num for Python < 3.8 without triggering deprecation warning
             # by checking for the 'n' attribute directly
@@ -91,10 +91,18 @@ def safe_eval_arithmetic(expr: str) -> float:
         elif isinstance(node, ast.BinOp):
             left = evaluate(node.left)
             right = evaluate(node.right)
-            return ops[type(node.op)](left, right)
+            op_type = type(node.op)
+            if op_type in ops:
+                result = ops[op_type](left, right)  # type: ignore[operator]
+                return float(result)
+            raise ValueError(f"Unknown operator: {type(node.op).__name__}")
         elif isinstance(node, ast.UnaryOp):
             operand = evaluate(node.operand)
-            return ops[type(node.op)](operand)
+            op_type = type(node.op)  # type: ignore[assignment]
+            if op_type in ops:
+                result = ops[op_type](operand)  # type: ignore[operator]
+                return float(result)
+            raise ValueError(f"Unknown operator: {type(node.op).__name__}")
         else:
             raise ValueError(f"Invalid node type: {type(node).__name__}")
 
@@ -234,7 +242,7 @@ class FormatStyle:
         "command": {
             "label": "",
             "pre_content": "",
-            "content": "{{tool_color}}{{content}}{{reset}}\n", 
+            "content": "{{tool_color}}{{content}}{{reset}}\n",
             "post_content": "",
         },
         "header": {
@@ -779,7 +787,9 @@ class StyleRenderer:
                     # prefix/suffix characters, not the padded width
                     # Replace content:pad macros with just the content to get true prefix
                     import re
-                    test_template = re.sub(r'\{\{content:pad:[^}]+\}\}', '{{content}}', content_template)
+                    test_template = re.sub(
+                        r'\{\{content:pad:[^}]+\}\}', '{{content}}', content_template
+                    )
                     temp_context = full_context.copy()
                     temp_context['content'] = ''
                     prefix = expand_macros(test_template, temp_context)
@@ -946,30 +956,30 @@ def render_inline(msg_type: str, content: str = "", **context: Any) -> str:
 def _right_align(content: str) -> str:
     """
     Right-align content to the terminal edge.
-    
+
     Args:
         content: The content to right-align
-        
+
     Returns:
         Right-aligned string with proper padding
     """
     from .utils import get_terminal_width
-    
+
     # Calculate terminal width
     terminal_width = get_terminal_width()
-    
+
     # Remove any existing ANSI codes from content for accurate length calculation
     import re
     clean_content = re.sub(r'\x1b\[[0-9;]*m', '', content)
     content_length = len(clean_content)
-    
+
     # Calculate padding for right alignment
     # Leave 1 space at the end for visual margin
     padding_needed = max(0, terminal_width - content_length - 1)
-    
+
     # Build the right-aligned string
     result = " " * padding_needed + content
-    
+
     return result
 
 

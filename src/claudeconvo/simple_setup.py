@@ -2,35 +2,35 @@
 
 import json
 import os
-import sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from .constants import CONFIG_FILE_PATH
 from .formatters import format_conversation_entry
 from .options import ShowOptions
-from .styles import STYLE_DESCRIPTIONS, set_style
-from .themes import THEME_DESCRIPTIONS, Colors, get_color_theme
+from .styles import set_style
+from .themes import Colors, get_color_theme
 
 
 def get_demo_messages() -> List[Dict[str, Any]]:
     """Get comprehensive demo messages from sample JSONL file."""
     # Use the real sample conversation file that already exists
-    sample_file = Path(__file__).parent.parent.parent / "tests" / "fixtures" / "sample_conversation.jsonl"
-    
+    sample_file = (Path(__file__).parent.parent.parent /
+                   "tests" / "fixtures" / "sample_conversation.jsonl")
+
     if sample_file.exists():
         # Load messages from the JSONL file
         messages = []
         try:
-            with open(sample_file, 'r', encoding='utf-8') as f:
+            with open(sample_file, encoding='utf-8') as f:
                 for line in f:
                     if line.strip():
                         messages.append(json.loads(line))
             return messages
-        except (json.JSONDecodeError, IOError):
+        except (OSError, json.JSONDecodeError):
             # Fall through to use fallback messages
             pass
-    
+
     # Fallback to simple messages if sample file not found or can't be read
     return [
         {
@@ -39,8 +39,9 @@ def get_demo_messages() -> List[Dict[str, Any]]:
             "timestamp": "2024-01-15T10:30:00Z"
         },
         {
-            "type": "assistant", 
-            "message": {"content": "Of course! I'd be happy to help you with your Python question. What would you like to know?"},
+            "type": "assistant",
+            "message": {"content": ("Of course! I'd be happy to help you with your Python "
+                                   "question. What would you like to know?")},
             "timestamp": "2024-01-15T10:30:05Z"
         }
     ]
@@ -49,7 +50,7 @@ def get_demo_messages() -> List[Dict[str, Any]]:
 class SimpleSetup:
     """Simple interactive setup that works everywhere."""
 
-    def __init__(self, automated_commands=None):
+    def __init__(self, automated_commands: Optional[List[str]] = None) -> None:
         """Initialize simple setup.
 
         Args:
@@ -98,24 +99,24 @@ class SimpleSetup:
         """Display current configuration as command line."""
         # Build the equivalent command line
         cmd_parts = ["claudeconvo"]
-        
+
         # Add show options if any are enabled
         flags = []
         for flag_char, attr, _ in ShowOptions.OPTIONS:
             if attr != "all" and getattr(self.show_options, attr, False):
                 flags.append(flag_char)
-        
+
         if flags:
             cmd_parts.append(f"-s{''.join(flags)}")
-        
+
         # Add theme if not default
         if self.current_theme != "dark":
             cmd_parts.append(f"--theme {self.current_theme}")
-        
+
         # Add style if not default
         if self.current_style != "default":
             cmd_parts.append(f"--style {self.current_style}")
-        
+
         # Display as a command line
         print("\n" + "="*60)
         print("CURRENT SETTINGS")
@@ -127,7 +128,7 @@ class SimpleSetup:
         print("\n" + "="*60)
         print("CONFIGURATION MENU")
         print("="*60)
-        
+
         # Display themes and styles side by side
         print("\nTHEMES:                          STYLES:")
         for i in range(max(len(self.themes), len(self.styles))):
@@ -138,7 +139,7 @@ class SimpleSetup:
                 theme_str = f"  {i+1}. {theme}{marker}"
             else:
                 theme_str = ""
-            
+
             # Style column
             if i < len(self.styles):
                 style = self.styles[i]
@@ -146,12 +147,12 @@ class SimpleSetup:
                 style_str = f"s{i+1}. {style}{marker}"
             else:
                 style_str = ""
-            
+
             # Print both columns aligned
             print(f"{theme_str:<32} {style_str}")
 
         print("\nOPTIONS (toggle on/off):")
-        
+
         # Define all options
         all_options = [
             ("q", "user", "User messages"),
@@ -174,22 +175,22 @@ class SimpleSetup:
             ("v", "user_types", "User types"),
             ("i", "model", "AI model names"),
         ]
-        
+
         # Split into enabled and disabled (excluding 'all' option)
         enabled_options = []
         disabled_options = []
-        
+
         for flag, attr, desc in all_options:
             is_enabled = getattr(self.show_options, attr, False)
             if is_enabled:
                 enabled_options.append((flag, desc))
             else:
                 disabled_options.append((flag, desc))
-        
+
         # Display in two columns: enabled on left, disabled on right
         print("  ENABLED:                       DISABLED:")
         max_rows = max(len(enabled_options), len(disabled_options))
-        
+
         for i in range(max_rows):
             # Enabled column
             if i < len(enabled_options):
@@ -197,16 +198,16 @@ class SimpleSetup:
                 left_str = f"  {flag}. {desc}"
             else:
                 left_str = ""
-            
+
             # Disabled column
             if i < len(disabled_options):
                 flag, desc = disabled_options[i]
                 right_str = f"{flag}. {desc}"
             else:
                 right_str = ""
-            
+
             print(f"{left_str:<32} {right_str}")
-        
+
         # Special option for 'all'
         all_enabled = all(
             getattr(self.show_options, attr, False)
@@ -246,10 +247,10 @@ class SimpleSetup:
         # Reset theme and style
         self.current_theme = "dark"
         self.current_style = "default"
-        
+
         # Reset show options to defaults
         self.show_options = ShowOptions('')  # This will use DEFAULT_ENABLED
-    
+
     def save_config(self) -> str:
         """Save configuration to file."""
         from .config import load_config
@@ -318,11 +319,11 @@ class SimpleSetup:
             self.display_menu()
 
             choice = self.get_next_command("\nEnter your choice: ").strip()
-            
+
             # Handle empty input - view sample (same as 'V')
             if not choice:
                 choice = 'V'
-            
+
             # Handle exit shortcuts
             # ESC key representations or 'x' for quick exit
             if choice in ('\x1b', 'ESC', 'Esc', 'esc', '^[', 'x', 'X'):
@@ -369,7 +370,7 @@ class SimpleSetup:
                 self.clear_screen()
 
 
-def run_simple_setup(automated_commands=None) -> None:
+def run_simple_setup(automated_commands: Optional[List[str]] = None) -> None:
     """Entry point for simple setup.
 
     Args:

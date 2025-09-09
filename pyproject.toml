@@ -71,7 +71,10 @@ select = [
     "W",  # pycodestyle warnings
     "UP", # pyupgrade
 ]
-ignore = []
+ignore = [
+    "UP007",  # Use X | Y for type annotations (requires Python 3.10+)
+    "UP045",  # Use X | None for type annotations (requires Python 3.10+)
+]
 
 [tool.mypy]
 python_version = "3.9"

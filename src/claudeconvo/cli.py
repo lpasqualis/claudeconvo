@@ -11,6 +11,7 @@ import os
 import sys
 from datetime import datetime
 from pathlib import Path
+from typing import Optional
 
 from .config import determine_theme, load_config
 from .constants import (
@@ -539,7 +540,7 @@ def handle_style_listing(args: argparse.Namespace) -> bool:
 
 ################################################################################
 
-def handle_project_listing(args: argparse.Namespace) -> int | None:
+def handle_project_listing(args: argparse.Namespace) -> Optional[int]:
     """
     Handle project listing if requested.
 

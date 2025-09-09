@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import re
 from datetime import datetime
-from typing import Any
+from typing import Any, Optional, Union
 
 # Import formatting constants from constants module
 from .constants import DEFAULT_MAX_LENGTH
@@ -82,10 +82,10 @@ def format_model_name(model_name: str) -> str:
 ################################################################################
 
 def truncate_text(
-    text         : str | Any,
-    max_length   : int | float = DEFAULT_MAX_LENGTH,
+    text         : Union[str, Any],
+    max_length   : Union[int, float] = DEFAULT_MAX_LENGTH,
     force_truncate: bool = False
-) -> str | Any:
+) -> Union[str, Any]:
     """
     Truncate text to max length with ellipsis if needed.
 
@@ -330,7 +330,7 @@ def _format_tool_parameter_wrapped(
 def format_tool_use(
     entry        : dict[str, Any],
     show_options : Any
-) -> str | None:
+) -> Optional[str]:
     """
     Format tool use information from an entry.
 
@@ -379,7 +379,7 @@ def format_tool_use(
 def format_tool_result(
     entry        : dict[str, Any],
     show_options : Any
-) -> str | None:
+) -> Optional[str]:
     """
     Format tool result from an entry.
 
@@ -421,7 +421,7 @@ def format_tool_result(
 def _format_summary_entry(
     entry        : dict[str, Any],
     show_options : Any
-) -> str | None:
+) -> Optional[str]:
     """
     Format a summary entry.
 
@@ -587,7 +587,7 @@ def format_conversation_entry(
     entry          : dict[str, Any],
     show_options   : Any,
     show_timestamp : bool = False
-) -> str | None:
+) -> Optional[str]:
     """
     Format a single entry as part of a conversation.
 
@@ -720,7 +720,7 @@ def _format_user_entry(
     show_options   : Any,
     timestamp_str  : str,
     metadata_lines : list[str] | None
-) -> str | None:
+) -> Optional[str]:
     """
     Format a user entry.
 
@@ -845,7 +845,7 @@ def _format_assistant_entry(
     show_options   : Any,
     timestamp_str  : str,
     metadata_lines : list[str] | None
-) -> str | None:
+) -> Optional[str]:
     """
     Format an assistant entry.
 
@@ -901,7 +901,7 @@ def _format_system_entry(
     show_options   : Any,
     timestamp_str  : str,
     metadata_lines : list[str] | None
-) -> str | None:
+) -> Optional[str]:
     """
     Format a system entry.
 
@@ -956,7 +956,7 @@ def _format_hook_entry(
     show_options   : Any,
     timestamp_str  : str,
     metadata_lines : list[str] | None
-) -> str | None:
+) -> Optional[str]:
     """Format a hook entry."""
     output = []
 
@@ -988,7 +988,7 @@ def _format_command_entry(
     show_options   : Any,
     timestamp_str  : str,
     metadata_lines : list[str] | None
-) -> str | None:
+) -> Optional[str]:
     """Format a command entry."""
     output = []
 
@@ -1016,7 +1016,7 @@ def _format_error_entry(
     show_options   : Any,
     timestamp_str  : str,
     metadata_lines : list[str] | None
-) -> str | None:
+) -> Optional[str]:
     """Format an error entry."""
     output = []
 

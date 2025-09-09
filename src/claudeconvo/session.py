@@ -10,7 +10,7 @@ import json
 import os
 import sys
 from pathlib import Path
-from typing import Any
+from typing import Any, Optional
 
 from .constants import (
     BYTES_PER_KB,
@@ -66,7 +66,7 @@ def path_to_session_dir(path: str) -> Path:
 
 ################################################################################
 
-def find_project_root(start_path: str | None = None) -> str:
+def find_project_root(start_path: Optional[str] = None) -> str:
     """
     Find the project root by looking for markers like .git, .claude, etc.
 

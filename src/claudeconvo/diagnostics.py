@@ -16,7 +16,7 @@ from __future__ import annotations
 import json
 from collections import Counter, defaultdict
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, Dict, Optional, Set
 
 from .constants import MAX_PARSE_ERRORS_DISPLAY, MAX_TYPE_COUNTS_DISPLAY
 from .parsers.adaptive import AdaptiveParser
@@ -39,7 +39,7 @@ class LogAnalyzer:
         """
         self.verbose = verbose
         self.parser  = AdaptiveParser()
-        self.stats: dict[str, Any] = {
+        self.stats: Dict[str, Any] = {
             "versions"           : Counter(),
             "entry_types"        : Counter(),
             "field_patterns"     : defaultdict(set),
@@ -55,7 +55,7 @@ class LogAnalyzer:
 
     def _load_known_fields(self) -> None:
         """Load known fields from field_mappings.json."""
-        self.known_fields: set[str] = set()
+        self.known_fields: Set[str] = set()
 
         # Load field mappings configuration
         mappings_file = Path(__file__).parent / "field_mappings.json"
@@ -101,7 +101,7 @@ class LogAnalyzer:
             Analysis results for the file including entry counts,
             versions found, types discovered, and any errors
         """
-        file_stats: dict[str, Any] = {
+        file_stats: Dict[str, Any] = {
             "filename" : filepath.name,
             "entries"  : 0,
             "versions" : set(),
@@ -295,7 +295,7 @@ class LogAnalyzer:
         # Missing Expected Fields
         if self.stats["missing_expected"]:
             report.append(f"\n{Colors.WARNING}Missing Expected Fields:{Colors.RESET}")
-            summary: dict[str, int] = defaultdict(int)
+            summary: Dict[str, int] = defaultdict(int)
             for version, issues in self.stats["missing_expected"].items():
                 for issue in issues:
                     key = f"{version}/{issue['type']}/{issue['field']}"
@@ -327,7 +327,7 @@ class LogAnalyzer:
         Returns:
             Test results including success rate and failure details
         """
-        results: dict[str, Any] = {
+        results: Dict[str, Any] = {
             "total_tested" : 0,
             "successful"   : 0,
             "failed"       : [],

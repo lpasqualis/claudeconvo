@@ -11,7 +11,7 @@ import os
 import sys
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
+from typing import List, Optional
 
 from .config import determine_theme, load_config
 from .constants import (
@@ -626,7 +626,7 @@ def handle_no_session_directory(project_path: str) -> None:
 
 ################################################################################
 
-def list_files_only(session_files: list[Path]) -> None:
+def list_files_only(session_files: List[Path]) -> None:
     """
     Display list of session files.
 
@@ -657,8 +657,8 @@ def list_files_only(session_files: list[Path]) -> None:
 
 def get_files_to_show(
     args          : argparse.Namespace,
-    session_files : list[Path]
-) -> Optional[list[Path]]:
+    session_files : List[Path]
+) -> Optional[List[Path]]:
     """
     Determine which files to show based on arguments.
 

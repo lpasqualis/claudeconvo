@@ -37,7 +37,7 @@ import ast
 import operator
 import re
 import textwrap
-from typing import Any, Callable, Optional, cast
+from typing import Any, Callable, List, Optional, cast
 
 from .constants import DEFAULT_FALLBACK_WIDTH, ELLIPSIS_LENGTH, MIN_WRAP_WIDTH
 from .themes import Colors
@@ -764,7 +764,7 @@ class StyleRenderer:
             full_context['color'] = color_map.get(msg_type, '')
 
         # Build output
-        output: list[str] = []
+        output: List[str] = []
 
         # Add label if present
         if template.get('label'):

@@ -10,7 +10,7 @@ import json
 import os
 import sys
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, Dict, List, Optional
 
 from .constants import (
     BYTES_PER_KB,
@@ -140,7 +140,7 @@ def parse_session_file(filepath: Path) -> list[dict[str, Any]]:
     Returns:
         List of parsed session entries
     """
-    sessions: list[dict[str, Any]] = []
+    sessions: List[Dict[str, Any]] = []
     parser   = AdaptiveParser()  # Will auto-load config if available
     tracker  = ToolInvocationTracker()  # Track tool invocations
 

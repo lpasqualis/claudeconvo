@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.3] - 2025-10-07
+
+### Fixed
+- Project discovery now correctly identifies the deepest project with an existing Claude session
+- Fixed project root detection prioritizing parent directories with `.claude` marker over child projects with `.git`
+- Windows compatibility: replaced hardcoded "/" path separator with platform-independent Path.parts
+- Improved project root prioritization to prefer project-specific markers (.git, pyproject.toml) over generic .claude marker
+
 ## [0.2.2] - 2025-09-09
 
 ### Fixed
@@ -74,7 +82,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Session listing and selection
 - Configurable display options via command-line flags
 
-[Unreleased]: https://github.com/lpasqualis/claudeconvo/compare/v0.2.2...HEAD
+[Unreleased]: https://github.com/lpasqualis/claudeconvo/compare/v0.2.3...HEAD
+[0.2.3]: https://github.com/lpasqualis/claudeconvo/compare/v0.2.2...v0.2.3
 [0.2.2]: https://github.com/lpasqualis/claudeconvo/compare/v0.2.1...v0.2.2
 [0.2.1]: https://github.com/lpasqualis/claudeconvo/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/lpasqualis/claudeconvo/compare/v0.1.1...v0.2.0

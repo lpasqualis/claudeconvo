@@ -26,7 +26,9 @@ from .tool_tracker import ToolInvocationTracker
 from .utils import log_debug
 
 # Session processing constants
-ROOT_MARKERS = [".git", ".claude", ".hg", ".svn", "pyproject.toml", "setup.py", "package.json"]
+# Priority markers - checked in order of preference
+# Project-specific markers should come before generic .claude
+ROOT_MARKERS = [".git", "pyproject.toml", "package.json", "setup.py", ".hg", ".svn", ".claude"]
 
 
 ################################################################################
@@ -45,11 +47,11 @@ def path_to_session_dir(path: str) -> Path:
     # Format: Leading dash, path with slashes replaced by dashes
     # Hidden folders (starting with .) get the dot removed and double dash
     # Underscores also become dashes
-    parts           = path.split("/")
+    parts           = Path(path).parts
     converted_parts = []
 
     for part in parts:
-        if part:  # Skip empty parts from leading/trailing slashes
+        if part and part != os.sep:  # Skip empty parts and root separator
             # Replace underscores with dashes
             part = part.replace("_", "-")
             if part.startswith("."):
@@ -68,6 +70,13 @@ def find_project_root(start_path: str | None = None) -> str:
     """
     Find the project root by looking for markers like .git, .claude, etc.
 
+    Strategy: Collect all candidate roots while walking up, then pick the best one.
+    Preference order:
+    1. Deepest directory with a matching Claude session directory
+    2. Deepest directory with a project-specific marker (.git, pyproject.toml, etc.)
+    3. Directory with .claude marker (less preferred as it might be a parent workspace)
+    4. Original path if nothing found
+
     Args:
         start_path: Starting directory (defaults to current working directory)
 
@@ -77,18 +86,39 @@ def find_project_root(start_path: str | None = None) -> str:
     if start_path is None:
         start_path = os.getcwd()
 
-    current = Path(start_path).resolve()
+    current          = Path(start_path).resolve()
+    candidates       = []  # List of (path, marker, has_session)
 
-    # Walk up the directory tree
+    # Walk up the directory tree and collect all candidates
     while current != current.parent:
-        # Check for any root markers
         for marker in ROOT_MARKERS:
             if (current / marker).exists():
-                return str(current)
+                # Check if a Claude session exists for this path
+                session_dir = path_to_session_dir(str(current))
+                has_session = session_dir.exists()
+
+                candidates.append((str(current), marker, has_session))
+                break  # Found a marker at this level, move up
         current = current.parent
 
-    # If no project root found, return the original path
-    return start_path
+    if not candidates:
+        # No markers found, return resolved original path
+        return str(Path(start_path).resolve())
+
+    # Prioritize candidates:
+    # 1. First, try candidates with existing Claude sessions
+    session_candidates = [c for c in candidates if c[2]]
+    if session_candidates:
+        return session_candidates[0][0]  # Return deepest with session
+
+    # 2. Next, prefer project-specific markers over .claude
+    project_markers = [".git", "pyproject.toml", "package.json", "setup.py", ".hg", ".svn"]
+    for candidate in candidates:
+        if candidate[1] in project_markers:
+            return candidate[0]
+
+    # 3. Fall back to any marker (including .claude)
+    return candidates[0][0]
 
 
 ################################################################################

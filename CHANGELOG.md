@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.4] - 2025-10-07
+
+### Fixed
+- Project discovery now checks current directory for Claude session FIRST before walking up tree
+- Fixed detection of projects without traditional markers (.git, pyproject.toml) that have Claude sessions
+- Added debug_project_discovery.py script for troubleshooting project detection issues
+
 ## [0.2.3] - 2025-10-07
 
 ### Fixed
@@ -82,7 +89,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Session listing and selection
 - Configurable display options via command-line flags
 
-[Unreleased]: https://github.com/lpasqualis/claudeconvo/compare/v0.2.3...HEAD
+[Unreleased]: https://github.com/lpasqualis/claudeconvo/compare/v0.2.4...HEAD
+[0.2.4]: https://github.com/lpasqualis/claudeconvo/compare/v0.2.3...v0.2.4
 [0.2.3]: https://github.com/lpasqualis/claudeconvo/compare/v0.2.2...v0.2.3
 [0.2.2]: https://github.com/lpasqualis/claudeconvo/compare/v0.2.1...v0.2.2
 [0.2.1]: https://github.com/lpasqualis/claudeconvo/compare/v0.2.0...v0.2.1

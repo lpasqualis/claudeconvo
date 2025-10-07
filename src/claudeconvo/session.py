@@ -70,12 +70,14 @@ def find_project_root(start_path: str | None = None) -> str:
     """
     Find the project root by looking for markers like .git, .claude, etc.
 
-    Strategy: Collect all candidate roots while walking up, then pick the best one.
+    Strategy: First check if current directory has a Claude session (even without markers).
+    Then collect all candidate roots while walking up, and pick the best one.
     Preference order:
-    1. Deepest directory with a matching Claude session directory
-    2. Deepest directory with a project-specific marker (.git, pyproject.toml, etc.)
-    3. Directory with .claude marker (less preferred as it might be a parent workspace)
-    4. Original path if nothing found
+    1. Current directory if it has a Claude session (even without project markers)
+    2. Deepest directory with a matching Claude session directory
+    3. Deepest directory with a project-specific marker (.git, pyproject.toml, etc.)
+    4. Directory with .claude marker (less preferred as it might be a parent workspace)
+    5. Original path if nothing found
 
     Args:
         start_path: Starting directory (defaults to current working directory)
@@ -87,6 +89,14 @@ def find_project_root(start_path: str | None = None) -> str:
         start_path = os.getcwd()
 
     current          = Path(start_path).resolve()
+    start_resolved   = str(current)
+
+    # FIRST: Check if current directory itself has a Claude session
+    # This handles projects without traditional markers but opened in Claude Code
+    current_session_dir = path_to_session_dir(start_resolved)
+    if current_session_dir.exists():
+        return start_resolved
+
     candidates       = []  # List of (path, marker, has_session)
 
     # Walk up the directory tree and collect all candidates
@@ -103,7 +113,7 @@ def find_project_root(start_path: str | None = None) -> str:
 
     if not candidates:
         # No markers found, return resolved original path
-        return str(Path(start_path).resolve())
+        return start_resolved
 
     # Prioritize candidates:
     # 1. First, try candidates with existing Claude sessions

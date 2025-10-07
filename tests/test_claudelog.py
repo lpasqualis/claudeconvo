@@ -168,8 +168,9 @@ class TestSessionFunctions:
         result = path_to_session_dir("/home/user/.hidden")
         assert result.name == "-home-user--hidden"
 
+    @patch("claudeconvo.session.path_to_session_dir")
     @patch("claudeconvo.session.Path")
-    def test_find_project_root(self, mock_path_class):
+    def test_find_project_root(self, mock_path_class, mock_path_to_session):
         """Test finding project root from subdirectories."""
         # Create mock paths for the directory hierarchy
         mock_subdir = Mock()
@@ -205,6 +206,11 @@ class TestSessionFunctions:
 
         # Mock Path() constructor and resolve()
         mock_path_class.return_value.resolve.return_value = mock_subdir
+
+        # Mock path_to_session_dir to return non-existent session dirs
+        mock_session_dir = Mock()
+        mock_session_dir.exists.return_value = False
+        mock_path_to_session.return_value = mock_session_dir
 
         # Test finding project root
         result = find_project_root("/home/user/project/src/subdir")
